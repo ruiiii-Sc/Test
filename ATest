@@ -4578,6 +4578,7 @@ function Airflow:Init(config)
 				ListRight.Visible = true;
 			end;
 
+			if value then
 				InternalTabLabel.Text = TabTable.Name;
 
 				Airflow:CreateAnimation(hightlight,0.4,nil,{
