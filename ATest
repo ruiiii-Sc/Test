@@ -3992,11 +3992,11 @@ function Airflow:Init(config)
 
 			Airflow:CreateAnimation(WindowFrame,0.5,nil,{
 				Size = config.Scale;
-				BackgroundTransparency = 0.600;
+				BackgroundTransparency = 0.9; -- More transparent as requested
 			})
 
 			Airflow:CreateAnimation(MainFrame,0.45,nil,{
-				BackgroundTransparency = 0.3;
+				BackgroundTransparency = 0.4; -- Content frame transparency
 			})
 
 			Airflow:CreateAnimation(LineH,0.45,nil,{
@@ -4154,6 +4154,61 @@ function Airflow:Init(config)
 	TabElements.Size = UDim2.new(1, -110, 1, 0)
 	TabElements.ZIndex = 5
 
+	-- Internal Header (Tab Name + Buttons)
+	local InternalHeader = Instance.new("Frame")
+	InternalHeader.Name = "InternalHeader"
+	InternalHeader.Parent = TabElements
+	InternalHeader.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	InternalHeader.BackgroundTransparency = 1
+	InternalHeader.Size = UDim2.new(1, 0, 0, 35)
+	InternalHeader.Position = UDim2.new(0, 10, 0, 5)
+	InternalHeader.ZIndex = 10
+
+	local InternalTabLabel = Instance.new("TextLabel")
+	InternalTabLabel.Name = "TabLabel"
+	InternalTabLabel.Parent = InternalHeader
+	InternalTabLabel.BackgroundTransparency = 1
+	InternalTabLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	InternalTabLabel.Font = Enum.Font.GothamBold
+	InternalTabLabel.TextSize = 14
+	InternalTabLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	InternalTabLabel.TextXAlignment = Enum.TextXAlignment.Left
+	InternalTabLabel.Text = "None"
+	InternalTabLabel.ZIndex = 11
+
+	local HeaderButtons = Instance.new("Frame")
+	HeaderButtons.Name = "HeaderButtons"
+	HeaderButtons.Parent = InternalHeader
+	HeaderButtons.AnchorPoint = Vector2.new(1, 0)
+	HeaderButtons.BackgroundTransparency = 1
+	HeaderButtons.Position = UDim2.new(1, -10, 0, 0)
+	HeaderButtons.Size = UDim2.new(0, 60, 1, 0)
+	HeaderButtons.ZIndex = 11
+
+	local HPadding = Instance.new("UIListLayout")
+	HPadding.Parent = HeaderButtons
+	HPadding.FillDirection = Enum.FillDirection.Horizontal
+	HPadding.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	HPadding.VerticalAlignment = Enum.VerticalAlignment.Center
+	HPadding.Padding = UDim.new(0, 8)
+
+	local function createHeaderButton(icon, callback)
+		local btn = Instance.new("ImageButton")
+		btn.BackgroundTransparency = 1
+		btn.Size = UDim2.fromOffset(18, 18)
+		btn.Image = Airflow:GetIcon(icon)
+		btn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+		btn.ZIndex = 12
+		btn.Parent = HeaderButtons
+		btn.MouseEnter:Connect(function() btn.ImageColor3 = config.Hightlight end)
+		btn.MouseLeave:Connect(function() btn.ImageColor3 = Color3.fromRGB(200, 200, 200) end)
+		btn.MouseButton1Click:Connect(callback)
+		return btn
+	end
+
+	createHeaderButton("minus", function() ToggleWindow(false) end)
+	createHeaderButton("x", function() AirflowWindow:Destroy() end)
+
 	TabInputs.Name = Airflow:RandomString()
 	TabInputs.Parent = MainFrame
 	TabInputs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4165,17 +4220,54 @@ function Airflow:Init(config)
 	TabInputs.Size = UDim2.new(0, 110, 1, 0)
 	TabInputs.ZIndex = 5
 
+	-- Omega Logo with Glow
+	local LogoContainer = Instance.new("Frame")
+	LogoContainer.Name = "LogoContainer"
+	LogoContainer.Parent = TabInputs
+	LogoContainer.Size = UDim2.new(1, 0, 0, 50)
+	LogoContainer.Position = UDim2.new(0, 0, 0, 0)
+	LogoContainer.BackgroundTransparency = 1
+	LogoContainer.ZIndex = 6
+
+	local Glow = Instance.new("TextLabel")
+	Glow.Name = "Glow"
+	Glow.Parent = LogoContainer
+	Glow.AnchorPoint = Vector2.new(0.5, 0.5)
+	Glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	Glow.Size = UDim2.new(0, 30, 0, 30)
+	Glow.BackgroundTransparency = 1
+	Glow.Font = Enum.Font.GothamBold
+	Glow.Text = "Ω"
+	Glow.TextSize = 28
+	Glow.TextColor3 = config.Hightlight
+	Glow.ZIndex = 7
+
+	local GlowEffect = Instance.new("UIStroke")
+	GlowEffect.Parent = Glow
+	GlowEffect.Color = config.Hightlight
+	GlowEffect.Thickness = 2
+	GlowEffect.Transparency = 0.5
+
+	task.spawn(function()
+		while task.wait(0.1) do
+			if not AirflowWindow or not AirflowWindow.Parent then break end
+			local t = tick()
+			Glow.TextTransparency = 0.2 + math.sin(t * 3) * 0.2
+			GlowEffect.Transparency = 0.5 + math.sin(t * 3) * 0.3
+		end
+	end)
+
 	ListInputs.Name = Airflow:RandomString()
 	ListInputs.Parent = TabInputs
 	ListInputs.Active = true
-	ListInputs.AnchorPoint = Vector2.new(0.5, 0.5)
+	ListInputs.AnchorPoint = Vector2.new(0.5, 1)
 	ListInputs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	ListInputs.BackgroundTransparency = 1.000
 	ListInputs.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	ListInputs.BorderSizePixel = 0
 	ListInputs.ClipsDescendants = false
-	ListInputs.Position = UDim2.new(0.5, 0, 0.5, 0)
-	ListInputs.Size = UDim2.new(1, -5, 1, -10)
+	ListInputs.Position = UDim2.new(0.5, 0, 1, -5)
+	ListInputs.Size = UDim2.new(1, -5, 1, -60)
 	ListInputs.ZIndex = 6
 	ListInputs.ScrollBarThickness = 0
 
@@ -4226,9 +4318,9 @@ function Airflow:Init(config)
 	Headers.BackgroundTransparency = 1.000
 	Headers.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	Headers.BorderSizePixel = 0
-	Headers.Position = UDim2.new(0.5, 0, 0, 5)
-	Headers.Size = UDim2.new(1, -15, 0, 30)
-	Headers.ZIndex = 3
+	Headers.Position = UDim2.new(0, 0, 0, 0)
+	Headers.Size = UDim2.new(1, 0, 0, 40)
+	Headers.ZIndex = 50 -- Ensure it's on top for dragging
 
 	UIListLayout_2.Parent = Headers
 	UIListLayout_2.FillDirection = Enum.FillDirection.Horizontal
@@ -4381,13 +4473,13 @@ function Airflow:Init(config)
 
 		ListElemants.Name = Airflow:RandomString()
 		ListElemants.Parent = TabElements;
-		ListElemants.AnchorPoint = Vector2.new(0.5, 0.5)
+		ListElemants.AnchorPoint = Vector2.new(0.5, 1)
 		ListElemants.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		ListElemants.BackgroundTransparency = 1.000
 		ListElemants.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ListElemants.BorderSizePixel = 0
-		ListElemants.Position = UDim2.new(0.5, 0, 0.5, 0)
-		ListElemants.Size = UDim2.new(1, -5, 1, -8)
+		ListElemants.Position = UDim2.new(0.5, 0, 1, -5)
+		ListElemants.Size = UDim2.new(1, -5, 1, -45)
 		ListElemants.ZIndex = 6
 
 		ListLeft.Name = Airflow:RandomString()
@@ -4400,7 +4492,7 @@ function Airflow:Init(config)
 		ListLeft.BorderSizePixel = 0
 		ListLeft.ClipsDescendants = false
 		ListLeft.Position = UDim2.new(0.25, 0, 0.5, 0)
-		ListLeft.Size = UDim2.new(0.5, -5, 1, -8)
+		ListLeft.Size = UDim2.new(0.5, -10, 1, 0)
 		ListLeft.ZIndex = 6
 		ListLeft.ScrollBarThickness = 0
 
@@ -4486,7 +4578,7 @@ function Airflow:Init(config)
 				ListRight.Visible = true;
 			end;
 
-			if value then
+				InternalTabLabel.Text = TabTable.Name;
 
 				Airflow:CreateAnimation(hightlight,0.4,nil,{
 					BackgroundTransparency = 0
@@ -4610,34 +4702,47 @@ function Airflow:Init(config)
 			config.Name = config.Name or "Section";
 			config.Position = config.Position or "left";
 
+			local SectionBase = Instance.new("Frame")
 			local Section = Instance.new("Frame")
 			local LabelFrame = Instance.new("TextLabel")
 			local UIListLayout = Instance.new("UIListLayout")
+			local BoxStroke = Instance.new("UIStroke")
+
+			SectionBase.Name = Airflow:RandomString()
+			SectionBase.Parent = (string.lower(config.Position) == "left" and ListLeft) or ListRight;
+			SectionBase.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			SectionBase.BackgroundTransparency = 1.000
+			SectionBase.Size = UDim2.new(1, -5, 0, 150)
 
 			Section.Name = Airflow:RandomString()
-			Section.Parent = (string.lower(config.Position) == "left" and ListLeft) or ListRight;
-			Section.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			Section.BackgroundTransparency = 1.000
-			Section.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			Section.Parent = SectionBase
+			Section.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			Section.BackgroundTransparency = 0.5
 			Section.BorderSizePixel = 0
+			Section.Position = UDim2.new(0, 0, 0, 15)
+			Section.Size = UDim2.new(1, 0, 1, -15)
 			Section.ClipsDescendants = true
-			Section.Size = UDim2.new(1, 0, 0, 150)
+
+			local SectionCorner = Instance.new("UICorner")
+			SectionCorner.CornerRadius = UDim.new(0, 4)
+			SectionCorner.Parent = Section
+
+			BoxStroke.Parent = Section
+			BoxStroke.Color = Color3.fromRGB(60, 60, 60)
+			BoxStroke.Thickness = 1
+			BoxStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
 			LabelFrame.Name = Airflow:RandomString()
-			LabelFrame.Parent = Section
-			LabelFrame.AnchorPoint = Vector2.new(0, 0.5)
-			LabelFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			LabelFrame.BackgroundTransparency = 1.000
-			LabelFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			LabelFrame.BorderSizePixel = 0
-			LabelFrame.Position = UDim2.new(0, 30, 0.5, 0)
-			LabelFrame.Size = UDim2.new(1, -10, 0, 17)
-			LabelFrame.ZIndex = 7
-			LabelFrame.Font = Enum.Font.GothamMedium
+			LabelFrame.Parent = SectionBase
+			LabelFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+			LabelFrame.BackgroundTransparency = 1
+			LabelFrame.Position = UDim2.new(0, 12, 0, 0)
+			LabelFrame.Size = UDim2.new(0, 50, 0, 20)
+			LabelFrame.ZIndex = 11
+			LabelFrame.Font = Enum.Font.GothamBold
 			LabelFrame.Text = config.Name
-			LabelFrame.TextColor3 = Color3.fromRGB(255, 255, 255)
-			LabelFrame.TextSize = 13.000
-			LabelFrame.TextWrapped = true
+			LabelFrame.TextColor3 = Color3.fromRGB(220, 220, 220)
+			LabelFrame.TextSize = 12
 			LabelFrame.TextXAlignment = Enum.TextXAlignment.Left
 
 			UIListLayout.Parent = Section
@@ -4645,32 +4750,30 @@ function Airflow:Init(config)
 			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 			UIListLayout.Padding = UDim.new(0, 5)
 
+			local Padding = Instance.new("UIPadding")
+			Padding.Parent = Section
+			Padding.PaddingTop = UDim.new(0, 5)
+			Padding.PaddingBottom = UDim.new(0, 5)
+
 			Bindable.Event:Connect(function(value)
 				if value then
 					task.wait(0.1);
-
-					Airflow:CreateAnimation(LabelFrame,1.2,nil,{
-						TextTransparency = 0;
-					})
+					Airflow:CreateAnimation(LabelFrame,1.2,nil,{TextTransparency = 0;})
+					Airflow:CreateAnimation(Section,1.2,nil,{BackgroundTransparency = 0.5;})
+					Airflow:CreateAnimation(BoxStroke,1.2,nil,{Transparency = 0;})
 				else
-					Airflow:CreateAnimation(LabelFrame,0.5,nil,{
-						TextTransparency = 1;
-					})
+					Airflow:CreateAnimation(LabelFrame,0.5,nil,{TextTransparency = 1;})
+					Airflow:CreateAnimation(Section,0.5,nil,{BackgroundTransparency = 1;})
+					Airflow:CreateAnimation(BoxStroke,0.5,nil,{Transparency = 1;})
 				end
 			end)
 
 			UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-				Airflow:CreateAnimation(Section,0.4,Enum.EasingStyle.Quint,{
-					Size = UDim2.new(1, 0, 0, UIListLayout.AbsoluteContentSize.Y + 4)
+				local newSize = UIListLayout.AbsoluteContentSize.Y + 10
+				Airflow:CreateAnimation(SectionBase, 0.4, Enum.EasingStyle.Quint, {
+					Size = UDim2.new(1, -5, 0, newSize + 15)
 				});
-			end);
-
-			Section:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-				if Section.Size.Y.Offset >= UIListLayout.AbsoluteContentSize.Y then
-					Section.ClipsDescendants = false;
-				else
-					Section.ClipsDescendants = true;
-				end;
+				Section.Size = UDim2.new(1, 0, 0, newSize)
 			end);
 
 			local ID = "Section_"..config.Name.."_"..TabTable.Name.."_"..tostring(#Response.TabElements).."_"..tostring(ElementId);
