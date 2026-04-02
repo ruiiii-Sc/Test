@@ -4151,9 +4151,10 @@ function Airflow:Init(config)
 	TabElements.BackgroundTransparency = 1.000
 	TabElements.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	TabElements.BorderSizePixel = 0
-	TabElements.Position = UDim2.new(0, 110, 0, 0)
-	TabElements.Size = UDim2.new(1, -110, 1, 0)
+	TabElements.Position = UDim2.new(0, 50, 0, 0)
+	TabElements.Size = UDim2.new(1, -50, 1, 0)
 	TabElements.ZIndex = 5
+	TabElements.ClipsDescendants = true
 
 	-- Internal Header (Tab Name + Buttons)
 	local InternalHeader = Instance.new("Frame")
@@ -4164,6 +4165,7 @@ function Airflow:Init(config)
 	InternalHeader.Size = UDim2.new(1, 0, 0, 35)
 	InternalHeader.Position = UDim2.new(0, 10, 0, 5)
 	InternalHeader.ZIndex = 10
+	InternalHeader.ClipsDescendants = true
 
 	local InternalTabLabel = Instance.new("TextLabel")
 	InternalTabLabel.Name = "TabLabel"
@@ -4217,8 +4219,8 @@ function Airflow:Init(config)
 	TabInputs.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	TabInputs.BorderSizePixel = 0
 	TabInputs.ClipsDescendants = true
-	TabInputs.Position = UDim2.fromOffset(-110,0)
-	TabInputs.Size = UDim2.new(0, 110, 1, 0)
+	TabInputs.Position = UDim2.fromOffset(-50,0)
+	TabInputs.Size = UDim2.new(0, 50, 1, 0)
 	TabInputs.ZIndex = 5
 
 	local LogoContainer = Instance.new("Frame")
@@ -4311,7 +4313,10 @@ function Airflow:Init(config)
 		UIGradient.Offset = Vector2.new(0,-((MainFrame.AbsoluteSize.Y / WindowFrame.AbsoluteSize.Y) / 2.15));
 	end);
 
-	Headers.Visible = false -- Fully hidden
+	Headers.Visible = false
+	Headers.BackgroundTransparency = 1
+	Headers.Size = UDim2.fromOffset(0, 0)
+	Headers.Active = false
 	UIListLayout_2.FillDirection = Enum.FillDirection.Horizontal
 	UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
@@ -4487,6 +4492,7 @@ function Airflow:Init(config)
 
 		UIListLayout.Parent = ListLeft
 		UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top -- Ensure top-down rendering
 		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 		UIListLayout.Padding = UDim.new(0, 5)
 		UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
@@ -4509,6 +4515,7 @@ function Airflow:Init(config)
 
 		UIListLayout_2.Parent = ListRight
 		UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Top -- Ensure top-down rendering
 		UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
 		UIListLayout_2.Padding = UDim.new(0, 5)
 		UIListLayout_2:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
