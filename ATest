@@ -2150,7 +2150,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 					Airflow:CreateAnimation(ToggleFrame,0.7,nil,{
 						BackgroundTransparency = 0.800,
-						Size = UDim2.new(1, -2, 0, 34)
+						Size = UDim2.new(1, -12, 0, 34)
 					})
 
 					Airflow:CreateAnimation(PText,0.7,nil,{
@@ -2347,7 +2347,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 			task.delay(0.4,Airflow.CreateAnimation,Airflow,SliderFrame,0.5,nil,{
 				BackgroundTransparency = 0.800,
-				Size = UDim2.new(1, -2, 0, 50)
+				Size = UDim2.new(1, -12, 0, 50)
 			})
 		end
 
@@ -2478,7 +2478,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 				else
 					Airflow:CreateAnimation(SliderFrame,0.5,nil,{
 						BackgroundTransparency = 1,
-						Size = UDim2.new(1, -6, 0, 50)
+						Size = UDim2.new(1, -12, 0, 50)
 					})
 
 					Airflow:CreateAnimation(PText,0.5,nil,{
@@ -2654,7 +2654,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 			task.delay(0.4,Airflow.CreateAnimation,Airflow,KeybindFrame,0.5,nil,{
 				BackgroundTransparency = 0.800,
-				Size = UDim2.new(1, -2, 0, 35)
+				Size = UDim2.new(1, -12, 0, 35)
 			})
 		end;
 
@@ -3076,7 +3076,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		ColorPickerFrame.BackgroundTransparency = 1
 		ColorPickerFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ColorPickerFrame.BorderSizePixel = 0
-		ColorPickerFrame.Size = UDim2.new(1, -2, 0, 40)
+		ColorPickerFrame.Size = UDim2.new(1, -12, 0, 36)
 		ColorPickerFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -3256,7 +3256,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		ParagraphFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ParagraphFrame.BorderSizePixel = 0
 		ParagraphFrame.ClipsDescendants = true
-		ParagraphFrame.Size = UDim2.new(1, -2, 0, 45)
+		ParagraphFrame.Size = UDim2.new(1, -12, 0, 45)
 		ParagraphFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -4128,6 +4128,7 @@ function Airflow:Init(config)
 	WindowFrame.ClipsDescendants = true
 	WindowFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 	WindowFrame.Size = UDim2.new(config.Scale.X.Scale,config.Scale.X.Offset - 50,config.Scale.Y.Scale,config.Scale.Y.Offset - 50);
+	WindowFrame.Active = true
 
 	UICorner.CornerRadius = UDim.new(0, 2)
 	UICorner.Parent = WindowFrame
@@ -4220,11 +4221,10 @@ function Airflow:Init(config)
 	TabInputs.Size = UDim2.new(0, 110, 1, 0)
 	TabInputs.ZIndex = 5
 
-	-- Omega Logo with Glow
 	local LogoContainer = Instance.new("Frame")
 	LogoContainer.Name = "LogoContainer"
 	LogoContainer.Parent = TabInputs
-	LogoContainer.Size = UDim2.new(1, 0, 0, 50)
+	LogoContainer.Size = UDim2.new(1, 0, 0, 60)
 	LogoContainer.Position = UDim2.new(0, 0, 0, 0)
 	LogoContainer.BackgroundTransparency = 1
 	LogoContainer.ZIndex = 6
@@ -4234,26 +4234,26 @@ function Airflow:Init(config)
 	Glow.Parent = LogoContainer
 	Glow.AnchorPoint = Vector2.new(0.5, 0.5)
 	Glow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	Glow.Size = UDim2.new(0, 30, 0, 30)
+	Glow.Size = UDim2.new(0, 40, 0, 40)
 	Glow.BackgroundTransparency = 1
-	Glow.Font = Enum.Font.GothamBold
+	Glow.Font = Enum.Font.LuckiestGuy
 	Glow.Text = "Ω"
-	Glow.TextSize = 28
-	Glow.TextColor3 = config.Hightlight
+	Glow.TextSize = 35
+	Glow.TextColor3 = Color3.fromRGB(240, 240, 240)
 	Glow.ZIndex = 7
 
 	local GlowEffect = Instance.new("UIStroke")
 	GlowEffect.Parent = Glow
-	GlowEffect.Color = config.Hightlight
+	GlowEffect.Color = Color3.fromRGB(255, 255, 255)
 	GlowEffect.Thickness = 2
-	GlowEffect.Transparency = 0.5
+	GlowEffect.Transparency = 0.6
 
 	task.spawn(function()
 		while task.wait(0.1) do
 			if not AirflowWindow or not AirflowWindow.Parent then break end
 			local t = tick()
-			Glow.TextTransparency = 0.2 + math.sin(t * 3) * 0.2
-			GlowEffect.Transparency = 0.5 + math.sin(t * 3) * 0.3
+			Glow.TextTransparency = 0.1 + math.sin(t * 1.5) * 0.1
+			GlowEffect.Transparency = 0.6 + math.sin(t * 1.5) * 0.2
 		end
 	end)
 
@@ -4267,7 +4267,7 @@ function Airflow:Init(config)
 	ListInputs.BorderSizePixel = 0
 	ListInputs.ClipsDescendants = false
 	ListInputs.Position = UDim2.new(0.5, 0, 1, -5)
-	ListInputs.Size = UDim2.new(1, -5, 1, -60)
+	ListInputs.Size = UDim2.new(1, -5, 1, -70)
 	ListInputs.ZIndex = 6
 	ListInputs.ScrollBarThickness = 0
 
@@ -4311,18 +4311,7 @@ function Airflow:Init(config)
 		UIGradient.Offset = Vector2.new(0,-((MainFrame.AbsoluteSize.Y / WindowFrame.AbsoluteSize.Y) / 2.15));
 	end);
 
-	Headers.Name = Airflow:RandomString()
-	Headers.Parent = WindowFrame
-	Headers.AnchorPoint = Vector2.new(0.5, 0)
-	Headers.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Headers.BackgroundTransparency = 1.000
-	Headers.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Headers.BorderSizePixel = 0
-	Headers.Position = UDim2.new(0, 0, 0, 0)
-	Headers.Size = UDim2.new(1, 0, 0, 40)
-	Headers.ZIndex = 50 -- Ensure it's on top for dragging
-
-	UIListLayout_2.Parent = Headers
+	Headers.Visible = false -- Fully hidden
 	UIListLayout_2.FillDirection = Enum.FillDirection.Horizontal
 	UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
@@ -4844,8 +4833,16 @@ function Airflow:Init(config)
 		});
 	end;
 
-	Headers.InputBegan:Connect(function(input)
+	WindowFrame.InputBegan:Connect(function(input)
 		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then 
+			local guiObjects = AirflowWindow:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y)
+			local topObject = guiObjects[1]
+			
+			-- Only drag if clicking the frame directly, not on sub-elements
+			if topObject ~= WindowFrame and topObject ~= MainFrame and topObject ~= TabInputs and topObject ~= LogoContainer and topObject ~= InternalHeader then
+				return
+			end
+
 			dragToggle = true
 			dragStart = input.Position
 			startPos = WindowFrame.Position
