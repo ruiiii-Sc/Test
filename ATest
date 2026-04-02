@@ -1880,7 +1880,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		ButtonFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ButtonFrame.BorderSizePixel = 0
 		ButtonFrame.ClipsDescendants = true
-		ButtonFrame.Size = UDim2.new(1, -6, 0, 30)
+		ButtonFrame.Size = UDim2.new(1, -8, 0, 30)
 		ButtonFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -1936,7 +1936,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 				Airflow:CreateAnimation(ButtonFrame,0.5,nil,{
 					BackgroundTransparency = 1,
-					Size = UDim2.new(1, -6, 0, 34)
+					Size = UDim2.new(1, -8, 0, 34)
 				})
 			end
 		end;
@@ -1989,7 +1989,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		ToggleFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ToggleFrame.BorderSizePixel = 0
 		ToggleFrame.ClipsDescendants = true
-		ToggleFrame.Size = UDim2.new(1, -6, 0, 30)
+		ToggleFrame.Size = UDim2.new(1, -8, 0, 30)
 		ToggleFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -2002,7 +2002,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		PText.BackgroundTransparency = 1.000
 		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 10, 0.5, 0)
+		PText.Position = UDim2.new(0, 8, 0.5, 0)
 		PText.Size = UDim2.new(1, 50, 0, 20)
 		PText.ZIndex = 7
 		PText.Font = Enum.Font.GothamMedium
@@ -2020,7 +2020,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		block.BackgroundTransparency = 1
 		block.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		block.BorderSizePixel = 0
-		block.Position = UDim2.new(1, -10, 0.5, 0)
+		block.Position = UDim2.new(1, -8, 0.5, 0)
 		block.Size = UDim2.new(0, 35, 0, 16)
 		block.ZIndex = 7
 
@@ -2054,7 +2054,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 			})
 			task.delay(0.4,Airflow.CreateAnimation,Airflow,ToggleFrame,0.5,nil,{
 				BackgroundTransparency = 0.800,
-				Size = UDim2.new(1, -2, 0, 34)
+				Size = UDim2.new(1, -8, 0, 34)
 			})
 		end;
 
@@ -2150,7 +2150,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 					Airflow:CreateAnimation(ToggleFrame,0.7,nil,{
 						BackgroundTransparency = 0.800,
-						Size = UDim2.new(1, -12, 0, 34)
+						Size = UDim2.new(1, -8, 0, 34)
 					})
 
 					Airflow:CreateAnimation(PText,0.7,nil,{
@@ -2183,7 +2183,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 					Airflow:CreateAnimation(ToggleFrame,0.5,nil,{
 						BackgroundTransparency = 1,
-						Size = UDim2.new(1, -6, 0, 34)
+						Size = UDim2.new(1, -8, 0, 34)
 					})
 				end
 			end)
@@ -2231,7 +2231,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		SliderFrame.BackgroundTransparency = 1
 		SliderFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		SliderFrame.BorderSizePixel = 0
-		SliderFrame.Size = UDim2.new(1, -6, 0, 44)
+		SliderFrame.Size = UDim2.new(1, -8, 0, 44)
 		SliderFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -2243,7 +2243,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		PText.BackgroundTransparency = 1.000
 		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 10, 0, 7)
+		PText.Position = UDim2.new(0, 8, 0, 7)
 		PText.Size = UDim2.new(1, 50, 0, 20)
 		PText.ZIndex = 7
 		PText.Font = Enum.Font.GothamMedium
@@ -2261,7 +2261,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		VText.BackgroundTransparency = 1.000
 		VText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		VText.BorderSizePixel = 0
-		VText.Position = UDim2.new(1, -10, 0, 7)
+		VText.Position = UDim2.new(1, -8, 0, 7)
 		VText.Size = UDim2.new(1, -30, 0, 20)
 		VText.ZIndex = 7
 		VText.Font = Enum.Font.GothamMedium
@@ -2345,10 +2345,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 				TextTransparency = 0.3,
 			})
 
-			task.delay(0.4,Airflow.CreateAnimation,Airflow,SliderFrame,0.5,nil,{
-				BackgroundTransparency = 0.800,
-				Size = UDim2.new(1, -12, 0, 50)
-			})
+				Size = UDim2.new(1, -8, 0, 50)
 		end
 
 		Airflow:Hover(SliderFrame)
@@ -2448,7 +2445,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 					Airflow:CreateAnimation(SliderFrame,0.7,nil,{
 						BackgroundTransparency = 0.800,
-						Size = UDim2.new(1, -2, 0, 50)
+						Size = UDim2.new(1, -8, 0, 50)
 					})
 
 					Airflow:CreateAnimation(PText,0.7,nil,{
@@ -2478,7 +2475,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 				else
 					Airflow:CreateAnimation(SliderFrame,0.5,nil,{
 						BackgroundTransparency = 1,
-						Size = UDim2.new(1, -12, 0, 50)
+						Size = UDim2.new(1, -8, 0, 50)
 					})
 
 					Airflow:CreateAnimation(PText,0.5,nil,{
@@ -2584,7 +2581,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		KeybindFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		KeybindFrame.BorderSizePixel = 0
 		KeybindFrame.ClipsDescendants = true
-		KeybindFrame.Size = UDim2.new(1, -6, 0, 30)
+		KeybindFrame.Size = UDim2.new(1, -8, 0, 30)
 		KeybindFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -2597,7 +2594,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		PText.BackgroundTransparency = 1.000
 		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 10, 0.5, 0)
+		PText.Position = UDim2.new(0, 8, 0.5, 0)
 		PText.Size = UDim2.new(1, 50, 0, 20)
 		PText.ZIndex = 7
 		PText.Font = Enum.Font.GothamMedium
@@ -2615,7 +2612,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		block.BackgroundTransparency = 1
 		block.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		block.BorderSizePixel = 0
-		block.Position = UDim2.new(1, -10, 0.5, 0)
+		block.Position = UDim2.new(1, -8, 0.5, 0)
 		block.Size = UDim2.new(0, 55, 0, 22)
 		block.ZIndex = 7
 
@@ -2652,10 +2649,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 				TextTransparency = 0.3,
 			})
 
-			task.delay(0.4,Airflow.CreateAnimation,Airflow,KeybindFrame,0.5,nil,{
-				BackgroundTransparency = 0.800,
-				Size = UDim2.new(1, -12, 0, 35)
-			})
+				Size = UDim2.new(1, -8, 0, 35)
 		end;
 
 		Airflow:Hover(KeybindFrame);
@@ -2750,7 +2744,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 
 					Airflow:CreateAnimation(KeybindFrame,0.7,nil,{
 						BackgroundTransparency = 0.800,
-						Size = UDim2.new(1, -2, 0, 35)
+						Size = UDim2.new(1, -8, 0, 35)
 					})
 
 					Airflow:CreateAnimation(block,0.6,nil,{
@@ -2767,7 +2761,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 				else
 					Airflow:CreateAnimation(KeybindFrame,0.5,nil,{
 						BackgroundTransparency = 1,
-						Size = UDim2.new(1, -6, 0, 35)
+						Size = UDim2.new(1, -8, 0, 35)
 					})
 
 					Airflow:CreateAnimation(block,0.5,nil,{
@@ -2834,7 +2828,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		PText.BackgroundTransparency = 1.000
 		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 10, 0.5, 0)
+		PText.Position = UDim2.new(0, 8, 0.5, 0)
 		PText.Size = UDim2.new(1, 50, 0, 20)
 		PText.ZIndex = 7
 		PText.Font = Enum.Font.GothamMedium
@@ -2853,7 +2847,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		block.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		block.BorderSizePixel = 0
 		block.ClipsDescendants = true
-		block.Position = UDim2.new(1, -10, 0.5, 0)
+		block.Position = UDim2.new(1, -8, 0.5, 0)
 		block.Size = UDim2.new(0, 65, 0, 25)
 		block.ZIndex = 7
 
@@ -3076,7 +3070,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		ColorPickerFrame.BackgroundTransparency = 1
 		ColorPickerFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ColorPickerFrame.BorderSizePixel = 0
-		ColorPickerFrame.Size = UDim2.new(1, -12, 0, 36)
+		ColorPickerFrame.Size = UDim2.new(1, -8, 0, 36)
 		ColorPickerFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -3089,7 +3083,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		PText.BackgroundTransparency = 1.000
 		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 10, 0.5, 0)
+		PText.Position = UDim2.new(0, 8, 0.5, 0)
 		PText.Size = UDim2.new(1, 50, 0, 20)
 		PText.ZIndex = 7
 		PText.Font = Enum.Font.GothamMedium
@@ -3107,7 +3101,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		block.BackgroundColor3 = config.Default;
 		block.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		block.BorderSizePixel = 0
-		block.Position = UDim2.new(1, -10, 0.5, 0)
+		block.Position = UDim2.new(1, -8, 0.5, 0)
 		block.Size = UDim2.new(0, 45, 0, 20)
 		block.ZIndex = 7
 		block.BackgroundTransparency = 1;
@@ -3256,7 +3250,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		ParagraphFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ParagraphFrame.BorderSizePixel = 0
 		ParagraphFrame.ClipsDescendants = true
-		ParagraphFrame.Size = UDim2.new(1, -12, 0, 45)
+		ParagraphFrame.Size = UDim2.new(1, -8, 0, 45)
 		ParagraphFrame.ZIndex = 6
 
 		UICorner.CornerRadius = UDim.new(0, 4)
@@ -3268,7 +3262,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		PText.BackgroundTransparency = 1.000
 		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 10, 0, 4)
+		PText.Position = UDim2.new(0, 8, 0, 4)
 		PText.Size = UDim2.new(1, 50, 0, 20)
 		PText.ZIndex = 7
 		PText.Font = Enum.Font.GothamMedium
@@ -3285,7 +3279,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		SText.BackgroundTransparency = 1.000
 		SText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		SText.BorderSizePixel = 0
-		SText.Position = UDim2.new(0, 10, 0, 25)
+		SText.Position = UDim2.new(0, 8, 0, 25)
 		SText.Size = UDim2.new(1, 50, 1, -25)
 		SText.ZIndex = 7
 		SText.Font = Enum.Font.GothamMedium
@@ -3471,7 +3465,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		PText.BackgroundTransparency = 1.000
 		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 10, 0.5, 0)
+		PText.Position = UDim2.new(0, 8, 0.5, 0)
 		PText.Size = UDim2.new(1, 50, 0, 20)
 		PText.ZIndex = 7
 		PText.Font = Enum.Font.GothamMedium
@@ -3490,7 +3484,7 @@ function Airflow:Elements(element : Frame,OnChange : BindableEvent , windowConfi
 		block.BackgroundTransparency = 1.000
 		block.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		block.BorderSizePixel = 0
-		block.Position = UDim2.new(1, -10, 0.5, 0)
+		block.Position = UDim2.new(1, -8, 0.5, 0)
 		block.Size = UDim2.new(0, 65, 0, 30)
 		block.ZIndex = 7
 
@@ -4418,13 +4412,13 @@ function Airflow:Init(config)
 
 		Icon.Name = Airflow:RandomString()
 		Icon.Parent = InputElement
-		Icon.AnchorPoint = Vector2.new(0, 0.5)
+		Icon.AnchorPoint = Vector2.new(0.5, 0.5)
 		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		Icon.BackgroundTransparency = 1.000
 		Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Icon.BorderSizePixel = 0
-		Icon.Position = UDim2.new(0, 5, 0.5, 0)
-		Icon.Size = UDim2.new(0, 19, 0, 19)
+		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+		Icon.Size = UDim2.new(0, 22, 0, 22)
 		Icon.ZIndex = 7
 		Icon.Image = Airflow:GetIcon(config.Icon);
 
@@ -4433,20 +4427,7 @@ function Airflow:Init(config)
 
 		PText.Name = Airflow:RandomString()
 		PText.Parent = InputElement
-		PText.AnchorPoint = Vector2.new(0, 0.5)
-		PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		PText.BackgroundTransparency = 1.000
-		PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		PText.BorderSizePixel = 0
-		PText.Position = UDim2.new(0, 30, 0.5, 0)
-		PText.Size = UDim2.new(1, 50, 0, 20)
-		PText.ZIndex = 7
-		PText.Font = Enum.Font.GothamMedium
-		PText.Text = config.Name;
-		PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-		PText.TextSize = 13.000
-		PText.TextWrapped = true
-		PText.TextXAlignment = Enum.TextXAlignment.Left
+		PText.Visible = false -- Icon only sidebar
 
 		hightlight.Name = Airflow:RandomString()
 		hightlight.Parent = InputElement
@@ -4709,7 +4690,7 @@ function Airflow:Init(config)
 			SectionBase.Parent = (string.lower(config.Position) == "left" and ListLeft) or ListRight;
 			SectionBase.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 			SectionBase.BackgroundTransparency = 1.000
-			SectionBase.Size = UDim2.new(1, -5, 0, 150)
+			SectionBase.Size = UDim2.new(1, -6, 0, 150)
 
 			Section.Name = Airflow:RandomString()
 			Section.Parent = SectionBase
@@ -4745,7 +4726,7 @@ function Airflow:Init(config)
 			UIListLayout.Parent = Section
 			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-			UIListLayout.Padding = UDim.new(0, 5)
+			UIListLayout.Padding = UDim.new(0, 3)
 
 			local Padding = Instance.new("UIPadding")
 			Padding.Parent = Section
@@ -4768,7 +4749,7 @@ function Airflow:Init(config)
 			UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 				local newSize = UIListLayout.AbsoluteContentSize.Y + 10
 				Airflow:CreateAnimation(SectionBase, 0.4, Enum.EasingStyle.Quint, {
-					Size = UDim2.new(1, -5, 0, newSize + 15)
+					Size = UDim2.new(1, -6, 0, newSize + 15)
 				});
 				Section.Size = UDim2.new(1, 0, 0, newSize)
 			end);
@@ -5426,7 +5407,7 @@ function Airflow:DrawList(config)
 		name.BackgroundTransparency = 1.000
 		name.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		name.BorderSizePixel = 0
-		name.Position = UDim2.new(0, 10, 0.5, 0)
+		name.Position = UDim2.new(0, 8, 0.5, 0)
 		name.Size = UDim2.new(1, 0, 1, 0)
 		name.ZIndex = 125
 		name.Font = Enum.Font.GothamMedium
@@ -5442,7 +5423,7 @@ function Airflow:DrawList(config)
 		value.BackgroundTransparency = 1.000
 		value.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		value.BorderSizePixel = 0
-		value.Position = UDim2.new(1, -10, 0.5, 0)
+		value.Position = UDim2.new(1, -8, 0.5, 0)
 		value.Size = UDim2.new(1, 0, 1, 0)
 		value.ZIndex = 125
 		value.Font = Enum.Font.GothamMedium
@@ -6270,7 +6251,7 @@ function Airflow:DrawLoader(loader_config : Loader)
 			GameName.BackgroundTransparency = 1.000
 			GameName.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			GameName.BorderSizePixel = 0
-			GameName.Position = UDim2.new(0, 10, 0.5, 0)
+			GameName.Position = UDim2.new(0, 8, 0.5, 0)
 			GameName.Size = UDim2.new(1, 50, 0, 20)
 			GameName.ZIndex = 7
 			GameName.Font = Enum.Font.GothamMedium
@@ -6298,7 +6279,7 @@ function Airflow:DrawLoader(loader_config : Loader)
 					});
 					
 					Airflow:CreateAnimation(GameName,0.25,Enum.EasingStyle.Quint,{
-						Position = UDim2.new(0, 10, 0.5, 0)
+						Position = UDim2.new(0, 8, 0.5, 0)
 					});
 					
 					cl_promis.selectedLoader = loader_version.LoadScript;
