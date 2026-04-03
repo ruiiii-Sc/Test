@@ -805,6 +805,7 @@ function Airflow:Elements(element, OnChange, windowConfig)
         return tableback
     end;
 
+    function elements:AddSlider(config)
         config = config or {};
         config.Name = config.Name or "Slider";
         config.Callback = config.Callback or function() end;
@@ -1003,6 +1004,7 @@ function Airflow:Elements(element, OnChange, windowConfig)
         return tableback
     end;
 
+    function elements:AddKeybind(config)
         config = config or {};
         config.Name = config.Name or "Keybind";
         config.Callback = config.Callback or function() end;
@@ -1158,6 +1160,7 @@ function Airflow:Elements(element, OnChange, windowConfig)
         return tableback
     end;
 
+    function elements:AddTextbox(config)
         config = config or {};
         config.Name = config.Name or "TextBox";
         config.Default = config.Default or "";
@@ -1316,6 +1319,7 @@ function Airflow:Elements(element, OnChange, windowConfig)
         return tableback
     end;
 
+    function elements:AddColorPicker(config)
         config = config or {};
         config.Name = config.Name or "ColorPicker";
         config.Default = config.Default or Color3.fromRGB(255,255,255);
@@ -1425,6 +1429,7 @@ function Airflow:Elements(element, OnChange, windowConfig)
         return tableback
     end;
 
+    function elements:AddParagraph(config)
         config = config or {};
         config.Name = config.Name or "Paragraph";
         config.Content = config.Content or nil;
