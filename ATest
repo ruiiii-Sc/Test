@@ -1,8 +1,10 @@
 --[[
-    Airflow Interface - REWRITE STABLE
+    Airflow Interface - FIXED STABLE VERSION
 
     Author: 4lpaca
     License: MIT
+    Github: https://github.com/4lpaca-pin/Airflow
+    Fixes: Scroll reset, Search feature, Layout stability, Overflow fix
 --]]
 
 -- Exploit Environment --
@@ -36,8 +38,9 @@ do
     protect_gui(AirflowUI);
 end;
 
+-- Airflow --
 local Airflow = {
-    Version = "1.3",
+    Version = "1.2",
     ScreenGui = AirflowUI,
     Config = {
         Scale = UDim2.new(0.1, 515, 0.1, (UserInputService.TouchEnabled and 345) or 395),
@@ -50,25 +53,116 @@ local Airflow = {
     },
     FileManager = {},
     Features = {},
+    SearchResults = {},
     Lucide = {
         ["lucide-search"] = "rbxassetid://10734943674",
         ["lucide-x"] = "rbxassetid://10747384394",
-        ["lucide-minus"] = "rbxassetid://10734896206",
         ["lucide-chevron-down"] = "rbxassetid://10709790948",
+        ["lucide-minus"] = "rbxassetid://10734896206",
     },
 };
 
-function Airflow:GetIcon(name)
-    return Airflow.Lucide['lucide-'..tostring(name)] or Airflow.Lucide[name] or "";
+function Airflow:LoadAssets()
+    for i,v in pairs(Airflow.Lucide) do
+        game:GetService('ContentProvider'):Preload(v);
+    end;
+end;
+
+function Airflow:IsMobile()
+    return UserInputService.TouchEnabled;    
 end;
 
 function Airflow:RandomString()
-    return string.char(math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102));
+    return string.char(math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102),math.random(64,102));
 end;
 
 function Airflow:IsMouseOverFrame(Frame)
     local AbsPos, AbsSize = Frame.AbsolutePosition, Frame.AbsoluteSize;
-    return Mouse.X >= AbsPos.X and Mouse.X <= AbsPos.X + AbsSize.X and Mouse.Y >= AbsPos.Y and Mouse.Y <= AbsPos.Y + AbsSize.Y;
+    if Mouse.X >= AbsPos.X and Mouse.X <= AbsPos.X + AbsSize.X and Mouse.Y >= AbsPos.Y and Mouse.Y <= AbsPos.Y + AbsSize.Y then
+        return true;
+    end;
+end;
+
+function Airflow:GetCalculatePosition(planePos, planeNormal, rayOrigin, rayDirection)
+    local n = planeNormal;
+    local d = rayDirection;
+    local v = rayOrigin - planePos;
+    local num = (n.x * v.x) + (n.y * v.y) + (n.z * v.z);
+    local den = (n.x * d.x) + (n.y * d.y) + (n.z * d.z);
+    local a = -num / den;
+    return rayOrigin + (a * rayDirection);
+end;
+
+function Airflow:Blur(element)
+    local Part = Instance.new('Part',workspace.Camera);
+    local DepthOfField = Instance.new('DepthOfFieldEffect',cloneref(game:GetService('Lighting')));
+    local BlockMesh = Instance.new("BlockMesh");
+    local userSettings = UserSettings():GetService("UserGameSettings");
+    BlockMesh.Parent = Part;
+    Part.Material = Enum.Material.Glass;
+    Part.Transparency = 1;
+    Part.Reflectance = 1;
+    Part.CastShadow = false;
+    Part.Anchored = true;
+    Part.CanCollide = false;
+    Part.CanQuery = false;
+    Part.CollisionGroup = Airflow:RandomString();
+    Part.Size = Vector3.new(1, 1, 1) * 0.01;
+    Part.Color = Color3.fromRGB(0,0,0);
+    DepthOfField.Enabled = true;
+    DepthOfField.FarIntensity = 0;
+    DepthOfField.FocusDistance = 0;
+    DepthOfField.InFocusRadius = 1000;
+    DepthOfField.NearIntensity = 1;
+    DepthOfField.Name = Airflow:RandomString();
+    Part.Name = Airflow:RandomString();
+    local rbxsignal = RunService.RenderStepped:Connect(function()
+        if element.BackgroundTransparency < 0.7 then
+            Airflow:CreateAnimation(DepthOfField,0.1,nil,{NearIntensity = 1})
+            Airflow:CreateAnimation(Part,0.1,nil,{Transparency = 0.97,})
+            Airflow:CreateAnimation(Part,0.3,nil,{Size = Vector3.new(1, 1, 1) * 0.01;})
+        else
+            Airflow:CreateAnimation(DepthOfField,0.1,nil,{NearIntensity = 0})
+            Airflow:CreateAnimation(Part,0.3,nil,{Size = Vector3.zero;})
+            Airflow:CreateAnimation(Part,0.1,nil,{Transparency = 1.5,})
+        end;
+        if element.BackgroundTransparency <= 0.95 then
+            local corner0 = element.AbsolutePosition;
+            local corner1 = corner0 + element.AbsoluteSize;
+            local ray0 = CurrentCamera:ScreenPointToRay(corner0.X, corner0.Y, 1);
+            local ray1 = CurrentCamera:ScreenPointToRay(corner1.X, corner1.Y, 1);
+            local planeOrigin = CurrentCamera.CFrame.Position + CurrentCamera.CFrame.LookVector * (0.05 - CurrentCamera.NearPlaneZ);
+            local planeNormal = CurrentCamera.CFrame.LookVector;
+            local pos0 = Airflow:GetCalculatePosition(planeOrigin, planeNormal, ray0.Origin, ray0.Direction);
+            local pos1 = Airflow:GetCalculatePosition(planeOrigin, planeNormal, ray1.Origin, ray1.Direction);
+            pos0 = CurrentCamera.CFrame:PointToObjectSpace(pos0);
+            pos1 = CurrentCamera.CFrame:PointToObjectSpace(pos1);
+            local size   = pos1 - pos0;
+            local center = (pos0 + pos1) / 2;
+            BlockMesh.Offset = center
+            BlockMesh.Scale  = size / 0.0101;
+            Part.CFrame = CurrentCamera.CFrame;
+        end;
+    end);
+    element.Destroying:Connect(function()
+        rbxsignal:Disconnect();
+        Part:Destroy();
+        DepthOfField:Destroy();
+    end);
+    return rbxsignal;
+end;
+
+function Airflow:GetIcon(name)
+    return Airflow.Lucide['lucide-'..tostring(name)] or Airflow.Lucide[name] or Airflow.Lucide[tostring(name)] or "";
+end;
+
+function Airflow:SetIcon(name, value)
+    Airflow.Lucide[name] = value;
+end;
+
+function Airflow:Rounding(num, numDecimalPlaces)
+    local mult = 10 ^ (numDecimalPlaces or 0);
+    return math.floor(num * mult + 0.5) / mult;
 end;
 
 function Airflow:CreateAnimation(Instance, Time, Style, Property)
@@ -100,749 +194,1887 @@ function Airflow:Hover(element)
     end)
 end;
 
--- Color Picker (shortened untuk hemat space)
+-- Color Picker --
 do
     local ColorPicker = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
+    local UIStroke = Instance.new("UIStroke")
+    local ColorPick = Instance.new("ImageLabel")
+    local UICorner_2 = Instance.new("UICorner")
+    local mouse = Instance.new("ImageLabel")
+    local ColorSelect = Instance.new("Frame")
+    local UIGradient = Instance.new("UIGradient")
+    local UICorner_3 = Instance.new("UICorner")
+    local move = Instance.new("Frame")
+    local left = Instance.new("Frame")
+    local right = Instance.new("Frame")
+    local Copy = Instance.new("Frame")
+    local UICorner_4 = Instance.new("UICorner")
+    local Text = Instance.new("TextLabel")
+    local Paste = Instance.new("Frame")
+    local UICorner_5 = Instance.new("UICorner")
+    local Text_2 = Instance.new("TextLabel")
+
     ColorPicker.Name = Airflow:RandomString()
     ColorPicker.Parent = Airflow.ScreenGui;
     ColorPicker.AnchorPoint = Vector2.new(0.5, 0.5)
     ColorPicker.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     ColorPicker.BackgroundTransparency = 0.89
-    ColorPicker.Size = UDim2.new(0.1, 100, 0.1, 100)
+    ColorPicker.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ColorPicker.BorderSizePixel = 0
+    ColorPicker.ClipsDescendants = true
+    ColorPicker.Position = UDim2.new(0.845068753, 0, 0.606334031, 0)
+    ColorPicker.Size = UDim2.new(0.100000001, 100, 0.100000001, 100)
     ColorPicker.SizeConstraint = Enum.SizeConstraint.RelativeYY
     ColorPicker.ZIndex = 105;
     ColorPicker.Visible = false;
+    ColorPicker.Active = true;
+
+    ColorPicker:GetPropertyChangedSignal('BackgroundTransparency'):Connect(function()
+        if ColorPicker.BackgroundTransparency <= 0.9 then
+            ColorPicker.Visible = true;
+        else
+            ColorPicker.Visible = false;
+        end;
+    end)
+
     Airflow.Features.ColorPickerRoot = ColorPicker;
+
+    UICorner.CornerRadius = UDim.new(0, 5)
+    UICorner.Parent = ColorPicker
+
+    UIStroke.Transparency = 1
+    UIStroke.Color = Color3.fromRGB(83, 83, 83)
+    UIStroke.Parent = ColorPicker
+
+    ColorPick.Name = Airflow:RandomString()
+    ColorPick.Parent = ColorPicker
+    ColorPick.BackgroundColor3 = Color3.fromRGB(255, 0, 4)
+    ColorPick.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ColorPick.BorderSizePixel = 0
+    ColorPick.Position = UDim2.new(0, 10, 0, 10)
+    ColorPick.Size = UDim2.new(0.75, 0, 0.75, 0)
+    ColorPick.ZIndex = 107
+    ColorPick.Image = "rbxassetid://4155801252"
+    ColorPick.ImageTransparency = 1;
+    ColorPick.BackgroundTransparency = 1;
+
+    UICorner_2.CornerRadius = UDim.new(0, 3)
+    UICorner_2.Parent = ColorPick
+
+    mouse.Name = Airflow:RandomString()
+    mouse.Parent = ColorPick
+    mouse.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    mouse.BackgroundTransparency = 1.000
+    mouse.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    mouse.BorderSizePixel = 0
+    mouse.Position = UDim2.new(0, 15, 0, 15)
+    mouse.Size = UDim2.new(0, 15, 0, 15)
+    mouse.ZIndex = 107
+    mouse.Image = "http://www.roblox.com/asset/?id=4805639000"
+    mouse.ImageTransparency = 1;
+    mouse.AnchorPoint = Vector2.new(0.5,0.5);
+
+    ColorSelect.Name = Airflow:RandomString()
+    ColorSelect.Parent = ColorPicker
+    ColorSelect.AnchorPoint = Vector2.new(1, 0)
+    ColorSelect.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ColorSelect.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ColorSelect.BorderSizePixel = 0
+    ColorSelect.Position = UDim2.new(1, -10, 0, 10)
+    ColorSelect.Size = UDim2.new(0.100000001, -3, 0.75, 0)
+    ColorSelect.SizeConstraint = Enum.SizeConstraint.RelativeYY
+    ColorSelect.ZIndex = 107
+    ColorSelect.BackgroundTransparency = 1;
+
+    UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.10, Color3.fromRGB(255, 153, 0)), ColorSequenceKeypoint.new(0.20, Color3.fromRGB(203, 255, 0)), ColorSequenceKeypoint.new(0.30, Color3.fromRGB(50, 255, 0)), ColorSequenceKeypoint.new(0.40, Color3.fromRGB(0, 255, 102)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)), ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 101, 255)), ColorSequenceKeypoint.new(0.70, Color3.fromRGB(50, 0, 255)), ColorSequenceKeypoint.new(0.80, Color3.fromRGB(204, 0, 255)), ColorSequenceKeypoint.new(0.90, Color3.fromRGB(255, 0, 153)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))}
+    UIGradient.Rotation = 90
+    UIGradient.Parent = ColorSelect
+
+    UICorner_3.CornerRadius = UDim.new(0, 3)
+    UICorner_3.Parent = ColorSelect
+
+    move.Name = Airflow:RandomString()
+    move.Parent = ColorSelect
+    move.AnchorPoint = Vector2.new(0.5, 0)
+    move.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    move.BackgroundTransparency = 1.000
+    move.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    move.BorderSizePixel = 0
+    move.Position = UDim2.new(0.5, 0, 0, 15)
+    move.Size = UDim2.new(1, 8, 0, 2)
+    move.ZIndex = 108
+
+    left.Name = Airflow:RandomString()
+    left.Parent = move
+    left.AnchorPoint = Vector2.new(0, 0.5)
+    left.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    left.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    left.BorderSizePixel = 0
+    left.Position = UDim2.new(0, 0, 0.5, 0)
+    left.Size = UDim2.new(0, 7, 1, 0)
+    left.ZIndex = 109
+    left.BackgroundTransparency = 1;
+
+    right.Name = Airflow:RandomString()
+    right.Parent = move
+    right.AnchorPoint = Vector2.new(1, 0.5)
+    right.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    right.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    right.BorderSizePixel = 0
+    right.Position = UDim2.new(1, 0, 0.5, 0)
+    right.Size = UDim2.new(0, 7, 1, 0)
+    right.ZIndex = 109
+    right.BackgroundTransparency = 1
+
+    Copy.Name = Airflow:RandomString()
+    Copy.Parent = ColorPicker
+    Copy.AnchorPoint = Vector2.new(0, 1)
+    Copy.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
+    Copy.BackgroundTransparency = 0.800
+    Copy.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Copy.BorderSizePixel = 0
+    Copy.ClipsDescendants = true
+    Copy.Position = UDim2.new(0, 10, 1, -5)
+    Copy.Size = UDim2.new(0.5, -12, 0, 22)
+    Copy.ZIndex = 300
+
+    UICorner_4.CornerRadius = UDim.new(0, 4)
+    UICorner_4.Parent = Copy
+
+    Text.Name = Airflow:RandomString()
+    Text.Parent = Copy
+    Text.AnchorPoint = Vector2.new(0.5, 0.5)
+    Text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Text.BackgroundTransparency = 1.000
+    Text.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Text.BorderSizePixel = 0
+    Text.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Text.Size = UDim2.new(1, -20, 0, 20)
+    Text.ZIndex = 300
+    Text.Font = Enum.Font.GothamMedium
+    Text.Text = "Copy"
+    Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Text.TextSize = 14.000
+    Text.TextWrapped = true
+    Text.TextTransparency = 1;
+
+    Paste.Name = Airflow:RandomString()
+    Paste.Parent = ColorPicker
+    Paste.AnchorPoint = Vector2.new(1, 1)
+    Paste.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
+    Paste.BackgroundTransparency = 0.800
+    Paste.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Paste.BorderSizePixel = 0
+    Paste.ClipsDescendants = true
+    Paste.Position = UDim2.new(1, -10, 1, -5)
+    Paste.Size = UDim2.new(0.5, -12, 0, 22)
+    Paste.ZIndex = 300
+
+    UICorner_5.CornerRadius = UDim.new(0, 4)
+    UICorner_5.Parent = Paste
+
+    Text_2.Name = Airflow:RandomString()
+    Text_2.Parent = Paste
+    Text_2.AnchorPoint = Vector2.new(0.5, 0.5)
+    Text_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Text_2.BackgroundTransparency = 1.000
+    Text_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Text_2.BorderSizePixel = 0
+    Text_2.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Text_2.Size = UDim2.new(1, -20, 0, 20)
+    Text_2.ZIndex = 300
+    Text_2.Font = Enum.Font.GothamMedium
+    Text_2.Text = "Paste"
+    Text_2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Text_2.TextSize = 14.000
+    Text_2.TextWrapped = true
+    Text_2.TextTransparency = 1;
+
     Airflow.Features.ColorPickerToggle = false;
     Airflow.Features.ColorDefault = Color3.fromRGB(255,255,255);
-    
-    function Airflow.Features:SetColor(Color) end
-    function Airflow.Features:SetPosition(Position) end
-    function Airflow.Features:OnColorPicker(Value) end
+    Airflow.Features.CopyColor =Airflow.Features.ColorDefault;
+    Airflow.Features.Callback = nil;
+
+    Airflow:Hover(Copy);
+    Airflow:Hover(Paste);
+
+    Airflow:NewInput(Copy,function()
+        Airflow.Features.CopyColor =Airflow.Features.ColorDefault;
+    end);
+
+    Airflow:NewInput(Paste,function()
+        local H,S,V = Airflow.Features.CopyColor:ToHSV();
+        Airflow.Features.ColorDefault = Airflow.Features.CopyColor;
+        Airflow:CreateAnimation(ColorPick,0.5,nil,{BackgroundColor3 = Color3.fromHSV(H,1,1);})
+        Airflow:CreateAnimation(mouse,0.5,nil,{Position = UDim2.new(S, 0,1 - V, 0)})
+        Airflow:CreateAnimation(move,0.5,nil,{Position = UDim2.new(0.5,0,H,0)})
+        if Airflow.Features.Callback then
+            task.spawn(Airflow.Features.Callback,Airflow.Features.ColorDefault)    
+        end;
+    end);
+
+    local OldCode = 0;
+    local CodeH,CodeV = 1, 1;
+    local IsPressM1 = false;
+
+    do
+        ColorPicker.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                IsPressM1 = true;
+            end;
+        end)
+
+        ColorPicker.InputEnded:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                IsPressM1 = false;
+            end;
+        end)
+
+        UserInputService.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                if not Airflow:IsMouseOverFrame(ColorPicker) then
+                    Airflow.Features:OnColorPicker(false)
+                end;
+            end;
+        end)
+
+        ColorSelect.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                IsPressM1 = true;
+                while (UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or IsPressM1) do task.wait()
+                    local ColorY = ColorSelect.AbsolutePosition.Y
+                    local ColorYM = ColorY + ColorSelect.AbsoluteSize.Y;
+                    local Value = math.clamp(Mouse.Y, ColorY, ColorYM)
+                    local Code = ((Value - ColorY) / (ColorYM - ColorY));
+                    Airflow.Features.ColorDefault = Color3.fromHSV(Code, CodeH, CodeV);
+                    if Airflow.Features.Callback then
+                        task.spawn(Airflow.Features.Callback,Airflow.Features.ColorDefault)    
+                    end;
+                    Airflow:CreateAnimation(move,0.5,nil,{Position = UDim2.new(0.5,0,Code,0)})
+                    Airflow:CreateAnimation(ColorPick,0.5,nil,{BackgroundColor3 = Color3.fromHSV(Code, 1, 1)});
+                    if Code > OldCode then
+                        Airflow:CreateAnimation(left,0.2,nil,{Rotation = 45})
+                        Airflow:CreateAnimation(right,0.2,nil,{Rotation = -45})
+                    elseif Code < OldCode then
+                        Airflow:CreateAnimation(left,0.2,nil,{Rotation = -45})
+                        Airflow:CreateAnimation(right,0.2,nil,{Rotation = 45})
+                    else
+                        Airflow:CreateAnimation(left,0.2,nil,{Rotation = 0})
+                        Airflow:CreateAnimation(right,0.2,nil,{Rotation = 0})
+                    end;
+                    OldCode = Code;
+                end;
+                Airflow:CreateAnimation(left,0.5,nil,{Rotation = 0})
+                Airflow:CreateAnimation(right,0.5,nil,{Rotation = 0})
+            end;
+        end);
+
+        ColorPick.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                IsPressM1 = true;
+                while (UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or IsPressM1) do task.wait();
+                    local PosX = ColorPick.AbsolutePosition.X
+                    local ScaleX = PosX + ColorPick.AbsoluteSize.X
+                    local Value, PosY = math.clamp(Mouse.X, PosX, ScaleX), ColorPick.AbsolutePosition.Y
+                    local ScaleY = PosY + ColorPick.AbsoluteSize.Y
+                    local Vals = math.clamp(Mouse.Y, PosY, ScaleY)
+                    CodeH = (Value - PosX) / (ScaleX - PosX);
+                    CodeV = (1 - ((Vals - PosY) / (ScaleY - PosY)));
+                    Airflow.Features.ColorDefault = Color3.fromHSV(OldCode, CodeH, CodeV);
+                    if Airflow.Features.Callback then
+                        task.spawn(Airflow.Features.Callback,Airflow.Features.ColorDefault)    
+                    end;
+                    Airflow:CreateAnimation(mouse,0.2,nil,{Position = UDim2.new(CodeH, 0, 1 - CodeV, 0)})
+                end
+            end
+        end)
+    end;
+
+    function Airflow.Features:SetColor(Color)
+        local H , S , V = Color:ToHSV();
+        Airflow.Features.ColorDefault = Color;
+        OldCode = H;
+        CodeH = S;
+        CodeV = V;
+    end;
+
+    function Airflow.Features:SetPosition(Position)
+        Airflow:CreateAnimation(ColorPicker,0.5,nil,{Position = Position})
+    end;
+
+    function Airflow.Features:OnColorPicker(Value)
+        Airflow.Features.ColorPickerToggle = Value;
+        if Value then
+            local H , S , V = Airflow.Features.ColorDefault:ToHSV();
+            Airflow:CreateAnimation(ColorPicker,0.5,nil,{BackgroundTransparency = 0.2, Size = UDim2.new(0.100000001, 100, 0.100000001, 100),})
+            Airflow:CreateAnimation(UIStroke,0.5,nil,{Transparency = 0.570})
+            Airflow:CreateAnimation(ColorPick,0.75,nil,{ImageTransparency = 0; BackgroundTransparency = 0; BackgroundColor3 = Color3.fromHSV(H,1,1);})
+            Airflow:CreateAnimation(mouse,0.5,nil,{ImageTransparency = 0; Position = UDim2.new(S, 0,1 - V, 0)})
+            Airflow:CreateAnimation(ColorSelect,0.5,nil,{BackgroundTransparency = 0;})
+            Airflow:CreateAnimation(move,0.5,nil,{Position = UDim2.new(0.5,0,H,0)})
+            Airflow:CreateAnimation(ColorSelect,0.5,nil,{BackgroundTransparency = 0;})
+            Airflow:CreateAnimation(left,0.5,nil,{BackgroundTransparency = 0;})
+            Airflow:CreateAnimation(right,0.5,nil,{BackgroundTransparency = 0;})
+            Airflow:CreateAnimation(Copy,0.5,nil,{BackgroundTransparency = 0.8;})
+            Airflow:CreateAnimation(Paste,0.5,nil,{BackgroundTransparency = 0.8;})
+            Airflow:CreateAnimation(Paste,0.5,nil,{BackgroundTransparency = 0.8;})
+            Airflow:CreateAnimation(Text,0.5,nil,{TextTransparency = 0;})
+            Airflow:CreateAnimation(Text_2,0.5,nil,{TextTransparency = 0;})
+        else
+            Airflow.Features.Callback = nil;
+            Airflow:CreateAnimation(move,0.5,nil,{Position = UDim2.new(0.5,0,0,0)})
+            Airflow:CreateAnimation(ColorPicker,0.5,nil,{BackgroundTransparency = 1, Size = UDim2.new(0.100000001 , 85, 0.100000001, 85)})
+            Airflow:CreateAnimation(UIStroke,0.5,nil,{Transparency = 1})
+            Airflow:CreateAnimation(ColorPick,0.5,nil,{ImageTransparency = 1; BackgroundTransparency = 1; BackgroundColor3 = Color3.fromRGB(0,0,0)})
+            Airflow:CreateAnimation(mouse,0.5,nil,{ImageTransparency = 1; Position = UDim2.new(0,0,0,0)})
+            Airflow:CreateAnimation(ColorSelect,0.5,nil,{BackgroundTransparency = 1;})
+            Airflow:CreateAnimation(ColorSelect,0.5,nil,{BackgroundTransparency = 1;})
+            Airflow:CreateAnimation(left,0.5,nil,{BackgroundTransparency = 1;})
+            Airflow:CreateAnimation(right,0.5,nil,{BackgroundTransparency = 1;})
+            Airflow:CreateAnimation(Copy,0.5,nil,{BackgroundTransparency = 1;})
+            Airflow:CreateAnimation(Paste,0.5,nil,{BackgroundTransparency = 1;})
+            Airflow:CreateAnimation(Paste,0.5,nil,{BackgroundTransparency = 1;})
+            Airflow:CreateAnimation(Text,0.5,nil,{TextTransparency = 1;})
+            Airflow:CreateAnimation(Text_2,0.5,nil,{TextTransparency = 1;})
+        end;
+    end;
+
+    Airflow.Features:OnColorPicker(false)
 end;
 
--- Elements Builder
 function Airflow:Elements(element, OnChange, windowConfig)
     local elements = {};
+    local delayTick = 0.05;
     local ElementConfigs = {};
     local ElementId = 1;
     local ElementIDs = {};
 
     function elements:AddLabel(name)
         local LabelFrame = Instance.new("TextLabel")
+        local ID = ElementId;
         LabelFrame.Name = Airflow:RandomString()
         LabelFrame.Parent = element
         LabelFrame.AnchorPoint = Vector2.new(0, 0.5)
-        LabelFrame.BackgroundTransparency = 1
+        LabelFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        LabelFrame.BackgroundTransparency = 1.000
+        LabelFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        LabelFrame.BorderSizePixel = 0
         LabelFrame.Position = UDim2.new(0, 30, 0.5, 0)
         LabelFrame.Size = UDim2.new(1, -10, 0, 17)
+        LabelFrame.ZIndex = 7
         LabelFrame.Font = Enum.Font.GothamMedium
         LabelFrame.Text = name
         LabelFrame.TextColor3 = Color3.fromRGB(255, 255, 255)
-        LabelFrame.TextSize = 13
+        LabelFrame.TextSize = 13.000
+        LabelFrame.TextWrapped = true
         LabelFrame.TextXAlignment = Enum.TextXAlignment.Left
         LabelFrame.TextTransparency = 1;
-        
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.3,Airflow.CreateAnimation,Airflow,LabelFrame,0.5,nil,{TextTransparency = 0;})
+        end;
+        local VisibleAnimation = function(value)
+            if value then
+                task.wait(delayTick);
+                Airflow:CreateAnimation(LabelFrame,1.2,nil,{TextTransparency = 0;})
+            else
+                Airflow:CreateAnimation(LabelFrame,0.5,nil,{TextTransparency = 1;})
+            end
+        end;
+        LabelFrame:GetPropertyChangedSignal('TextTransparency'):Connect(function()
+            if LabelFrame.TextTransparency >= 0.9 then
+                LabelFrame.Visible = false;
+            else
+                LabelFrame.Visible = true;
+            end;
+        end);
+        ElementId += 1;
         local tableback = {
             Edit = function(self, Value) LabelFrame.Text = Value end,
             Visible = function(self, Value) LabelFrame.Visible = Value end,
             Destroy = function(self) LabelFrame:Destroy(); end,
+            ID = ID,
+            Signal = OnChange.Event:Connect(VisibleAnimation)
         };
+        local info = {Title = name, ID = ID, Type = "Label", API = tableback, Frame = LabelFrame, PairKey = name};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, info) end;
         return tableback;
     end;
 
     function elements:AddButton(config)
-        config = config or {Name = "Button", Callback = function() end};
+        config = config or {};
+        config.Name = config.Name or "Button";
+        config.Callback = config.Callback or function() end;
+        config.PairKey = config.PairKey or config.Name;
+        local ID = ElementId;
         local ButtonFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         ButtonFrame.Name = Airflow:RandomString()
         ButtonFrame.Parent = element
         ButtonFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
         ButtonFrame.BackgroundTransparency = 1
+        ButtonFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ButtonFrame.BorderSizePixel = 0
+        ButtonFrame.ClipsDescendants = true
         ButtonFrame.Size = UDim2.new(1, -8, 0, 30)
-        Instance.new("UICorner").Parent = ButtonFrame
+        ButtonFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = ButtonFrame
+        PText.Name = Airflow:RandomString()
         PText.Parent = ButtonFrame
         PText.AnchorPoint = Vector2.new(0.5, 0.5)
-        PText.BackgroundTransparency = 1
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0.5, 0, 0.5, 0)
         PText.Size = UDim2.new(1, -20, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
         PText.Text = config.Name
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 14
+        PText.TextSize = 14.000
+        PText.TextWrapped = true
         PText.TextTransparency = 1
-        Airflow:NewInput(ButtonFrame, config.Callback);
+        Airflow:NewInput(ButtonFrame,config.Callback);
         Airflow:Hover(ButtonFrame);
-        
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0})
+            task.delay(0.4,Airflow.CreateAnimation,Airflow,ButtonFrame,0.5,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 34)});
+        end;
+        local VisibleAnimation = function(value)
+            if value then
+                task.wait(delayTick);
+                Airflow:CreateAnimation(ButtonFrame,0.7,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 34)})
+                Airflow:CreateAnimation(PText,0.7,nil,{TextTransparency = 0})
+            else
+                Airflow:CreateAnimation(PText,0.6,nil,{TextTransparency = 1})
+                Airflow:CreateAnimation(ButtonFrame,0.5,nil,{BackgroundTransparency = 1, Size = UDim2.new(1, -8, 0, 34)})
+            end
+        end;
+        ElementId += 1;
         local tableback = {
             Edit = function(self, Value) PText.Text = Value end,
             Visible = function(self, Value) ButtonFrame.Visible = Value end,
             Fire = config.Callback,
             Destroy = function(self) ButtonFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(VisibleAnimation)
         };
+        local info = {Title = config.Name, ID = ID, Type = "Button", API = tableback, Frame = ButtonFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, info) end;
         return tableback
     end;
 
     function elements:AddToggle(config)
-        config = config or {Name = "Toggle", Default = false, Callback = function() end};
+        config = config or {};
+        config.Name = config.Name or "Toggle";
+        config.Callback = config.Callback or function() end;
+        config.Default = config.Default or false;
+        config.PairKey = config.PairKey or config.Name;
+        local ID = ElementId;
         local ToggleFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         local block = Instance.new("Frame")
+        local UICorner_2 = Instance.new("UICorner")
         local circle = Instance.new("Frame")
+        local UICorner_3 = Instance.new("UICorner")
         ToggleFrame.Name = Airflow:RandomString()
         ToggleFrame.Parent = element
         ToggleFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
         ToggleFrame.BackgroundTransparency = 1
+        ToggleFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ToggleFrame.BorderSizePixel = 0
+        ToggleFrame.ClipsDescendants = true
         ToggleFrame.Size = UDim2.new(1, -8, 0, 30)
-        Instance.new("UICorner").Parent = ToggleFrame
+        ToggleFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = ToggleFrame
+        PText.Name = Airflow:RandomString()
         PText.Parent = ToggleFrame
         PText.AnchorPoint = Vector2.new(0, 0.5)
-        PText.BackgroundTransparency = 1
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0, 8, 0.5, 0)
         PText.Size = UDim2.new(1, -50, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
-        PText.Text = config.Name
+        PText.Text = config.Name;
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 13
-        PText.TextXAlignment = Enum.TextXAlignment.Left
+        PText.TextSize = 13.000
         PText.TextTransparency = 1
+        PText.TextWrapped = true
+        PText.TextXAlignment = Enum.TextXAlignment.Left
+        block.Name = Airflow:RandomString()
         block.Parent = ToggleFrame
         block.AnchorPoint = Vector2.new(1, 0.5)
         block.BackgroundColor3 = Color3.fromRGB(36, 35, 35)
         block.BackgroundTransparency = 1
+        block.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        block.BorderSizePixel = 0
         block.Position = UDim2.new(1, -8, 0.5, 0)
         block.Size = UDim2.new(0, 35, 0, 16)
-        Instance.new("UICorner").CornerRadius = UDim.new(1, 0)
-        Instance.new("UICorner").Parent = block
+        block.ZIndex = 7
+        UICorner_2.CornerRadius = UDim.new(1, 0)
+        UICorner_2.Parent = block
+        circle.Name = Airflow:RandomString()
         circle.Parent = block
         circle.AnchorPoint = Vector2.new(0.5, 0.5)
-        circle.BackgroundColor3 = windowConfig.Hightlight
+        circle.BackgroundColor3 = windowConfig.Hightlight or Color3.fromRGB(163, 128, 216)
+        circle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        circle.BorderSizePixel = 0
         circle.Position = UDim2.new(0.75, 0, 0.5, 0)
-        circle.Size = UDim2.new(0.7, 0, 0.7, 0)
+        circle.Size = UDim2.new(0.699999988, 0, 0.699999988, 0)
         circle.SizeConstraint = Enum.SizeConstraint.RelativeYY
+        circle.ZIndex = 8
         circle.BackgroundTransparency = 1;
-        Instance.new("UICorner").CornerRadius = UDim.new(1, 0)
-        Instance.new("UICorner").Parent = circle
-        
-        local State = config.Default
-        local function Change(value)
-            State = value
+        UICorner_3.CornerRadius = UDim.new(1, 0)
+        UICorner_3.Parent = circle
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,circle,0.5,nil,{BackgroundTransparency = 0})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,block,0.5,nil,{BackgroundTransparency = 0.5})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0.3})
+            task.delay(0.4,Airflow.CreateAnimation,Airflow,ToggleFrame,0.5,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 34)})
+        end;
+        local Change = function(value)
             if value then
                 Airflow:CreateAnimation(circle,0.5,nil,{BackgroundColor3 = windowConfig.Hightlight, Position = UDim2.new(0.75, 0, 0.5, 0)});
             else
                 Airflow:CreateAnimation(circle,0.5,nil,{BackgroundColor3 = Color3.fromRGB(216, 216, 216), Position = UDim2.new(0.25, 0, 0.5, 0)});
             end;
-        end
-        Change(State)
-        
+        end;
+        Change(config.Default);
+        ElementConfigs["Toggle_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
+        local BindableToggle = Instance.new("BindableEvent",ToggleFrame);
         Airflow:NewInput(ToggleFrame,function()
-            State = not State
-            Change(State)
-            config.Callback(State)
+            config.Default = not config.Default;
+            BindableToggle:Fire(config.Default);
+            ElementConfigs["Toggle_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
+            Change(config.Default)
+            config.Callback(config.Default)
         end);
         Airflow:Hover(ToggleFrame);
-        
+        ElementId += 1;
         local tableback = {
             Edit = function(self, Value) PText.Text = Value end,
-            SetValue = function(self, Value) State = Value; Change(State); config.Callback(State) end,
-            GetValue = function(self) return State end,
+            SetValue = function(self, Value)
+                config.Default = Value;
+                Change(config.Default);
+                ElementConfigs["Toggle_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
+                BindableToggle:Fire(config.Default);
+                config.Callback(config.Default)
+            end,
             Visible = function(self, Value) ToggleFrame.Visible = Value end,
+            AutomaticVisible = function(self, cfg)
+                cfg = cfg or {};
+                cfg.Target = cfg.Target;
+                cfg.Elements = cfg.Elements or {};
+                local callback = function(val)
+                    if val == cfg.Target then
+                        for i,v in pairs(cfg.Elements) do v:Visible(true); end;
+                    else
+                        for i,v in pairs(cfg.Elements) do v:Visible(false); end;
+                    end;
+                end;
+                callback(config.Default);
+                return BindableToggle.Event:Connect(callback);
+            end,
             Destroy = function(self) ToggleFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(function(value)
+                if value then
+                    task.wait(delayTick);
+                    Airflow:CreateAnimation(ToggleFrame,0.7,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 34)})
+                    Airflow:CreateAnimation(PText,0.7,nil,{TextTransparency = 0.3})
+                    Airflow:CreateAnimation(block,0.7,nil,{BackgroundTransparency = 0.5});
+                    Airflow:CreateAnimation(circle,0.7,nil,{BackgroundTransparency = 0})
+                    Change(config.Default);
+                else
+                    Change(false);
+                    Airflow:CreateAnimation(block,0.5,nil,{BackgroundTransparency = 1});
+                    Airflow:CreateAnimation(circle,0.5,nil,{BackgroundTransparency = 1})
+                    Airflow:CreateAnimation(PText,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(ToggleFrame,0.5,nil,{BackgroundTransparency = 1, Size = UDim2.new(1, -8, 0, 34)})
+                end
+            end)
         };
+        ElementIDs[ID] = {Title = config.Name, ID = ID, Type = "Toggle", API = tableback, IDCode = "Toggle_"..config.Name.."_"..tostring(ID), Frame = ToggleFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, ElementIDs[ID]) end;
         return tableback
     end;
 
-    function elements:AddSlider(config)
-        config = config or {Name = "Slider", Min = 0, Max = 100, Default = 0, Callback = function() end};
+        config = config or {};
+        config.Name = config.Name or "Slider";
+        config.Callback = config.Callback or function() end;
+        config.Min = config.Min or 0;
+        config.Max = config.Max or 100;
+        config.Round = config.Round or 0;
+        config.Default = config.Default or config.Min;
+        config.Type = config.Type or "";
+        config.ValueTexts = config.ValueTexts or {};
+        config.PairKey = config.PairKey or config.Name;
+        local ID = ElementId;
         local SliderFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         local VText = Instance.new("TextLabel")
         local wheel = Instance.new("Frame")
+        local UICorner_2 = Instance.new("UICorner")
         local slide = Instance.new("Frame")
+        local UICorner_3 = Instance.new("UICorner")
+        local UIGradient = Instance.new("UIGradient")
         local bth = Instance.new("Frame")
+        local UICorner_4 = Instance.new("UICorner")
+        local UIStroke = Instance.new("UIStroke")
         SliderFrame.Name = Airflow:RandomString()
         SliderFrame.Parent = element
         SliderFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
         SliderFrame.BackgroundTransparency = 1
+        SliderFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        SliderFrame.BorderSizePixel = 0
         SliderFrame.Size = UDim2.new(1, -8, 0, 44)
-        Instance.new("UICorner").Parent = SliderFrame
+        SliderFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = SliderFrame
+        PText.Name = Airflow:RandomString()
         PText.Parent = SliderFrame
-        PText.BackgroundTransparency = 1
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0, 8, 0, 7)
         PText.Size = UDim2.new(1, -50, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
         PText.Text = config.Name
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 13
-        PText.TextXAlignment = Enum.TextXAlignment.Left
+        PText.TextSize = 13.000
         PText.TextTransparency = 1
+        PText.TextWrapped = true
+        PText.TextXAlignment = Enum.TextXAlignment.Left
+        VText.Name = Airflow:RandomString()
         VText.Parent = SliderFrame
         VText.AnchorPoint = Vector2.new(1, 0)
-        VText.BackgroundTransparency = 1
+        VText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        VText.BackgroundTransparency = 1.000
+        VText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        VText.BorderSizePixel = 0
         VText.Position = UDim2.new(1, -8, 0, 7)
         VText.Size = UDim2.new(1, -30, 0, 20)
+        VText.ZIndex = 7
         VText.Font = Enum.Font.GothamMedium
-        VText.Text = tostring(config.Default)
+        VText.Text = tostring(config.Default)..tostring(config.Type)
         VText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        VText.TextSize = 13
+        VText.TextSize = 13.000
+        VText.TextWrapped = true
         VText.TextXAlignment = Enum.TextXAlignment.Right
-        VText.TextTransparency = 1
+        VText.TextTransparency = 1;
+        wheel.Name = Airflow:RandomString()
         wheel.Parent = SliderFrame
         wheel.AnchorPoint = Vector2.new(0.5, 1)
         wheel.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
+        wheel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        wheel.BorderSizePixel = 0
         wheel.Position = UDim2.new(0.5, 0, 1, -11)
         wheel.Size = UDim2.new(1, -25, 0, 7)
-        wheel.BackgroundTransparency = 1
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 4)
-        Instance.new("UICorner").Parent = wheel
+        wheel.ZIndex = 7
+        wheel.BackgroundTransparency = 1;
+        UICorner_2.CornerRadius = UDim.new(0, 4)
+        UICorner_2.Parent = wheel
+        slide.Name = Airflow:RandomString()
         slide.Parent = wheel
-        slide.BackgroundColor3 = windowConfig.Hightlight
+        slide.BackgroundColor3 = windowConfig.Hightlight or Color3.fromRGB(163, 128, 216)
+        slide.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        slide.BorderSizePixel = 0
         slide.Size = UDim2.new((config.Default - config.Min) / (config.Max - config.Min), 0, 1, 0)
-        slide.BackgroundTransparency = 1
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 4)
-        Instance.new("UICorner").Parent = slide
+        slide.ZIndex = 8
+        slide.BackgroundTransparency = 1;
+        UICorner_3.CornerRadius = UDim.new(0, 4)
+        UICorner_3.Parent = slide
+        UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(165, 165, 165)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255))}
+        UIGradient.Parent = slide
+        bth.Name = Airflow:RandomString()
         bth.Parent = slide
         bth.AnchorPoint = Vector2.new(1, 0.5)
         bth.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        bth.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        bth.BorderSizePixel = 0
         bth.Position = UDim2.new(1, 5, 0.5, 0)
         bth.Size = UDim2.new(0, 10, 0, 10)
+        bth.ZIndex = 9
         bth.BackgroundTransparency = 1
-        Instance.new("UICorner").CornerRadius = UDim.new(1, 0)
-        Instance.new("UICorner").Parent = bth
-        
-        local Value = config.Default
-        local IsHold = false
-        local function update(Input)
-            local SizeScale = math.clamp((Input.Position.X - wheel.AbsolutePosition.X) / wheel.AbsoluteSize.X, 0, 1)
-            local Main = ((config.Max - config.Min) * SizeScale) + config.Min
-            local Round = config.Round and (math.floor(Main * (10^config.Round) + 0.5) / (10^config.Round)) or Main
-            Value = math.clamp(Round, config.Min, config.Max)
-            local normalized = (Value - config.Min) / (config.Max - config.Min)
-            TweenService:Create(slide, TweenInfo.new(0.2), {Size = UDim2.new(normalized, 0, 1, 0)}):Play()
-            VText.Text = tostring(Value)
-            config.Callback(Value)
+        UICorner_4.CornerRadius = UDim.new(1, 0)
+        UICorner_4.Parent = bth
+        UIStroke.Thickness = 4.000
+        UIStroke.Transparency = 1
+        UIStroke.Color = Color3.fromRGB(255, 255, 255)
+        UIStroke.Parent = bth    
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.7,Airflow.CreateAnimation,Airflow,UIStroke,0.5,nil,{Transparency = 0.9,})
+            task.delay(0.6,Airflow.CreateAnimation,Airflow,bth,0.5,nil,{BackgroundTransparency = 0,})
+            task.delay(0.55,Airflow.CreateAnimation,Airflow,slide,0.5,nil,{BackgroundTransparency = 0,})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,wheel,0.5,nil,{BackgroundTransparency = 0,})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,VText,0.5,nil,{TextTransparency = 0,})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0.3,})
         end
+        Airflow:Hover(SliderFrame)
+        ElementConfigs["Slider_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
+        local IsHold = false;
+        local function update(Input)
+            local SizeScale = math.clamp((((Input.Position.X) - wheel.AbsolutePosition.X) / wheel.AbsoluteSize.X), 0, 1);
+            local Main = ((config.Max - config.Min) * SizeScale) + config.Min;
+            local Value = Airflow:Rounding(Main,config.Round);
+            local normalized = (Value - config.Min) / (config.Max - config.Min);
+            TweenService:Create(slide, TweenInfo.new(0.2),{Size = UDim2.new(normalized, 0, 1, 0)}):Play();
+            config.Default = Value;
+            VText.Text = (config.ValueTexts[Value] and config.ValueTexts[Value]) or tostring(Value)..tostring(config.Type);
+            ElementConfigs["Slider_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
+            config.Callback(Value)
+        end;
         wheel.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 IsHold = true
                 update(Input)
             end
         end)
-        wheel.InputEnded:Connect(function() IsHold = false end)
-        UserInputService.InputChanged:Connect(function(Input)
-            if IsHold and Input.UserInputType == Enum.UserInputType.MouseMovement then
-                update(Input)
+        wheel.InputEnded:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                if UserInputService.TouchEnabled then
+                    if not Airflow:IsMouseOverFrame(SliderFrame) then
+                        IsHold = false
+                    end;
+                else
+                    IsHold = false
+                end;
             end
         end)
-        
+        UserInputService.InputChanged:Connect(function(Input)
+            if IsHold then
+                if (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
+                    if UserInputService.TouchEnabled then
+                        if not Airflow:IsMouseOverFrame(SliderFrame) then
+                            IsHold = false
+                        else
+                            update(Input)
+                        end;
+                    else
+                        update(Input)
+                    end;
+                end;
+            end;
+        end);
+        ElementId += 1;
         local tableback = {
             Edit = function(self, Value) PText.Text = Value end,
             SetValue = function(self, Value)
-                Value = math.clamp(Value, config.Min, config.Max)
-                local normalized = (Value - config.Min) / (config.Max - config.Min)
-                slide.Size = UDim2.new(normalized, 0, 1, 0)
-                VText.Text = tostring(Value)
+                config.Default = Value;
+                slide.Size = UDim2.new((config.Default - config.Min) / (config.Max - config.Min), 0, 1, 0);
+                VText.Text = (config.ValueTexts[Value] and config.ValueTexts[Value]) or tostring(Value)..tostring(config.Type);
+                ElementConfigs["Slider_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
                 config.Callback(Value)
             end,
-            GetValue = function(self) return Value end,
             Visible = function(self, Value) SliderFrame.Visible = Value end,
             Destroy = function(self) SliderFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(function(value)
+                if value then
+                    task.wait(delayTick);
+                    Airflow:CreateAnimation(SliderFrame,0.7,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 50)})
+                    Airflow:CreateAnimation(PText,0.7,nil,{TextTransparency = 0.3})
+                    Airflow:CreateAnimation(VText,0.6,nil,{TextTransparency = 0,})
+                    Airflow:CreateAnimation(wheel,0.7,nil,{BackgroundTransparency = 0,})
+                    Airflow:CreateAnimation(slide,0.7,nil,{BackgroundTransparency = 0, Size = UDim2.new((config.Default - config.Min) / (config.Max - config.Min), 0, 1, 0)})
+                    Airflow:CreateAnimation(bth,0.6,nil,{BackgroundTransparency = 0,})
+                    Airflow:CreateAnimation(UIStroke,0.7,nil,{Transparency = 0.9,})
+                else
+                    Airflow:CreateAnimation(SliderFrame,0.5,nil,{BackgroundTransparency = 1, Size = UDim2.new(1, -8, 0, 50)})
+                    Airflow:CreateAnimation(PText,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(VText,0.5,nil,{TextTransparency = 1,})
+                    Airflow:CreateAnimation(wheel,0.5,nil,{BackgroundTransparency = 1,})
+                    Airflow:CreateAnimation(slide,0.5,nil,{BackgroundTransparency = 1, Size = UDim2.new(0, 0, 1, 0)})
+                    Airflow:CreateAnimation(bth,0.5,nil,{BackgroundTransparency = 1,})
+                    Airflow:CreateAnimation(UIStroke,0.5,nil,{Transparency = 1,})
+                end
+            end)
         };
+        ElementIDs[ID] = {Title = config.Name, ID = ID, Type = "Slider", API = tableback, IDCode = "Slider_"..config.Name.."_"..tostring(ID), Frame = SliderFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, ElementIDs[ID]) end;
         return tableback
     end;
 
-    function elements:AddKeybind(config)
-        config = config or {Name = "Keybind", Default = "None", Callback = function() end};
-        local Keys = {LeftControl = "LCtrl", RightControl = "RCtrl", LeftShift = "LShift", RightShift = "RShift", Return = "Enter"}
+        config = config or {};
+        config.Name = config.Name or "Keybind";
+        config.Callback = config.Callback or function() end;
+        config.Default = config.Default or "None";
+        config.PairKey = config.PairKey or config.Name;
+        local Keys = {
+            One = '1', Two = '2', Three = '3', Four = '4', Five = '5', Six = '6', Seven = '7', Eight = '8', Nine = '9', Zero = '0',
+            Minus = "-", Plus = "+", BackSlash = "\\", Slash = "/", Period = '.', Semicolon = ';', Colon = ":",
+            LeftControl = "LCtrl", RightControl = "RCtrl", LeftShift = "LShift", RightShift = "RShift",
+            Return = "Enter", LeftBracket = "[", RightBracket = "]", Quote = "'", Comma = ",", Equals = "=", LeftSuper = "Windows"
+        };
+        local ID = ElementId;
         local GetItem = function(item)
-            if not item then return 'NONE' end
-            if typeof(item) == 'EnumItem' then return Keys[item.Name] or item.Name end
-            return Keys[tostring(item)] or tostring(item)
-        end
-        
+            if item then
+                if typeof(item) == 'EnumItem' then
+                    return Keys[item.Name] or item.Name;
+                else
+                    return Keys[tostring(item)] or tostring(item);
+                end;
+            else
+                return 'NONE';
+            end;
+        end;
         local KeybindFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         local block = Instance.new("Frame")
+        local UICorner_2 = Instance.new("UICorner")
         local VText = Instance.new("TextLabel")
         KeybindFrame.Name = Airflow:RandomString()
         KeybindFrame.Parent = element
         KeybindFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
         KeybindFrame.BackgroundTransparency = 1
+        KeybindFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        KeybindFrame.BorderSizePixel = 0
+        KeybindFrame.ClipsDescendants = true
         KeybindFrame.Size = UDim2.new(1, -8, 0, 30)
-        Instance.new("UICorner").Parent = KeybindFrame
+        KeybindFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = KeybindFrame
+        PText.Name = Airflow:RandomString()
         PText.Parent = KeybindFrame
         PText.AnchorPoint = Vector2.new(0, 0.5)
-        PText.BackgroundTransparency = 1
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0, 8, 0.5, 0)
         PText.Size = UDim2.new(1, -50, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
         PText.Text = config.Name
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 13
-        PText.TextXAlignment = Enum.TextXAlignment.Left
+        PText.TextSize = 13.000
         PText.TextTransparency = 1
+        PText.TextWrapped = true
+        PText.TextXAlignment = Enum.TextXAlignment.Left
+        block.Name = Airflow:RandomString()
         block.Parent = KeybindFrame
         block.AnchorPoint = Vector2.new(1, 0.5)
         block.BackgroundColor3 = Color3.fromRGB(50, 49, 48)
         block.BackgroundTransparency = 1
+        block.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        block.BorderSizePixel = 0
         block.Position = UDim2.new(1, -8, 0.5, 0)
         block.Size = UDim2.new(0, 55, 0, 22)
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 5)
-        Instance.new("UICorner").Parent = block
+        block.ZIndex = 7
+        UICorner_2.CornerRadius = UDim.new(0, 5)
+        UICorner_2.Parent = block
+        VText.Name = Airflow:RandomString()
         VText.Parent = block
         VText.AnchorPoint = Vector2.new(0.5, 0.5)
-        VText.BackgroundTransparency = 1
+        VText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        VText.BackgroundTransparency = 1.000
+        VText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        VText.BorderSizePixel = 0
         VText.Position = UDim2.new(0.5, 0, 0.5, 0)
         VText.Size = UDim2.new(1, -10, 0, 20)
+        VText.ZIndex = 7
         VText.Font = Enum.Font.GothamMedium
-        VText.Text = GetItem(config.Default)
+        VText.Text = GetItem(config.Default);
         VText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        VText.TextSize = 13
-        VText.TextTransparency = 1
-        
-        local CurrentKey = config.Default
-        local IsBinding = false
-        local function UpdateScale()
-            local size = TextService:GetTextSize(VText.Text, 13, Enum.Font.GothamMedium, Vector2.new(math.huge, math.huge))
-            TweenService:Create(block, TweenInfo.new(0.1), {Size = UDim2.new(0, size.X + 22, 0, 22)}):Play()
-        end
-        UpdateScale()
-        
-        Airflow:NewInput(block, function()
-            if IsBinding then return end
-            IsBinding = true
-            VText.Text = "..."
-            UpdateScale()
-            local Selected = nil
+        VText.TextSize = 13.000
+        VText.TextWrapped = true
+        VText.TextTransparency = 1;
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,VText,0.5,nil,{TextTransparency = 0,})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,block,0.5,nil,{BackgroundTransparency = 0.5,})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0.3,})
+        end;
+        Airflow:Hover(KeybindFrame);
+        local UpdateScale = function()
+            local BindLabelScale = TextService:GetTextSize(VText.Text,VText.TextSize,VText.Font,Vector2.new(math.huge,math.huge));
+            TweenService:Create(block,TweenInfo.new(0.1),{Size = UDim2.new(0, BindLabelScale.X + 22, 0, 22)}):Play();
+        end;
+        UpdateScale();
+        local IsBinding = false;
+        Airflow:NewInput(block,function()
+            if IsBinding then return; end;
+            VText.Text = "...";
+            UpdateScale();
+            local Selected = nil;
             while not Selected do
-                local Key = UserInputService.InputBegan:Wait()
+                local Key = UserInputService.InputBegan:Wait();
                 if Key.KeyCode ~= Enum.KeyCode.Unknown then
-                    Selected = Key.KeyCode
-                elseif Key.UserInputType == Enum.UserInputType.MouseButton1 then
-                    Selected = "MouseLeft"
-                elseif Key.UserInputType == Enum.UserInputType.MouseButton2 then
-                    Selected = "MouseRight"
-                end
-            end
-            CurrentKey = Selected
-            VText.Text = GetItem(Selected)
-            UpdateScale()
-            IsBinding = false
-            config.Callback(CurrentKey)
-        end)
-        
+                    Selected = Key.KeyCode;
+                else
+                    if Key.UserInputType == Enum.UserInputType.MouseButton1 then
+                        Selected = "MouseLeft";
+                    elseif Key.UserInputType == Enum.UserInputType.MouseButton2 then
+                        Selected = "MouseRight";
+                    end;
+                end;
+            end;
+            config.Default = Selected;
+            VText.Text = GetItem(Selected);
+            UpdateScale();
+            IsBinding = false;
+            ElementConfigs["Keybind_"..config.Name.."_"..tostring(ID)] = {Value = (typeof(Selected) == "string" and Selected or Selected.Name)};
+            config.Callback(typeof(Selected) == "string" and Selected or Selected.Name);
+        end);
+        ElementConfigs["Keybind_"..config.Name.."_"..tostring(ID)] = {Value = (typeof(config.Default) == "string" and config.Default or config.Default.Name)};
+        ElementId += 1;
         local tableback = {
             Edit = function(self, Value) PText.Text = Value end,
-            SetValue = function(self, Value) CurrentKey = Value; VText.Text = GetItem(Value); UpdateScale(); config.Callback(Value) end,
-            GetValue = function(self) return CurrentKey end,
+            SetValue = function(self, Value)
+                config.Default = Value;
+                VText.Text = GetItem(config.Default);
+                UpdateScale();
+                local Key = (typeof(config.Default) == "string" and config.Default or config.Default.Name);
+                ElementConfigs["Keybind_"..config.Name.."_"..tostring(ID)] = {Value = Key};
+                config.Callback(Key);
+            end,
             Visible = function(self, Value) KeybindFrame.Visible = Value end,
             Destroy = function(self) KeybindFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(function(value)
+                if value then
+                    task.wait(delayTick);
+                    Airflow:CreateAnimation(KeybindFrame,0.7,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 35)})
+                    Airflow:CreateAnimation(block,0.6,nil,{BackgroundTransparency = 0.5,})
+                    Airflow:CreateAnimation(PText,0.7,nil,{TextTransparency = 0.3,})
+                    Airflow:CreateAnimation(VText,0.6,nil,{TextTransparency = 0,})
+                else
+                    Airflow:CreateAnimation(KeybindFrame,0.5,nil,{BackgroundTransparency = 1, Size = UDim2.new(1, -8, 0, 35)})
+                    Airflow:CreateAnimation(block,0.5,nil,{BackgroundTransparency = 1,})
+                    Airflow:CreateAnimation(PText,0.5,nil,{TextTransparency = 1,})
+                    Airflow:CreateAnimation(VText,0.5,nil,{TextTransparency = 1,})
+                end
+            end)
         };
+        ElementIDs[ID] = {Title = config.Name, ID = ID, Type = "Keybind", API = tableback, IDCode = "Keybind_"..config.Name.."_"..tostring(ID), Frame = KeybindFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, ElementIDs[ID]) end;
         return tableback
     end;
 
-    function elements:AddTextbox(config)
-        config = config or {Name = "Textbox", Default = "", Placeholder = "", Callback = function() end};
+        config = config or {};
+        config.Name = config.Name or "TextBox";
+        config.Default = config.Default or "";
+        config.Placeholder = config.Placeholder or "	";
+        config.Numeric = config.Numeric or false;
+        config.Finished = config.Finished or false;
+        config.Callback = config.Callback or function() end;
+        config.PairKey = config.PairKey or config.Name;
+        local ID = ElementId;
         local TextboxFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         local block = Instance.new("Frame")
+        local UICorner_2 = Instance.new("UICorner")
         local TextBox = Instance.new("TextBox")
         TextboxFrame.Name = Airflow:RandomString()
         TextboxFrame.Parent = element
         TextboxFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
         TextboxFrame.BackgroundTransparency = 1
+        TextboxFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        TextboxFrame.BorderSizePixel = 0
+        TextboxFrame.ClipsDescendants = true
         TextboxFrame.Size = UDim2.new(1, -8, 0, 45)
-        Instance.new("UICorner").Parent = TextboxFrame
+        TextboxFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = TextboxFrame
+        PText.Name = Airflow:RandomString()
         PText.Parent = TextboxFrame
         PText.AnchorPoint = Vector2.new(0, 0.5)
-        PText.BackgroundTransparency = 1
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0, 8, 0.5, 0)
         PText.Size = UDim2.new(1, -50, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
         PText.Text = config.Name
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 13
-        PText.TextXAlignment = Enum.TextXAlignment.Left
+        PText.TextSize = 13.000
         PText.TextTransparency = 1
+        PText.TextWrapped = true
+        PText.TextXAlignment = Enum.TextXAlignment.Left
+        block.Name = Airflow:RandomString()
         block.Parent = TextboxFrame
         block.AnchorPoint = Vector2.new(1, 0.5)
         block.BackgroundColor3 = Color3.fromRGB(36, 35, 35)
         block.BackgroundTransparency = 1
+        block.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        block.BorderSizePixel = 0
+        block.ClipsDescendants = true
         block.Position = UDim2.new(1, -8, 0.5, 0)
         block.Size = UDim2.new(0, 65, 0, 25)
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 4)
-        Instance.new("UICorner").Parent = block
+        block.ZIndex = 7
+        UICorner_2.CornerRadius = UDim.new(0, 4)
+        UICorner_2.Parent = block
         TextBox.Parent = block
         TextBox.AnchorPoint = Vector2.new(0.5, 0.5)
-        TextBox.BackgroundTransparency = 1
+        TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TextBox.BackgroundTransparency = 1.000
+        TextBox.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        TextBox.BorderSizePixel = 0
         TextBox.Position = UDim2.new(0.5, 0, 0.5, 0)
         TextBox.Size = UDim2.new(1, -10, 1, -5)
+        TextBox.ZIndex = 8
         TextBox.ClearTextOnFocus = false
         TextBox.Font = Enum.Font.GothamMedium
         TextBox.PlaceholderText = config.Placeholder
         TextBox.Text = config.Default
         TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TextBox.TextSize = 10
-        TextBox.TextTransparency = 1
+        TextBox.TextSize = 10.000
+        TextBox.TextTransparency = 1;
         TextBox.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local CurrentValue = config.Default
-        TextBox.FocusLost:Connect(function()
-            CurrentValue = TextBox.Text
-            config.Callback(CurrentValue)
-        end)
-        
+        local Update = function()
+            local scale = TextService:GetTextSize(TextBox.Text,TextBox.TextSize,TextBox.Font,Vector2.new(math.huge,math.huge));
+            local Base = TextService:GetTextSize(TextBox.PlaceholderText,TextBox.TextSize,TextBox.Font,Vector2.new(math.huge,math.huge));
+            local Sty = TextService:GetTextSize(PText.Text,PText.TextSize,PText.Font,Vector2.new(math.huge,math.huge));
+            local MainScale = ((scale.X > Base.X) and scale.X) or Base.X;
+            if scale.X > (Base.X + 5) then
+                TextBox.TextXAlignment = Enum.TextXAlignment.Left;
+            else
+                TextBox.TextXAlignment = Enum.TextXAlignment.Center;
+            end;
+            Airflow:CreateAnimation(block,0.3,nil,{Size = UDim2.new(0, math.min(MainScale + 10, TextboxFrame.AbsoluteSize.X - (Sty.X + 25)), 0, 25)})
+        end;
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,block,0.5,nil,{BackgroundTransparency = 0.500})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0.3})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,TextBox,0.5,nil,{TextTransparency = 0})
+            task.delay(0.4,Airflow.CreateAnimation,Airflow,TextboxFrame,0.5,nil,{BackgroundTransparency = 0.800,})
+        end;
+        Update();
+        TextBox:GetPropertyChangedSignal('Text'):Connect(Update);
+        ElementConfigs["TextBox_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
+        local parse = function(text)
+            if not text then return ""; end;
+            if config.Numeric then
+                local out = string.gsub(tostring(text), '[^0-9.]', '')
+                if tonumber(out) then return tonumber(out); end;
+                return nil;
+            end;
+            return text;
+        end;
+        Airflow:Hover(TextboxFrame);
+        if config.Finished then
+            TextBox:GetPropertyChangedSignal('Text'):Connect(function()
+                TextBox.Text = parse(TextBox.Text);
+            end);
+            TextBox.FocusLost:Connect(function()
+                local value = parse(TextBox.Text);
+                if value then
+                    TextBox.Text = tostring(value);
+                    config.Callback(value);
+                end;
+                ElementConfigs["TextBox_"..config.Name.."_"..tostring(ID)] = {Value = value};
+            end)
+        else
+            TextBox:GetPropertyChangedSignal('Text'):Connect(function()
+                local value = parse(TextBox.Text);
+                if value then
+                    TextBox.Text = tostring(value);
+                    config.Callback(value);
+                else
+                    TextBox.Text = string.gsub(TextBox.Text, '[^0-9.]', '');
+                end;
+                ElementConfigs["TextBox_"..config.Name.."_"..tostring(ID)] = {Value = value};
+            end);
+        end;
+        ElementId += 1;
         local tableback = {
-            Edit = function(self, Value) PText.Text = Value end,
-            SetValue = function(self, Value) TextBox.Text = Value; CurrentValue = Value; config.Callback(Value) end,
-            GetValue = function(self) return CurrentValue end,
+            Edit = function(self, Value) PText.Text = Value; end,
+            SetValue = function(self, value)
+                TextBox.Text = parse(value);
+                ElementConfigs["TextBox_"..config.Name.."_"..tostring(ID)] = {Value = parse(value)};
+                config.Callback(value);
+            end,
             Visible = function(self, Value) TextboxFrame.Visible = Value end,
             Destroy = function(self) TextboxFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(function(value)
+                if value then
+                    task.wait(delayTick);
+                    Airflow:CreateAnimation(block,0.7,nil,{BackgroundTransparency = 0.500})
+                    Airflow:CreateAnimation(PText,0.7,nil,{TextTransparency = 0.3})
+                    Airflow:CreateAnimation(TextBox,0.7,nil,{TextTransparency = 0})
+                    Airflow:CreateAnimation(TextboxFrame,0.6,nil,{BackgroundTransparency = 0.800,})
+                else
+                    Airflow:CreateAnimation(block,0.5,nil,{BackgroundTransparency = 1})
+                    Airflow:CreateAnimation(PText,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(TextBox,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(TextboxFrame,0.5,nil,{BackgroundTransparency = 1,})
+                end
+            end)
         };
+        ElementIDs[ID] = {Title = config.Name, ID = ID, Type = "TextBox", API = tableback, IDCode = "TextBox_"..config.Name.."_"..tostring(ID), Frame = TextboxFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, ElementIDs[ID]) end;
         return tableback
     end;
 
-    function elements:AddColorPicker(config)
-        config = config or {Name = "ColorPicker", Default = Color3.fromRGB(255,255,255), Callback = function() end};
-        local ColorFrame = Instance.new("Frame")
+        config = config or {};
+        config.Name = config.Name or "ColorPicker";
+        config.Default = config.Default or Color3.fromRGB(255,255,255);
+        config.Callback = config.Callback or function() end;
+        config.PairKey = config.PairKey or config.Name;
+        local ID = ElementId;
+        local ColorPickerFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         local block = Instance.new("Frame")
-        ColorFrame.Name = Airflow:RandomString()
-        ColorFrame.Parent = element
-        ColorFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
-        ColorFrame.BackgroundTransparency = 1
-        ColorFrame.Size = UDim2.new(1, -8, 0, 36)
-        Instance.new("UICorner").Parent = ColorFrame
-        PText.Parent = ColorFrame
+        local UICorner_2 = Instance.new("UICorner")
+        local UIStroke = Instance.new("UIStroke")
+        local TextButton = Instance.new("TextButton")
+        ColorPickerFrame.Name = Airflow:RandomString()
+        ColorPickerFrame.Parent = element;
+        ColorPickerFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
+        ColorPickerFrame.BackgroundTransparency = 1
+        ColorPickerFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ColorPickerFrame.BorderSizePixel = 0
+        ColorPickerFrame.Size = UDim2.new(1, -8, 0, 36)
+        ColorPickerFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = ColorPickerFrame
+        PText.Name = Airflow:RandomString()
+        PText.Parent = ColorPickerFrame
         PText.AnchorPoint = Vector2.new(0, 0.5)
-        PText.BackgroundTransparency = 1
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0, 8, 0.5, 0)
         PText.Size = UDim2.new(1, -50, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
         PText.Text = config.Name
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 13
-        PText.TextXAlignment = Enum.TextXAlignment.Left
+        PText.TextSize = 13.000
         PText.TextTransparency = 1
-        block.Parent = ColorFrame
+        PText.TextWrapped = true
+        PText.TextXAlignment = Enum.TextXAlignment.Left
+        block.Name = Airflow:RandomString()
+        block.Parent = ColorPickerFrame
         block.AnchorPoint = Vector2.new(1, 0.5)
-        block.BackgroundColor3 = config.Default
+        block.BackgroundColor3 = config.Default;
+        block.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        block.BorderSizePixel = 0
         block.Position = UDim2.new(1, -8, 0.5, 0)
         block.Size = UDim2.new(0, 45, 0, 20)
-        block.BackgroundTransparency = 1
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 4)
-        Instance.new("UICorner").Parent = block
-        Instance.new("UIStroke").Parent = block
-        
-        local CurrentColor = config.Default
-        local function UpdateColor(color)
-            CurrentColor = color
-            block.BackgroundColor3 = color
-            config.Callback(color)
-        end
-        
-        Airflow:NewInput(ColorFrame, function()
-            -- Simplified color picker trigger
-            UpdateColor(Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255)))
+        block.ZIndex = 7
+        block.BackgroundTransparency = 1;
+        UICorner_2.CornerRadius = UDim.new(0, 4)
+        UICorner_2.Parent = block
+        UIStroke.Transparency = 0.380
+        UIStroke.Color = Color3.fromRGB(88, 88, 88)
+        UIStroke.Parent = block
+        TextButton.Parent = ColorPickerFrame
+        TextButton.BackgroundTransparency = 1.000
+        TextButton.Size = UDim2.new(1, 0, 1, 0)
+        TextButton.ZIndex = 16
+        TextButton.TextTransparency = 1.000
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,block,0.5,nil,{BackgroundTransparency = 0})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0.3})
+            task.delay(0.4,Airflow.CreateAnimation,Airflow,ColorPickerFrame,0.5,nil,{BackgroundTransparency = 0.800,})
+        end;
+        local Detector = function(color)
+            config.Default = color;
+            local R,G,B = color.R * 255,color.G * 255,color.B * 255;
+            Airflow:CreateAnimation(block,0.7,nil,{BackgroundColor3 = config.Default;});
+            ElementConfigs["ColorPicker_"..config.Name.."_"..tostring(ID)] = {Value = {R,G,B}};
+            config.Callback(color);
+        end;
+        do
+            local R,G,B = config.Default.R * 255,config.Default.G * 255,config.Default.B * 255;
+            ElementConfigs["ColorPicker_"..config.Name.."_"..tostring(ID)] = {Value = {R,G,B}};
+        end;
+        TextButton.MouseButton1Click:Connect(function()
+            task.wait();
+            Airflow.Features.ColorPickerToggle = not Airflow.Features.ColorPickerToggle;
+            Airflow.Features:SetColor(config.Default);
+            Airflow.Features:OnColorPicker(Airflow.Features.ColorPickerToggle);
+            Airflow.Features:SetPosition(UDim2.fromOffset(block.AbsolutePosition.X,block.AbsolutePosition.Y));
+            Airflow.Features.Callback = Detector;
         end)
-        
+        Airflow:Hover(ColorPickerFrame);
+        ElementId += 1;
         local tableback = {
-            Edit = function(self, Value) PText.Text = Value end,
-            SetValue = function(self, Value) UpdateColor(Value) end,
-            GetValue = function(self) return CurrentColor end,
-            Visible = function(self, Value) ColorFrame.Visible = Value end,
-            Destroy = function(self) ColorFrame:Destroy(); end,
+            Edit = function(self, Value) PText.Text = Value; end,
+            SetValue = function(self, value) return Detector(value); end,
+            Visible = function(self, Value) ColorPickerFrame.Visible = Value end,
+            Destroy = function(self) ColorPickerFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(function(value)
+                if value then
+                    task.wait(delayTick);
+                    Airflow:CreateAnimation(ColorPickerFrame,0.7,nil,{BackgroundTransparency = 0.800,})
+                    Airflow:CreateAnimation(PText,0.6,nil,{TextTransparency = 0.3})
+                    Airflow:CreateAnimation(block,0.7,nil,{BackgroundTransparency = 0, BackgroundColor3 = config.Default,})
+                else
+                    Airflow:CreateAnimation(ColorPickerFrame,0.5,nil,{BackgroundTransparency = 1,})
+                    Airflow:CreateAnimation(PText,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(block,0.5,nil,{BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(0,0,0),})
+                end
+            end)
         };
+        ElementIDs[ID] = {Title = config.Name, ID = ID, Type = "ColorPicker", API = tableback, IDCode = "ColorPicker_"..config.Name.."_"..tostring(ID), Frame = ColorPickerFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, ElementIDs[ID]) end;
         return tableback
     end;
 
-    function elements:AddParagraph(config)
-        config = config or {Name = "Paragraph", Content = ""};
-        local ParaFrame = Instance.new("Frame")
+        config = config or {};
+        config.Name = config.Name or "Paragraph";
+        config.Content = config.Content or nil;
+        config.PairKey = config.PairKey or config.Name;
+        local ID = ElementId;
+        local ParagraphFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         local SText = Instance.new("TextLabel")
-        ParaFrame.Name = Airflow:RandomString()
-        ParaFrame.Parent = element
-        ParaFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
-        ParaFrame.BackgroundTransparency = 1
-        ParaFrame.Size = UDim2.new(1, -8, 0, 45)
-        Instance.new("UICorner").Parent = ParaFrame
-        PText.Parent = ParaFrame
-        PText.BackgroundTransparency = 1
+        ParagraphFrame.Name = Airflow:RandomString()
+        ParagraphFrame.Parent = element
+        ParagraphFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
+        ParagraphFrame.BackgroundTransparency = 1
+        ParagraphFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ParagraphFrame.BorderSizePixel = 0
+        ParagraphFrame.ClipsDescendants = true
+        ParagraphFrame.Size = UDim2.new(1, -8, 0, 45)
+        ParagraphFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = ParagraphFrame
+        PText.Name = Airflow:RandomString()
+        PText.Parent = ParagraphFrame
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0, 8, 0, 4)
         PText.Size = UDim2.new(1, -50, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
         PText.Text = config.Name
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 13
-        PText.TextXAlignment = Enum.TextXAlignment.Left
+        PText.TextSize = 13.000
         PText.TextTransparency = 1
-        SText.Parent = ParaFrame
-        SText.BackgroundTransparency = 1
+        PText.TextWrapped = true
+        PText.TextXAlignment = Enum.TextXAlignment.Left
+        SText.Name = Airflow:RandomString()
+        SText.Parent = ParagraphFrame
+        SText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SText.BackgroundTransparency = 1.000
+        SText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        SText.BorderSizePixel = 0
         SText.Position = UDim2.new(0, 8, 0, 25)
         SText.Size = UDim2.new(1, -50, 1, -25)
+        SText.ZIndex = 7
         SText.Font = Enum.Font.GothamMedium
-        SText.Text = config.Content
+        SText.Text = config.Content or "";
         SText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        SText.TextSize = 11
+        SText.TextSize = 11.000
         SText.TextTransparency = 1
         SText.TextWrapped = true
         SText.TextXAlignment = Enum.TextXAlignment.Left
-        
+        SText.TextYAlignment = Enum.TextYAlignment.Top
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,SText,0.5,nil,{TextTransparency = 0.300})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0.200})
+            task.delay(0.4,Airflow.CreateAnimation,Airflow,ParagraphFrame,0.5,nil,{BackgroundTransparency = 0.800,})
+        end;
+        Airflow:Hover(ParagraphFrame);
+        local updateScale = function()
+            if config.Content or SText.Text:byte() then
+                local SizeY = 27;
+                local size = TextService:GetTextSize(SText.Text,SText.TextSize,SText.Font,Vector2.new(math.huge,math.huge));
+                SizeY += size.Y;
+                Airflow:CreateAnimation(ParagraphFrame,0.4,nil,{Size = UDim2.new(1, -8, 0, SizeY + 10)});
+            else
+                Airflow:CreateAnimation(ParagraphFrame,0.4,nil,{Size = UDim2.new(1, -8, 0, 27)});
+            end;
+        end;
+        task.delay(0.4,updateScale)
+        ElementId += 1;
         local tableback = {
-            EditName = function(self, Value) PText.Text = Value end,
-            EditContent = function(self, Value) SText.Text = Value end,
-            Visible = function(self, Value) ParaFrame.Visible = Value end,
-            Destroy = function(self) ParaFrame:Destroy(); end,
+            EditName = function(self, Value) PText.Text = Value; updateScale(); end,
+            EditContent = function(self, Value) SText.Text = Value; updateScale(); end,
+            Visible = function(self, Value) ParagraphFrame.Visible = Value end,
+            Destroy = function(self) ParagraphFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(function(value)
+                if value then
+                    task.wait(delayTick);
+                    Airflow:CreateAnimation(ParagraphFrame,0.7,nil,{BackgroundTransparency = 0.800,})
+                    Airflow:CreateAnimation(PText,0.6,nil,{TextTransparency = 0.200})
+                    Airflow:CreateAnimation(SText,0.7,nil,{TextTransparency = 0.300})
+                else
+                    Airflow:CreateAnimation(ParagraphFrame,0.5,nil,{BackgroundTransparency = 1,})
+                    Airflow:CreateAnimation(PText,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(SText,0.5,nil,{TextTransparency = 1})
+                end
+            end)
         };
-        return tableback
+        ElementIDs[ID] = {Title = config.Name, ID = ID, Type = "Paragraph", API = tableback, IDCode = "Paragraph_"..config.Name.."_"..tostring(ID), Frame = ParagraphFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, ElementIDs[ID]) end;
+        return tableback;
     end;
 
     function elements:AddDropdown(config)
-        config = config or {Name = "Dropdown", Values = {}, Default = "", Callback = function() end};
+        config = config or {};
+        config.Name = config.Name or "Dropdown";
+        config.Values = config.Values or {};
+        config.Default = config.Default or {};
+        config.Multi = config.Multi or false;
+        config.Callback = config.Callback or function() end;
+        config.PairKey = config.PairKey or config.Name;
+        local parse = function(value)
+            if not value then return 'NONE' end;
+            local Out;
+            if typeof(value) == 'table' then
+                if #value > 0 then
+                    local x = {};
+                    for i,v in pairs(value) do table.insert(x, tostring(v)) end;
+                    Out = table.concat(x,' , ')
+                else
+                    local x = {};
+                    for i,v in pairs(value) do if v == true then table.insert(x, tostring(i)) end end;
+                    Out = table.concat(x,' , ')
+                end;
+            else
+                Out = tostring(value);
+            end;
+            return Out;
+        end;
+        local ID = ElementId;
         local DropdownFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local PText = Instance.new("TextLabel")
         local block = Instance.new("Frame")
+        local UICorner_2 = Instance.new("UICorner")
         local VText = Instance.new("TextLabel")
         local ImageLabel = Instance.new("ImageLabel")
         local DropdownInner = Instance.new("Frame")
+        local UICorner_3 = Instance.new("UICorner")
+        local LineV = Instance.new("Frame")
         local ScrollingFrame = Instance.new("ScrollingFrame")
         local UIListLayout = Instance.new("UIListLayout")
-        
         DropdownFrame.Name = Airflow:RandomString()
         DropdownFrame.Parent = element
         DropdownFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
         DropdownFrame.BackgroundTransparency = 1
+        DropdownFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        DropdownFrame.BorderSizePixel = 0
         DropdownFrame.Size = UDim2.new(1, -8, 0, 30)
-        Instance.new("UICorner").Parent = DropdownFrame
+        DropdownFrame.ZIndex = 6
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = DropdownFrame
+        PText.Name = Airflow:RandomString()
         PText.Parent = DropdownFrame
         PText.AnchorPoint = Vector2.new(0, 0.5)
-        PText.BackgroundTransparency = 1
+        PText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        PText.BackgroundTransparency = 1.000
+        PText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        PText.BorderSizePixel = 0
         PText.Position = UDim2.new(0, 8, 0.5, 0)
         PText.Size = UDim2.new(1, -50, 0, 20)
+        PText.ZIndex = 7
         PText.Font = Enum.Font.GothamMedium
         PText.Text = config.Name
         PText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PText.TextSize = 13
-        PText.TextXAlignment = Enum.TextXAlignment.Left
+        PText.TextSize = 13.000
         PText.TextTransparency = 1
+        PText.TextWrapped = true
+        PText.TextXAlignment = Enum.TextXAlignment.Left
+        block.Name = Airflow:RandomString()
         block.Parent = DropdownFrame
         block.AnchorPoint = Vector2.new(1, 0.5)
         block.BackgroundColor3 = Color3.fromRGB(40,40,38)
-        block.BackgroundTransparency = 1
+        block.BackgroundTransparency = 1.000
+        block.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        block.BorderSizePixel = 0
         block.Position = UDim2.new(1, -8, 0.5, 0)
         block.Size = UDim2.new(0, 65, 0, 30)
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 2)
-        Instance.new("UICorner").Parent = block
+        block.ZIndex = 7
+        UICorner_2.CornerRadius = UDim.new(0, 2)
+        UICorner_2.Parent = block
+        VText.Name = Airflow:RandomString()
         VText.Parent = block
         VText.AnchorPoint = Vector2.new(0, 0.5)
-        VText.BackgroundTransparency = 1
+        VText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        VText.BackgroundTransparency = 1.000
+        VText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        VText.BorderSizePixel = 0
         VText.Position = UDim2.new(0, 7, 0.5, 0)
         VText.Size = UDim2.new(1, -30, 0, 20)
+        VText.ZIndex = 7
         VText.Font = Enum.Font.GothamMedium
-        VText.Text = tostring(config.Default)
+        VText.Text = parse(config.Default)
         VText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        VText.TextSize = 14
+        VText.TextSize = 14.000
+        VText.TextWrapped = true
         VText.TextXAlignment = Enum.TextXAlignment.Left
         VText.TextTransparency = 1
+        VText.TextTruncate = Enum.TextTruncate.SplitWord;
         ImageLabel.Parent = block
         ImageLabel.AnchorPoint = Vector2.new(1, 0.5)
-        ImageLabel.BackgroundTransparency = 1
+        ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ImageLabel.BackgroundTransparency = 1.000
+        ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ImageLabel.BorderSizePixel = 0
         ImageLabel.Position = UDim2.new(1, -6, 0.5, 0)
         ImageLabel.Size = UDim2.new(0.5, 0, 0.5, 0)
         ImageLabel.SizeConstraint = Enum.SizeConstraint.RelativeYY
-        ImageLabel.Image = Airflow:GetIcon("chevron-down")
+        ImageLabel.ZIndex = 8
+        ImageLabel.Image = "rbxassetid://10709790948"
         ImageLabel.ImageTransparency = 1
-        DropdownInner.Parent = block
+        DropdownInner.Name = Airflow:RandomString()
         DropdownInner.AnchorPoint = Vector2.new(0.5,0)
+        DropdownInner.Parent = block
         DropdownInner.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
         DropdownInner.BackgroundTransparency = 0.025
+        DropdownInner.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        DropdownInner.BorderSizePixel = 0
         DropdownInner.ClipsDescendants = true
         DropdownInner.Position = UDim2.new(0.5, 0, 1, 0)
         DropdownInner.Size = UDim2.new(1, 0, 0, 0)
         DropdownInner.ZIndex = 100
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 2)
-        Instance.new("UICorner").Parent = DropdownInner
+        DropdownInner.Rotation = 0;
+        DropdownInner.Active = true
+        UICorner_3.CornerRadius = UDim.new(0, 2)
+        UICorner_3.Parent = DropdownInner
+        LineV.Name = Airflow:RandomString()
+        LineV.Parent = DropdownInner
+        LineV.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+        LineV.BackgroundTransparency = 0.500
+        LineV.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        LineV.BorderSizePixel = 0
+        LineV.Size = UDim2.new(1, 0, 0, 1)
+        LineV.ZIndex = 101
         ScrollingFrame.Parent = DropdownInner
         ScrollingFrame.Active = true
         ScrollingFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-        ScrollingFrame.BackgroundTransparency = 1
+        ScrollingFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ScrollingFrame.BackgroundTransparency = 1.000
+        ScrollingFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ScrollingFrame.BorderSizePixel = 0
         ScrollingFrame.ClipsDescendants = true
         ScrollingFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
         ScrollingFrame.Size = UDim2.new(1, -5, 1, -4)
+        ScrollingFrame.ZIndex = 104
         ScrollingFrame.ScrollBarThickness = 0
         UIListLayout.Parent = ScrollingFrame
         UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
+        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
         UIListLayout.Padding = UDim.new(0, 6)
-        
-        local Selected = config.Default
-        local IsOpen = false
-        local function RefreshOptions()
-            for _, v in pairs(ScrollingFrame:GetChildren()) do if v:IsA('TextButton') then v:Destroy() end end
-            for _, v in pairs(config.Values) do
-                local Btn = Instance.new("TextButton")
-                Btn.Parent = ScrollingFrame
-                Btn.BackgroundTransparency = 1
-                Btn.Size = UDim2.new(1, -3, 0, 20)
-                Btn.Font = Enum.Font.GothamMedium
-                Btn.Text = "  "..tostring(v)
-                Btn.TextColor3 = Selected == v and windowConfig.Hightlight or Color3.fromRGB(255,255,255)
-                Btn.TextSize = 14
-                Btn.TextXAlignment = Enum.TextXAlignment.Left
-                Btn.MouseButton1Click:Connect(function()
-                    Selected = v
-                    VText.Text = tostring(v)
-                    config.Callback(v)
-                    IsOpen = false
-                    TweenService:Create(DropdownInner, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-                    TweenService:Create(ImageLabel, TweenInfo.new(0.3), {Rotation = 0}):Play()
-                end)
-            end
-        end
-        RefreshOptions()
-        
-        Airflow:NewInput(DropdownFrame, function()
-            IsOpen = not IsOpen
-            if IsOpen then
-                local contentHeight = UIListLayout.AbsoluteContentSize.Y + 11
-                TweenService:Create(DropdownInner, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, math.min(contentHeight, 150))}):Play()
-                TweenService:Create(ImageLabel, TweenInfo.new(0.3), {Rotation = -180}):Play()
+        if OnChange:GetAttribute('Value') then
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,ImageLabel,0.5,nil,{ImageTransparency = 0})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,VText,0.5,nil,{TextTransparency = 0})
+            task.delay(0.5,Airflow.CreateAnimation,Airflow,PText,0.5,nil,{TextTransparency = 0.300})
+            task.delay(0.4,Airflow.CreateAnimation,Airflow,DropdownFrame,0.5,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 35)})
+        end;
+        UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function() 
+            ScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y + 2)
+        end);
+        local IsDefault = function(val)
+            if typeof(config.Default) == 'table' then
+                if table.find(config.Default,val) or config.Default[val] then
+                    return true;
+                end;
             else
-                TweenService:Create(DropdownInner, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-                TweenService:Create(ImageLabel, TweenInfo.new(0.3), {Rotation = 0}):Play()
+                if config.Default == val then
+                    return true
+                end
+            end;
+        end;
+        local scale = TextService:GetTextSize(VText.Text,VText.TextSize,VText.Font,Vector2.new(math.huge,math.huge));
+        local LongestSize = scale.X;
+        local refresh = function()
+            for i,v in pairs(ScrollingFrame:GetChildren()) do
+                if v:IsA('TextButton') then
+                    v:Destroy();
+                end;
+            end;
+            if config.Multi then
+                local SelectedItems = {};
+                for i,v in pairs(config.Values) do
+                    local InputButton = Instance.new("TextButton")
+                    InputButton.Name = Airflow:RandomString()
+                    InputButton.Parent = ScrollingFrame;
+                    InputButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    InputButton.BackgroundTransparency = 1.000
+                    InputButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+                    InputButton.BorderSizePixel = 0
+                    InputButton.Size = UDim2.new(1, -3, 0, 20)
+                    InputButton.ZIndex = 105
+                    InputButton.Font = Enum.Font.GothamMedium
+                    InputButton.Text = string.rep(" ",2)..tostring(v)
+                    InputButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    InputButton.TextSize = 14.000
+                    InputButton.TextTransparency = 0.5
+                    InputButton.TextXAlignment = Enum.TextXAlignment.Left
+                    if IsDefault(v) then
+                        InputButton.TextTransparency = 0;
+                        SelectedItems[v] = true;
+                    end;
+                    local scale = TextService:GetTextSize(InputButton.Text,InputButton.TextSize,InputButton.Font,Vector2.new(math.huge,math.huge));
+                    if scale.X > LongestSize then
+                        LongestSize = scale.X;
+                    end;
+                    InputButton.MouseButton1Click:Connect(function()
+                        SelectedItems[v] = not SelectedItems[v];
+                        if SelectedItems[v] then
+                            InputButton.TextTransparency = 0;
+                        else
+                            InputButton.TextTransparency = 0.5;
+                        end;
+                        config.Default = SelectedItems;
+                        VText.Text = parse(SelectedItems)
+                        ElementConfigs["Dropdown_"..config.Name.."_"..tostring(ID)] = {Value = SelectedItems};
+                        config.Callback(SelectedItems)
+                    end)
+                end;
+            else
+                local SelectedItem;
+                for i,v in pairs(config.Values) do
+                    local InputButton = Instance.new("TextButton")
+                    InputButton.Name = Airflow:RandomString()
+                    InputButton.Parent = ScrollingFrame;
+                    InputButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    InputButton.BackgroundTransparency = 1.000
+                    InputButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+                    InputButton.BorderSizePixel = 0
+                    InputButton.Size = UDim2.new(1, -3, 0, 15)
+                    InputButton.ZIndex = 105
+                    InputButton.Font = Enum.Font.GothamMedium
+                    InputButton.Text = string.rep(" ",2)..tostring(v)
+                    InputButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    InputButton.TextSize = 14.000
+                    InputButton.TextTransparency = 0.5
+                    InputButton.TextXAlignment = Enum.TextXAlignment.Left
+                    if v == config.Default then
+                        InputButton.TextTransparency = 0;
+                        SelectedItem = InputButton;
+                    end;
+                    local scale = TextService:GetTextSize(InputButton.Text,InputButton.TextSize,InputButton.Font,Vector2.new(math.huge,math.huge));
+                    if scale.X > LongestSize then
+                        LongestSize = scale.X;
+                    end;
+                    InputButton.MouseButton1Click:Connect(function()
+                        if SelectedItem then
+                            SelectedItem.TextTransparency = 0.5;
+                        end;
+                        InputButton.TextTransparency = 0;
+                        SelectedItem = InputButton;
+                        VText.Text = parse(v)
+                        config.Default = v;
+                        ElementConfigs["Dropdown_"..config.Name.."_"..tostring(ID)] = {Value = v};
+                        config.Callback(v)
+                    end)
+                end;
+            end;
+        end;
+        local UpdateValueText = function()
+            local scale = TextService:GetTextSize(VText.Text,VText.TextSize,VText.Font,Vector2.new(math.huge,math.huge));
+            Airflow:CreateAnimation(VText,0.65,nil,{Position = UDim2.new(0, 23, 0.5, 0), Size = UDim2.new(1, -45, 0, 20)})
+        end;
+        ElementConfigs["Dropdown_"..config.Name.."_"..tostring(ID)] = {Value = config.Default};
+        refresh();
+        local ToggleValue = false;
+        local Change = function(Value)
+            ToggleValue = Value;
+            local scale = TextService:GetTextSize(VText.Text,VText.TextSize,VText.Font,Vector2.new(math.huge,math.huge));
+            local NameScale = TextService:GetTextSize(PText.Text,PText.TextSize,PText.Font,Vector2.new(math.huge,math.huge));
+            local MaxSize = (200 - NameScale.X) + DropdownFrame.AbsoluteSize.X / 10;
+            if Value then
+                local TargetScale = (scale.X > LongestSize and scale.X) or LongestSize;
+                Airflow:CreateAnimation(block,0.35,nil,{BackgroundTransparency = 0.5, Size = UDim2.new(0, math.clamp((TargetScale + 15) + 37,75,MaxSize), 0, 30)})
+                Airflow:CreateAnimation(DropdownInner,0.5,nil,{Size = UDim2.new(0, math.clamp((TargetScale + 15) + 37,75,MaxSize), 0, math.min(UIListLayout.AbsoluteContentSize.Y + 11,150))})
+                Airflow:CreateAnimation(ScrollingFrame,0.5,nil,{Position = UDim2.new(0.5, 0, 0.5, 0)})
+                Airflow:CreateAnimation(ImageLabel,0.4,nil,{Rotation = -180})
+                Airflow:CreateAnimation(VText,0.65,nil,{Position = UDim2.new(0, 7, 0.5, 0), Size = UDim2.new(1, -30, 0, 20)})
+                DropdownInner.Rotation = 0;
+            else
+                DropdownInner.Rotation = 0;
+                Airflow:CreateAnimation(ScrollingFrame,0.5,nil,{Position = UDim2.new(0.65, 0, 0.5, 0)})
+                Airflow:CreateAnimation(ImageLabel,0.4,nil,{Rotation = 0})
+                Airflow:CreateAnimation(block,0.75,nil,{BackgroundTransparency = 1, Size = UDim2.new(0, math.clamp((scale.X + 15) + 37,75,MaxSize), 0, 30)})
+                Airflow:CreateAnimation(DropdownInner,0.4,nil,{Size = UDim2.new(0, math.clamp((scale.X + 15) + 37,75,MaxSize), 0, 0)})
+                UpdateValueText();
+            end;
+        end;
+        UserInputService.InputBegan:Connect(function(sts)
+            if sts.UserInputType == Enum.UserInputType.MouseButton1 or sts.UserInputType == Enum.UserInputType.Touch then
+                if not Airflow:IsMouseOverFrame(DropdownFrame) and not Airflow:IsMouseOverFrame(DropdownInner) then
+                    Change(false)
+                end;
             end
         end)
-        
+        Airflow:NewInput(DropdownFrame,function()
+            refresh();
+            ToggleValue = not ToggleValue;
+            Change(ToggleValue)
+        end);
+        Airflow:Hover(DropdownFrame);
+        Change(false);
+        UpdateValueText();
+        ElementId += 1;
         local tableback = {
-            Edit = function(self, Value) PText.Text = Value end,
-            SetValue = function(self, Value) Selected = Value; VText.Text = tostring(Value); config.Callback(Value) end,
-            GetValue = function(self) return Selected end,
+            Edit = function(self, Value) PText.Text = Value; end,
+            SetValues = function(self, Value) config.Values = Value; end,
+            SetDefault = function(self, Value)
+                config.Default = Value;
+                VText.Text = parse(Value);
+                ElementConfigs["Dropdown_"..config.Name.."_"..tostring(ID)] = {Value = Value};
+                Change(ToggleValue);
+                config.Callback(Value)
+            end,
             Visible = function(self, Value) DropdownFrame.Visible = Value end,
             Destroy = function(self) DropdownFrame:Destroy(); end,
+            Signal = OnChange.Event:Connect(function(value)
+                if value then
+                    task.wait(delayTick);
+                    Airflow:CreateAnimation(DropdownFrame,0.7,nil,{BackgroundTransparency = 0.800, Size = UDim2.new(1, -8, 0, 35)})
+                    Airflow:CreateAnimation(PText,0.6,nil,{TextTransparency = 0.300})
+                    Airflow:CreateAnimation(VText,0.7,nil,{TextTransparency = 0})
+                    Airflow:CreateAnimation(ImageLabel,0.7,nil,{ImageTransparency = 0})
+                else
+                    Airflow:CreateAnimation(DropdownFrame,0.5,nil,{BackgroundTransparency = 1, Size = UDim2.new(1, -8, 0, 35)})
+                    Airflow:CreateAnimation(PText,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(VText,0.5,nil,{TextTransparency = 1})
+                    Airflow:CreateAnimation(ImageLabel,0.5,nil,{ImageTransparency = 1})
+                end
+            end)
         };
-        return tableback
+        ElementIDs[ID] = {Title = config.Name, ID = ID, Type = "Dropdown", API = tableback, IDCode = "Dropdown_"..config.Name.."_"..tostring(ID), Frame = DropdownFrame, PairKey = config.PairKey};
+        if windowConfig.AllElements then table.insert(windowConfig.AllElements, ElementIDs[ID]) end;
+        return tableback;
+    end;
+
+    function elements:GetElementFromKey(key)
+        local _V = string.split(key,'_');
+        local ID = _V[#_V];
+        return ElementIDs[ID] or ElementIDs[tostring(ID)] or (function()
+            for i,v in pairs(ElementIDs) do
+                if v.IDCode == key then
+                    return v;
+                end;
+            end;
+        end)();
+    end;
+
+    function elements:GetConfigs()
+        return ElementConfigs;
+    end;
+
+    function elements:GetElementFromId(id)
+        return ElementIDs[id];
+    end;
+
+    function elements:GetInfo()
+        return ElementIDs;
     end;
 
     return elements;
 end;
 
--- Main Init Function
 function Airflow:Init(config)
-    config = config or {}
-    config.Name = config.Name or "airflow"
-    config.Logo = config.Logo or Airflow.Config.Logo
-    config.Scale = config.Scale or Airflow.Config.Scale
-    config.Hightlight = config.Hightlight or Airflow.Config.Hightlight
-    config.Keybind = config.Keybind or Airflow.Config.Keybind
-    config.Resizable = config.Resizable or false
-    config.Version = config.Version or "1.0"
-    
+    config = config or {};
+    config.Name = config.Name or "airflow";
+    config.Logo = config.Logo or Airflow.Config.Logo;
+    config.Scale = config.Scale or Airflow.Config.Scale;
+    config.Hightlight = config.Highlight or config.Hightlight or Airflow.Config.Hightlight;
+    config.Keybind = config.Keybind or Airflow.Config.Keybind;
+    config.Resizable = config.Resizable or Airflow.Config.Resizable;
+    config.UnlockMouse = config.UnlockMouse or Airflow.Config.UnlockMouse;
+    config.IconSize = config.IconSize or Airflow.Config.IconSize;
+    config.Version = config.Version or "1.0";
+
     local Response = {
-        TabElements = {},
-        OpenedTab = nil,
+        TabElements = {};
+        OpenedTab = nil;
         Toggle = true,
         Hightlight = config.Hightlight,
-        TabConfig = {},
-        TabScrolls = {},
-        SearchMode = false,
-        SearchQuery = "",
-        AllElements = {},
-        CurrentTabName = "",
-        MiniButton = nil,
-        MiniButtonOpen = true,
-    }
-    
+        FirstToggle = true;
+        UnlockMouse = config.UnlockMouse;
+        TabConfig = {};
+        TabScrolls = {};
+        SearchMode = false;
+        SearchQuery = "";
+        AllElements = {};
+        SearchResultsFrame = nil;
+        SearchContent = nil;
+    };
+
     local AirflowWindow = Instance.new("ScreenGui")
     local WindowFrame = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
     local MainPanel = Instance.new("CanvasGroup")
     local TabElements = Instance.new("Frame")
     local TabInputs = Instance.new("Frame")
     local ListInputs = Instance.new("ScrollingFrame")
     local UIListLayout = Instance.new("UIListLayout")
-    local InternalHeader = Instance.new("Frame")
-    local InternalTabLabel = Instance.new("TextLabel")
+    local LineH = Instance.new("Frame")
+    local LineV = Instance.new("Frame")
+    local UIStroke = Instance.new("UIStroke")
+    local UIGradient = Instance.new("UIGradient")
+    local Headers = Instance.new("Frame")
+    local UIListLayout_2 = Instance.new("UIListLayout")
+    local Icon = Instance.new("ImageLabel")
+    local UICorner_2 = Instance.new("UICorner")
+    local windowName = Instance.new("TextLabel")
+    local static = Instance.new("ImageLabel")
     local SearchBar = Instance.new("Frame")
     local SearchIcon = Instance.new("ImageLabel")
     local SearchBox = Instance.new("TextBox")
     local ClearSearch = Instance.new("ImageButton")
-    local HeaderButtons = Instance.new("Frame")
-    local MinimizeBtn = Instance.new("ImageButton")
-    local DestroyBtn = Instance.new("ImageButton")
-    local LogoContainer = Instance.new("Frame")
-    local Glow = Instance.new("TextLabel")
-    local GlowEffect = Instance.new("UIStroke")
-    local Body = Instance.new("ScrollingFrame")
-    local SearchContent = Instance.new("ScrollingFrame")
-    local SearchLayout = Instance.new("UIListLayout")
-    local NoResultsLabel = Instance.new("TextLabel")
-    local content = Instance.new("Frame")
-    local ContentLayout = Instance.new("UIListLayout")
-    
+
+    WindowFrame:GetPropertyChangedSignal('BackgroundTransparency'):Connect(function()
+        if WindowFrame.BackgroundTransparency < 0.9 then
+            WindowFrame.Visible = true
+        else
+            WindowFrame.Visible = false
+        end;
+    end)
+
+    local ToggleWindow = function(value)
+        if value then
+            if config.Resizable then
+                Airflow:CreateAnimation(WindowFrame,0.5,nil,{Position = UDim2.new(0,WindowFrame.Position.X.Offset - 25,0,WindowFrame.Position.Y.Offset - 25)})
+            end;
+            Airflow:CreateAnimation(WindowFrame,0.5,nil,{Size = config.Scale, BackgroundTransparency = 0.9})
+            Airflow:CreateAnimation(MainPanel,0.45,nil,{BackgroundTransparency = 1})
+            Airflow:CreateAnimation(LineH,0.45,nil,{BackgroundTransparency = 0.5})
+            Airflow:CreateAnimation(LineV,0.45,nil,{BackgroundTransparency = 0.5})
+            Airflow:CreateAnimation(UIStroke,0.45,nil,{Transparency = 0.570})
+            Airflow:CreateAnimation(static,0.45,nil,{ImageTransparency = 0.95})
+            Airflow:CreateAnimation(TabInputs,0.45,nil,{Position = UDim2.new(0,0,0,0)})
+            if Response.OpenedTab then
+                Response.OpenedTab(true)
+            end;
+        else
+            for i,ChaValue in pairs(Response.TabElements) do
+                ChaValue(false);
+            end;
+            if config.Resizable then
+                Airflow:CreateAnimation(WindowFrame,0.5,nil,{Position = UDim2.new(0,WindowFrame.Position.X.Offset + 25,0,WindowFrame.Position.Y.Offset + 25)})
+            end;
+            Airflow:CreateAnimation(WindowFrame,0.5,nil,{Size = UDim2.new(config.Scale.X.Scale,config.Scale.X.Offset - 50,config.Scale.Y.Scale,config.Scale.Y.Offset - 50), BackgroundTransparency = 1})
+            Airflow:CreateAnimation(MainPanel,0.45,nil,{BackgroundTransparency = 1})
+            Airflow:CreateAnimation(LineH,0.45,nil,{BackgroundTransparency = 1})
+            Airflow:CreateAnimation(LineV,0.45,nil,{BackgroundTransparency = 1})
+            Airflow:CreateAnimation(UIStroke,0.45,nil,{Transparency = 1})
+            Airflow:CreateAnimation(static,0.45,nil,{ImageTransparency = 1})
+            Airflow:CreateAnimation(TabInputs,0.45,nil,{Position = UDim2.fromOffset(-50, 0)})
+            if Response.FirstToggle then
+                Response.FirstToggle = false;
+                Airflow:Notify({Title = "Keybind", Content = "press "..tostring(typeof(config.Keybind) == "string" and config.Keybind or config.Keybind.Name).." to open/close ui"})
+            end
+        end;
+    end;
+
+    task.delay(0.5,function()
+        if Airflow.Features.ColorPickerRoot then
+            Airflow.Features.ColorPickerRoot.Parent = AirflowWindow;
+        end;
+    end)
+
     AirflowWindow.Name = ".Airflow="..Airflow:RandomString()
-    AirflowWindow.Parent = CoreGui
+    AirflowWindow.Parent = CoreGui;
     AirflowWindow.ResetOnSpawn = false
-    AirflowWindow.IgnoreGuiInset = true
-    AirflowWindow.ZIndexBehavior = Enum.ZIndexBehavior.Global
-    protect_gui(AirflowWindow)
-    
-    -- WindowFrame (transparan total, tanpa putih)
+    AirflowWindow.IgnoreGuiInset = true;
+    AirflowWindow.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+
+    protect_gui(AirflowWindow);
+    -- Airflow:Blur(WindowFrame);
+
+    WindowFrame.Active = true;
     WindowFrame.Name = Airflow:RandomString()
     WindowFrame.Parent = AirflowWindow
     WindowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     WindowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     WindowFrame.BackgroundTransparency = 1
+    WindowFrame.Visible = false
+    WindowFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
     WindowFrame.BorderSizePixel = 0
     WindowFrame.ClipsDescendants = true
     WindowFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    WindowFrame.Size = UDim2.new(config.Scale.X.Scale, config.Scale.X.Offset - 50, config.Scale.Y.Scale, config.Scale.Y.Offset - 50)
-    Instance.new("UICorner").CornerRadius = UDim.new(0, 2)
-    Instance.new("UICorner").Parent = WindowFrame
-    
-    -- MainPanel (gelap, transparan)
+    WindowFrame.Size = UDim2.new(config.Scale.X.Scale,config.Scale.X.Offset - 50,config.Scale.Y.Scale,config.Scale.Y.Offset - 50);
+    WindowFrame.Active = true
+
+    UICorner.CornerRadius = UDim.new(0, 2)
+    UICorner.Parent = WindowFrame
+
     MainPanel.Name = Airflow:RandomString()
     MainPanel.Parent = WindowFrame
     MainPanel.AnchorPoint = Vector2.new(0, 1)
     MainPanel.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    MainPanel.BackgroundTransparency = 0.3
+    MainPanel.BackgroundTransparency = 1
+    MainPanel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    MainPanel.BorderSizePixel = 0
     MainPanel.ClipsDescendants = true
     MainPanel.Position = UDim2.new(0, 0, 1, 0)
     MainPanel.Size = UDim2.new(1, 0, 1, -40)
-    MainPanel.GroupTransparency = 0
-    
-    -- TabElements Container
+    MainPanel.ZIndex = 2
+
     TabElements.Name = Airflow:RandomString()
     TabElements.Parent = MainPanel
-    TabElements.BackgroundTransparency = 1
+    TabElements.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabElements.BackgroundTransparency = 1.000
+    TabElements.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    TabElements.BorderSizePixel = 0
     TabElements.Position = UDim2.new(0, 50, 0, 0)
     TabElements.Size = UDim2.new(1, -50, 1, 0)
+    TabElements.ZIndex = 5
     TabElements.ClipsDescendants = true
-    
-    -- Internal Header
+
+    local InternalHeader = Instance.new("Frame")
     InternalHeader.Name = "InternalHeader"
     InternalHeader.Parent = TabElements
+    InternalHeader.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     InternalHeader.BackgroundTransparency = 1
     InternalHeader.Size = UDim2.new(1, 0, 0, 45)
     InternalHeader.Position = UDim2.new(0, 10, 0, 5)
+    InternalHeader.ZIndex = 10
     InternalHeader.ClipsDescendants = true
-    
-    -- Search Bar (di KIRI)
+
+    local InternalTabLabel = Instance.new("TextLabel")
+    InternalTabLabel.Name = "TabLabel"
+    InternalTabLabel.Parent = InternalHeader
+    InternalTabLabel.BackgroundTransparency = 1
+    InternalTabLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+    InternalTabLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+    InternalTabLabel.Size = UDim2.new(1, 0, 1, 0)
+    InternalTabLabel.Font = Enum.Font.GothamBold
+    InternalTabLabel.TextSize = 14
+    InternalTabLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InternalTabLabel.TextXAlignment = Enum.TextXAlignment.Center
+    InternalTabLabel.Text = "None"
+    InternalTabLabel.ZIndex = 11
+
     SearchBar.Name = "SearchBar"
     SearchBar.Parent = InternalHeader
     SearchBar.AnchorPoint = Vector2.new(0, 0.5)
     SearchBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SearchBar.BackgroundTransparency = 0.5
+    SearchBar.BorderSizePixel = 0
     SearchBar.Position = UDim2.new(0, 10, 0.5, 0)
-    SearchBar.Size = UDim2.new(0, 160, 0, 32)
-    Instance.new("UICorner").CornerRadius = UDim.new(0, 8)
-    Instance.new("UICorner").Parent = SearchBar
-    
+    SearchBar.Size = UDim2.new(0, 180, 0, 32)
+    SearchBar.ZIndex = 12
+    local SearchCorner = Instance.new("UICorner")
+    SearchCorner.CornerRadius = UDim.new(0, 8)
+    SearchCorner.Parent = SearchBar
+
+    SearchIcon.Name = "SearchIcon"
     SearchIcon.Parent = SearchBar
     SearchIcon.Size = UDim2.new(0, 16, 0, 16)
     SearchIcon.Position = UDim2.new(0, 12, 0.5, -8)
     SearchIcon.BackgroundTransparency = 1
     SearchIcon.Image = Airflow:GetIcon("search")
     SearchIcon.ImageColor3 = Color3.fromRGB(160, 165, 180)
-    
+    SearchIcon.ZIndex = 13
+
+    SearchBox.Name = "SearchBox"
     SearchBox.Parent = SearchBar
     SearchBox.Size = UDim2.new(1, -40, 1, 0)
     SearchBox.Position = UDim2.new(0, 36, 0, 0)
@@ -854,7 +2086,9 @@ function Airflow:Init(config)
     SearchBox.Font = Enum.Font.GothamMedium
     SearchBox.TextSize = 13
     SearchBox.TextXAlignment = Enum.TextXAlignment.Left
-    
+    SearchBox.ZIndex = 13
+
+    ClearSearch.Name = "ClearSearch"
     ClearSearch.Parent = SearchBar
     ClearSearch.Size = UDim2.new(0, 18, 0, 18)
     ClearSearch.Position = UDim2.new(1, -28, 0.5, -9)
@@ -862,60 +2096,62 @@ function Airflow:Init(config)
     ClearSearch.Image = Airflow:GetIcon("x")
     ClearSearch.ImageColor3 = Color3.fromRGB(160, 165, 180)
     ClearSearch.Visible = false
-    
-    -- Tab Label (Judul di tengah)
-    InternalTabLabel.Parent = InternalHeader
-    InternalTabLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-    InternalTabLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
-    InternalTabLabel.BackgroundTransparency = 1
-    InternalTabLabel.Size = UDim2.new(0, 200, 0, 25)
-    InternalTabLabel.Font = Enum.Font.GothamBold
-    InternalTabLabel.TextSize = 14
-    InternalTabLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    InternalTabLabel.Text = "None"
-    
-    -- Header Buttons (Minimize & Destroy di KANAN)
+    ClearSearch.ZIndex = 13
+
+    local HeaderButtons = Instance.new("Frame")
+    HeaderButtons.Name = "HeaderButtons"
     HeaderButtons.Parent = InternalHeader
     HeaderButtons.AnchorPoint = Vector2.new(1, 0.5)
     HeaderButtons.BackgroundTransparency = 1
     HeaderButtons.Position = UDim2.new(1, -10, 0.5, 0)
     HeaderButtons.Size = UDim2.new(0, 60, 1, 0)
-    
+    HeaderButtons.ZIndex = 11
+
     local HPadding = Instance.new("UIListLayout")
     HPadding.Parent = HeaderButtons
     HPadding.FillDirection = Enum.FillDirection.Horizontal
     HPadding.HorizontalAlignment = Enum.HorizontalAlignment.Right
     HPadding.VerticalAlignment = Enum.VerticalAlignment.Center
     HPadding.Padding = UDim.new(0, 8)
-    
-    -- Minimize Button
-    MinimizeBtn.Parent = HeaderButtons
-    MinimizeBtn.BackgroundTransparency = 1
-    MinimizeBtn.Size = UDim2.fromOffset(18, 18)
-    MinimizeBtn.Image = Airflow:GetIcon("minus")
-    MinimizeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
-    MinimizeBtn.ZIndex = 12
-    
-    -- Destroy Button
-    DestroyBtn.Parent = HeaderButtons
-    DestroyBtn.BackgroundTransparency = 1
-    DestroyBtn.Size = UDim2.fromOffset(18, 18)
-    DestroyBtn.Image = Airflow:GetIcon("x")
-    DestroyBtn.ImageColor3 = Color3.fromRGB(200, 200, 200)
-    DestroyBtn.ZIndex = 12
-    
-    -- Sidebar Tabs
+
+    local function createHeaderButton(icon, callback)
+        local btn = Instance.new("ImageButton")
+        btn.BackgroundTransparency = 1
+        btn.Size = UDim2.fromOffset(18, 18)
+        btn.Image = Airflow:GetIcon(icon)
+        btn.ImageColor3 = Color3.fromRGB(200, 200, 200)
+        btn.ZIndex = 12
+        btn.Parent = HeaderButtons
+        btn.MouseEnter:Connect(function() btn.ImageColor3 = config.Hightlight end)
+        btn.MouseLeave:Connect(function() btn.ImageColor3 = Color3.fromRGB(200, 200, 200) end)
+        btn.MouseButton1Click:Connect(callback)
+        return btn
+    end
+
+    createHeaderButton("minus", function() ToggleWindow(false) end)
+    createHeaderButton("x", function() AirflowWindow:Destroy() end)
+
     TabInputs.Name = Airflow:RandomString()
     TabInputs.Parent = MainPanel
-    TabInputs.BackgroundTransparency = 1
+    TabInputs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabInputs.BackgroundTransparency = 1.000
+    TabInputs.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    TabInputs.BorderSizePixel = 0
     TabInputs.ClipsDescendants = true
-    TabInputs.Position = UDim2.fromOffset(-50, 0)
+    TabInputs.Position = UDim2.fromOffset(-50,0)
     TabInputs.Size = UDim2.new(0, 50, 1, 0)
-    
+    TabInputs.ZIndex = 5
+
+    local LogoContainer = Instance.new("Frame")
+    LogoContainer.Name = "LogoContainer"
     LogoContainer.Parent = TabInputs
     LogoContainer.Size = UDim2.new(1, 0, 0, 60)
+    LogoContainer.Position = UDim2.new(0, 0, 0, 0)
     LogoContainer.BackgroundTransparency = 1
-    
+    LogoContainer.ZIndex = 6
+
+    local Glow = Instance.new("TextLabel")
+    Glow.Name = "Glow"
     Glow.Parent = LogoContainer
     Glow.AnchorPoint = Vector2.new(0.5, 0.5)
     Glow.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -925,16 +2161,14 @@ function Airflow:Init(config)
     Glow.Text = "Ω"
     Glow.TextSize = 35
     Glow.TextColor3 = Color3.fromRGB(240, 240, 240)
-    
+    Glow.ZIndex = 7
+
+    local GlowEffect = Instance.new("UIStroke")
     GlowEffect.Parent = Glow
     GlowEffect.Color = Color3.fromRGB(255, 255, 255)
     GlowEffect.Thickness = 2
     GlowEffect.Transparency = 0.6
-    
-    -- Mini Button toggle logic
-    Response.MiniButton = Glow
-    Response.MiniButtonOpen = true
-    
+
     local function ToggleMiniButton(open)
         Response.MiniButtonOpen = open
         if open then
@@ -944,18 +2178,26 @@ function Airflow:Init(config)
             Airflow:CreateAnimation(Glow, 0.3, nil, {TextTransparency = 0, TextColor3 = Color3.fromRGB(240, 240, 240)})
             Airflow:CreateAnimation(GlowEffect, 0.3, nil, {Transparency = 0.4})
         else
-            Airflow:CreateAnimation(Glow, 0.3, nil, {TextTransparency = 0.2, TextColor3 = Color3.fromRGB(100, 100, 100)})
+             Airflow:CreateAnimation(Glow, 0.3, nil, {TextTransparency = 0.2, TextColor3 = Color3.fromRGB(100, 100, 100)})
             Airflow:CreateAnimation(GlowEffect, 0.3, nil, {Transparency = 0.8})
             Airflow:CreateAnimation(TabInputs, 0.4, Enum.EasingStyle.Quint, {Position = UDim2.fromOffset(-50, 0)})
             Airflow:CreateAnimation(WindowFrame, 0.4, Enum.EasingStyle.Quint, {Size = UDim2.new(0, 60, 0, 60)})
         end
     end
-    
-    Glow.MouseButton1Click:Connect(function()
+
+    local GlowButton = Instance.new("TextButton")
+    GlowButton.Name = "GlowButton"
+    GlowButton.Parent = LogoContainer
+    GlowButton.BackgroundTransparency = 1
+    GlowButton.Size = UDim2.new(1, 0, 1, 0)
+    GlowButton.Text = ""
+    GlowButton.ZIndex = 15
+    GlowButton.MouseButton1Click:Connect(function()
         ToggleMiniButton(not Response.MiniButtonOpen)
     end)
-    
-    -- Glow animation loop
+
+    Response.MiniButtonOpen = true
+
     task.spawn(function()
         while task.wait(0.1) do
             if not AirflowWindow or not AirflowWindow.Parent then break end
@@ -966,36 +2208,128 @@ function Airflow:Init(config)
             end
         end
     end)
-    
-    -- Tab List ScrollingFrame
+
+    ListInputs.Name = Airflow:RandomString()
     ListInputs.Parent = TabInputs
     ListInputs.Active = true
     ListInputs.AnchorPoint = Vector2.new(0.5, 1)
-    ListInputs.BackgroundTransparency = 1
+    ListInputs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ListInputs.BackgroundTransparency = 1.000
+    ListInputs.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ListInputs.BorderSizePixel = 0
     ListInputs.ClipsDescendants = true
     ListInputs.Position = UDim2.new(0.5, 0, 1, -5)
     ListInputs.Size = UDim2.new(1, -5, 1, -70)
+    ListInputs.ZIndex = 6
     ListInputs.ScrollBarThickness = 0
-    
+
     UIListLayout.Parent = ListInputs
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     UIListLayout.Padding = UDim.new(0, 5)
-    
+
     UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-        ListInputs.CanvasSize = UDim2.fromOffset(0, UIListLayout.AbsoluteContentSize.Y + 5)
+        ListInputs.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y + 5)
     end)
-    
-    -- Body (Main Content Area) - SCROLL PER SECTION
+
+    LineH.Name = Airflow:RandomString()
+    LineH.Parent = MainPanel
+    LineH.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+    LineH.BackgroundTransparency = 1
+    LineH.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    LineH.BorderSizePixel = 0
+    LineH.Position = UDim2.new(0, 110, 0, 0)
+    LineH.Size = UDim2.new(0, 1, 1, 0)
+    LineH.ZIndex = 5
+
+    LineV.Name = Airflow:RandomString()
+    LineV.Parent = MainPanel
+    LineV.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+    LineV.BackgroundTransparency = 1
+    LineV.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    LineV.BorderSizePixel = 0
+    LineV.Size = UDim2.new(1, 0, 0, 1)
+    LineV.ZIndex = 5
+
+    UIStroke.Transparency = 1
+    UIStroke.Color = Color3.fromRGB(255, 255, 255)
+    UIStroke.Parent = WindowFrame
+
+    UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 0, 0)), ColorSequenceKeypoint.new(0.499, Color3.fromRGB(0, 0, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(177, 177, 177)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(177, 177, 177))}
+    UIGradient.Rotation = -90;
+    UIGradient.Parent = UIStroke;
+    UIGradient.Offset = Vector2.new(0,-((MainPanel.AbsoluteSize.Y / WindowFrame.AbsoluteSize.Y) / 2.15));
+
+    MainPanel:GetPropertyChangedSignal('Size'):Connect(function()
+        UIGradient.Offset = Vector2.new(0,-((MainPanel.AbsoluteSize.Y / WindowFrame.AbsoluteSize.Y) / 2.15));
+    end);
+
+    Headers.Visible = false
+    Headers.BackgroundTransparency = 1
+    Headers.Size = UDim2.fromOffset(0, 0)
+    Headers.Active = false
+    UIListLayout_2.FillDirection = Enum.FillDirection.Horizontal
+    UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
+    UIListLayout_2.Padding = UDim.new(0, 3)
+
+    Icon.Name = Airflow:RandomString()
+    Icon.Parent = Headers
+    Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Icon.BackgroundTransparency = 1.000
+    Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Icon.BorderSizePixel = 0
+    Icon.Size = UDim2.new(0, config.IconSize, 0, config.IconSize)
+    Icon.ZIndex = 5
+    Icon.Image = config.Logo;
+    Icon.ImageTransparency = 1
+    Icon.Visible = false;
+
+    UICorner_2.CornerRadius = UDim.new(1, 0)
+    UICorner_2.Parent = Icon
+
+    windowName.Name = Airflow:RandomString()
+    windowName.Parent = Headers
+    windowName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    windowName.BackgroundTransparency = 1.000
+    windowName.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    windowName.BorderSizePixel = 0
+    windowName.Size = UDim2.new(0, 50, 0, 20)
+    windowName.Font = Enum.Font.GothamMedium
+    windowName.Text = config.Name;
+    windowName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    windowName.TextSize = 15.000
+    windowName.TextTransparency = 1
+    windowName.Visible = false;
+
+    static.Name = Airflow:RandomString()
+    static.Parent = WindowFrame
+    static.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    static.BackgroundTransparency = 1.000
+    static.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    static.BorderSizePixel = 0
+    static.Size = UDim2.new(1, 0, 1, 0)
+    static.ZIndex = -10
+    static.Image = "rbxassetid://9579075682"
+    static.ImageTransparency = 1
+    static.ScaleType = Enum.ScaleType.Crop
+
+    local Body = Instance.new("ScrollingFrame")
+    Body.Name = "Body"
     Body.Parent = TabElements
     Body.Size = UDim2.new(1, -16, 1, -60)
     Body.Position = UDim2.new(0, 8, 0, 55)
     Body.BackgroundTransparency = 1
     Body.BorderSizePixel = 0
+    Body.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Body.CanvasSize = UDim2.new(0, 0, 0, 0)
     Body.ScrollBarThickness = 4
     Body.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 55)
     Body.ClipsDescendants = true
-    
-    -- Search Content
+    Body.CanvasPosition = Vector2.new(0, 0)
+
+    local SearchContent = Instance.new("ScrollingFrame")
+    SearchContent.Name = "SearchContent"
     SearchContent.Parent = TabElements
     SearchContent.Size = UDim2.new(1, -16, 1, -60)
     SearchContent.Position = UDim2.new(0, 8, 0, 55)
@@ -1007,16 +2341,16 @@ function Airflow:Init(config)
     SearchContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
     SearchContent.ClipsDescendants = true
     SearchContent.Visible = false
-    
+    SearchContent.ZIndex = 20
+
+    local SearchLayout = Instance.new("UIListLayout")
     SearchLayout.Parent = SearchContent
     SearchLayout.SortOrder = Enum.SortOrder.LayoutOrder
     SearchLayout.Padding = UDim.new(0, 5)
     SearchLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    
-    SearchLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-        SearchContent.CanvasSize = UDim2.fromOffset(0, SearchLayout.AbsoluteContentSize.Y + 10)
-    end)
-    
+
+    local NoResultsLabel = Instance.new("TextLabel")
+    NoResultsLabel.Name = "NoResultsLabel"
     NoResultsLabel.Parent = TabElements
     NoResultsLabel.Size = UDim2.new(1, 0, 1, -60)
     NoResultsLabel.Position = UDim2.new(0, 8, 0, 55)
@@ -1026,34 +2360,30 @@ function Airflow:Init(config)
     NoResultsLabel.Font = Enum.Font.GothamMedium
     NoResultsLabel.TextSize = 16
     NoResultsLabel.Visible = false
-    
-    -- Content Frame with Layout
+    NoResultsLabel.ZIndex = 21
+
+    local content = Instance.new("Frame")
+    content.Name = "Content"
     content.Parent = Body
     content.Size = UDim2.new(1, 0, 0, 0)
     content.BackgroundTransparency = 1
     content.AutomaticSize = Enum.AutomaticSize.Y
-    
+
+    local ContentLayout = Instance.new("UIListLayout")
     ContentLayout.Parent = content
     ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ContentLayout.Padding = UDim.new(0, 8)
     ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    
-    ContentLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-        content.Size = UDim2.new(1, 0, 0, ContentLayout.AbsoluteContentSize.Y)
-        Body.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 10)
-    end)
-    
-    -- Search Function
-    local function UpdateSearch(query)
+
+    local function updateSearch(query)
         local lowerQuery = string.lower(query)
-        Response.SearchQuery = lowerQuery
         
         if lowerQuery == "" then
             Response.SearchMode = false
             Body.Visible = true
             SearchContent.Visible = false
             NoResultsLabel.Visible = false
-            InternalTabLabel.Text = Response.CurrentTabName
+            InternalTabLabel.Text = Response.CurrentTabName or "None"
             return
         end
         
@@ -1081,170 +2411,168 @@ function Airflow:Init(config)
         NoResultsLabel.Visible = (foundCount == 0)
         InternalTabLabel.Text = "Search: " .. lowerQuery
     end
-    
+
+    function Response:FilterByPair(pairKey)
+        for _, elem in pairs(Response.AllElements) do
+            local visible = (elem.PairKey == pairKey)
+            if elem.Frame then
+                elem.Frame.Visible = visible
+            end
+        end
+    end
+
+    function Response:RegisterElementsRecursive(elementsTable, sectionName)
+        for id, info in pairs(elementsTable:GetInfo() or {}) do
+            if info.Title or info.Name then
+                table.insert(Response.AllElements, {
+                    Title = info.Title or info.Name,
+                    Frame = info.Frame or info.API._frame,
+                    Section = sectionName,
+                    PairKey = info.PairKey,
+                    Type = info.Type
+                })
+            end
+        end
+    end
+
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         ClearSearch.Visible = SearchBox.Text ~= ""
-        UpdateSearch(SearchBox.Text)
+        updateSearch(SearchBox.Text)
     end)
-    
+
     ClearSearch.MouseButton1Click:Connect(function()
         SearchBox.Text = ""
         ClearSearch.Visible = false
     end)
-    
-    -- Hover effects for buttons
-    MinimizeBtn.MouseEnter:Connect(function() MinimizeBtn.ImageColor3 = config.Hightlight end)
-    MinimizeBtn.MouseLeave:Connect(function() MinimizeBtn.ImageColor3 = Color3.fromRGB(200, 200, 200) end)
-    DestroyBtn.MouseEnter:Connect(function() DestroyBtn.ImageColor3 = config.Hightlight end)
-    DestroyBtn.MouseLeave:Connect(function() DestroyBtn.ImageColor3 = Color3.fromRGB(200, 200, 200) end)
-    
-    -- Button actions
-    MinimizeBtn.MouseButton1Click:Connect(function()
-        ToggleMiniButton(not Response.MiniButtonOpen)
+
+    ContentLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+        content.Size = UDim2.new(1, 0, 0, ContentLayout.AbsoluteContentSize.Y)
+        Body.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 10)
     end)
-    
-    DestroyBtn.MouseButton1Click:Connect(function()
-        AirflowWindow:Destroy()
+
+    SearchLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+        SearchContent.CanvasSize = UDim2.new(0, 0, 0, SearchLayout.AbsoluteContentSize.Y + 10)
     end)
-    
-    -- Toggle Window Function
-    local function ToggleWindow(value)
-        if value then
-            Airflow:CreateAnimation(WindowFrame, 0.4, Enum.EasingStyle.Quint, {Size = config.Scale})
-            Airflow:CreateAnimation(MainPanel, 0.3, nil, {GroupTransparency = 0, BackgroundTransparency = 0.3})
-            Airflow:CreateAnimation(TabInputs, 0.4, nil, {Position = Response.MiniButtonOpen and UDim2.fromOffset(0, 0) or UDim2.fromOffset(-50, 0)})
-            if Response.OpenedTab then Response.OpenedTab(true) end
-        else
-            for _, v in pairs(Response.TabElements) do v(false) end
-            Airflow:CreateAnimation(WindowFrame, 0.4, Enum.EasingStyle.Quint, {Size = UDim2.new(config.Scale.X.Scale, config.Scale.X.Offset - 50, config.Scale.Y.Scale, config.Scale.Y.Offset - 50)})
-            Airflow:CreateAnimation(MainPanel, 0.3, nil, {GroupTransparency = 1, BackgroundTransparency = 1})
-            Airflow:CreateAnimation(TabInputs, 0.4, nil, {Position = UDim2.fromOffset(-110, 0)})
-        end
-    end
-    
-    -- Keybind
-    UserInputService.InputBegan:Connect(function(input, IsType)
-        if not IsType and (input.KeyCode.Name == config.Keybind or input.KeyCode == config.Keybind) then
-            Response.Toggle = not Response.Toggle
-            ToggleWindow(Response.Toggle)
-        end
-    end)
-    
-    -- Drag Window
-    local dragToggle = false
-    local dragStart = nil
-    local startPos = nil
-    
-    WindowFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local guiObjects = AirflowWindow:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y)
-            local topObject = guiObjects[1]
-            if topObject == WindowFrame or topObject == MainPanel or topObject == TabInputs or topObject == LogoContainer then
-                dragToggle = true
-                dragStart = input.Position
-                startPos = WindowFrame.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        dragToggle = false
-                    end
-                end)
-            end
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement) then
-            local delta = input.Position - dragStart
-            WindowFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-    
-    -- Draw Tab Function
+
+    function Response:Update()
+        local WindowNameSize = TextService:GetTextSize(windowName.Text,windowName.TextSize,windowName.Font,Vector2.new(math.huge,math.huge));
+        windowName.Size = UDim2.new(0, WindowNameSize.X + 4, 0, 20)
+    end;
+
+    function Response:GetTabFromKey(key)
+        for i,v in pairs(Response.TabConfig) do
+            if (v.Name.."_"..tostring(v.ID)) == key then
+                return v;
+            end;
+        end;
+    end;
+
+    function Response:GetConfigs()
+        local process = {};
+        for i,v in pairs(Response.TabConfig) do
+            process[v.Name.."_"..tostring(v.ID)] = v:GetConfigs();
+        end;
+        process.VERSION = config.Version;
+        return process;
+    end;
+
     function Response:DrawTab(cfg)
-        cfg = cfg or {Name = "Tab", Icon = "book"}
-        
-        -- Tab Button di Sidebar
-        local TabBtn = Instance.new("TextButton")
-        TabBtn.Name = Airflow:RandomString()
-        TabBtn.Parent = ListInputs
-        TabBtn.Size = UDim2.new(1, 0, 0, 40)
-        TabBtn.BackgroundTransparency = 1
-        TabBtn.Text = ""
-        Instance.new("UICorner").CornerRadius = UDim.new(0, 4)
-        Instance.new("UICorner").Parent = TabBtn
-        
+        cfg = cfg or {};
+        cfg.Name = cfg.Name or "Tab";
+        cfg.Icon = cfg.Icon or "book";
+
+        local InputElement = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
         local IconImg = Instance.new("ImageLabel")
-        IconImg.Parent = TabBtn
+        local UICorner_2 = Instance.new("UICorner")
+        local PText = Instance.new("TextLabel")
+        local hightlight = Instance.new("Frame")
+
+        InputElement.Name = Airflow:RandomString()
+        InputElement.Parent = ListInputs;
+        InputElement.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
+        InputElement.BackgroundTransparency = 1
+        InputElement.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        InputElement.BorderSizePixel = 0
+        InputElement.ClipsDescendants = true
+        InputElement.Size = UDim2.new(1, 0, 0, 40)
+        InputElement.ZIndex = 6
+
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = InputElement
+
+        IconImg.Name = Airflow:RandomString()
+        IconImg.Parent = InputElement
         IconImg.AnchorPoint = Vector2.new(0.5, 0.5)
+        IconImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        IconImg.BackgroundTransparency = 1.000
+        IconImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        IconImg.BorderSizePixel = 0
         IconImg.Position = UDim2.new(0.5, 0, 0.5, 0)
         IconImg.Size = UDim2.new(0, 22, 0, 22)
-        IconImg.BackgroundTransparency = 1
-        IconImg.Image = Airflow:GetIcon(cfg.Icon)
-        IconImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
-        
-        local Highlight = Instance.new("Frame")
-        Highlight.Parent = TabBtn
-        Highlight.AnchorPoint = Vector2.new(1, 0.5)
-        Highlight.BackgroundColor3 = Response.Hightlight
-        Highlight.Position = UDim2.new(1, 0, 0.5, 0)
-        Highlight.Size = UDim2.new(0, 2, 1, 0)
-        Highlight.BackgroundTransparency = 1
-        
-        -- Tab Panel (berisi Left dan Right sections dengan scroll independen)
+        IconImg.ZIndex = 7
+        IconImg.Image = Airflow:GetIcon(cfg.Icon);
+
+        UICorner_2.CornerRadius = UDim.new(1, 0)
+        UICorner_2.Parent = IconImg
+
+        PText.Name = Airflow:RandomString()
+        PText.Parent = InputElement
+        PText.Visible = false
+
+        hightlight.Name = Airflow:RandomString()
+        hightlight.Parent = InputElement
+        hightlight.AnchorPoint = Vector2.new(1, 0.5)
+        hightlight.BackgroundColor3 = Response.Hightlight
+        hightlight.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        hightlight.BorderSizePixel = 0
+        hightlight.Position = UDim2.new(1, 0, 0.5, 0)
+        hightlight.Size = UDim2.new(0, 2, 1, 0)
+        hightlight.ZIndex = 8
+
         local TabPanel = Instance.new("Frame")
-        TabPanel.Parent = content
-        TabPanel.BackgroundTransparency = 1
+        TabPanel.Name = Airflow:RandomString()
+        TabPanel.Parent = content;
+        TabPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TabPanel.BackgroundTransparency = 1.000
         TabPanel.Size = UDim2.new(1, 0, 0, 0)
+        TabPanel.ZIndex = 6
         TabPanel.AutomaticSize = Enum.AutomaticSize.Y
         TabPanel.Visible = false
-        
-        -- Left Column (scroll independen)
+
         local LeftColumn = Instance.new("ScrollingFrame")
+        LeftColumn.Name = "LeftColumn"
         LeftColumn.Parent = TabPanel
-        LeftColumn.AnchorPoint = Vector2.new(0, 0)
-        LeftColumn.Position = UDim2.new(0, 0, 0, 0)
-        LeftColumn.Size = UDim2.new(0.5, -10, 0, 0)
-        LeftColumn.BackgroundTransparency = 1
+        LeftColumn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        LeftColumn.BackgroundTransparency = 1.000
         LeftColumn.BorderSizePixel = 0
+        LeftColumn.Size = UDim2.new(0.5, -10, 0, 0)
         LeftColumn.ScrollBarThickness = 4
-        LeftColumn.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 55)
-        LeftColumn.ClipsDescendants = true
         LeftColumn.AutomaticSize = Enum.AutomaticSize.Y
-        
+
         local LeftLayout = Instance.new("UIListLayout")
         LeftLayout.Parent = LeftColumn
         LeftLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         LeftLayout.SortOrder = Enum.SortOrder.LayoutOrder
         LeftLayout.Padding = UDim.new(0, 5)
-        
-        LeftLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-            LeftColumn.CanvasSize = UDim2.fromOffset(0, LeftLayout.AbsoluteContentSize.Y + 10)
-        end)
-        
-        -- Right Column (scroll independen)
+
         local RightColumn = Instance.new("ScrollingFrame")
+        RightColumn.Name = "RightColumn"
         RightColumn.Parent = TabPanel
-        RightColumn.AnchorPoint = Vector2.new(1, 0)
-        RightColumn.Position = UDim2.new(1, 0, 0, 0)
-        RightColumn.Size = UDim2.new(0.5, -10, 0, 0)
-        RightColumn.BackgroundTransparency = 1
+        RightColumn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        RightColumn.BackgroundTransparency = 1.000
         RightColumn.BorderSizePixel = 0
+        RightColumn.Position = UDim2.new(0.5, 0, 0, 0)
+        RightColumn.Size = UDim2.new(0.5, -10, 0, 0)
         RightColumn.ScrollBarThickness = 4
-        RightColumn.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 55)
-        RightColumn.ClipsDescendants = true
         RightColumn.AutomaticSize = Enum.AutomaticSize.Y
-        
+
         local RightLayout = Instance.new("UIListLayout")
         RightLayout.Parent = RightColumn
         RightLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         RightLayout.SortOrder = Enum.SortOrder.LayoutOrder
         RightLayout.Padding = UDim.new(0, 5)
-        
-        RightLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-            RightColumn.CanvasSize = UDim2.fromOffset(0, RightLayout.AbsoluteContentSize.Y + 10)
-        end)
-        
-        -- Set column heights based on content
+
         local function UpdatePanelHeight()
             local leftHeight = LeftLayout.AbsoluteContentSize.Y
             local rightHeight = RightLayout.AbsoluteContentSize.Y
@@ -1252,192 +2580,960 @@ function Airflow:Init(config)
             LeftColumn.Size = UDim2.new(0.5, -10, 0, maxHeight + 10)
             RightColumn.Size = UDim2.new(0.5, -10, 0, maxHeight + 10)
             TabPanel.Size = UDim2.new(1, 0, 0, maxHeight + 20)
+            LeftColumn.CanvasSize = UDim2.fromOffset(0, leftHeight + 10)
+            RightColumn.CanvasSize = UDim2.fromOffset(0, rightHeight + 10)
         end
-        
+
         LeftLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(UpdatePanelHeight)
         RightLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(UpdatePanelHeight)
-        
-        local Bindable = Instance.new('BindableEvent', TabBtn)
-        local LeftElements = Airflow:Elements(LeftColumn, Bindable, config)
-        local RightElements = Airflow:Elements(RightColumn, Bindable, config)
+
+        local Bindable = Instance.new('BindableEvent', InputElement);
+
+        local LeftElements = Airflow:Elements(LeftColumn, Bindable, Response)
+        local RightElements = Airflow:Elements(RightColumn, Bindable, Response)
         
         local TabTable = {
             Left = LeftElements,
             Right = RightElements,
+            Disabled = false,
             Name = cfg.Name,
-            Panel = TabPanel,
-            TabButton = TabBtn,
             Sections = {},
             ID = #Response.TabElements,
-        }
-        
-        -- Activate/Deactivate Tab
-        local function ActivateTab(active)
-            if active then
-                Response.CurrentTabName = TabTable.Name
-                if not Response.SearchMode then
-                    InternalTabLabel.Text = TabTable.Name
-                end
-                for _, v in pairs(Response.TabElements) do
-                    if v ~= ActivateTab then v(false) end
-                end
-                TabPanel.Visible = true
-                if Response.TabScrolls[TabTable.Name] then
-                    Body.CanvasPosition = Response.TabScrolls[TabTable.Name]
-                end
-                Airflow:CreateAnimation(Highlight, 0.3, nil, {BackgroundTransparency = 0})
-                Airflow:CreateAnimation(TabBtn, 0.3, nil, {BackgroundTransparency = 0.8})
-                Airflow:CreateAnimation(IconImg, 0.3, nil, {ImageTransparency = 0})
-                Bindable:Fire(true)
-            else
-                Response.TabScrolls[TabTable.Name] = Body.CanvasPosition
+            Panel = TabPanel,
+        };
+
+        local ElementId = 1;
+
+        local ChangeValue = function(value)
+            if TabTable.Disabled then
                 TabPanel.Visible = false
-                Airflow:CreateAnimation(TabBtn, 0.3, nil, {BackgroundTransparency = 1})
-                Airflow:CreateAnimation(Highlight, 0.3, nil, {BackgroundTransparency = 1})
-                Airflow:CreateAnimation(IconImg, 0.3, nil, {ImageTransparency = 0.3})
-                Bindable:Fire(false)
-            end
-        end
-        
-        if #Response.TabElements == 0 then
-            ActivateTab(true)
-        end
-        
-        table.insert(Response.TabElements, ActivateTab)
-        
-        TabBtn.MouseButton1Click:Connect(function()
-            for _, v in pairs(Response.TabElements) do
-                v(v == ActivateTab)
-            end
-        end)
-        
-        -- Add Section to Tab
+            else
+                if Response.SearchMode then
+                    return
+                end
+                if value then
+                    Response.CurrentTabName = TabTable.Name
+                    InternalTabLabel.Text = TabTable.Name
+                    for _, v in pairs(Response.TabElements) do
+                        if v ~= ChangeValue then
+                            v(false)
+                        end
+                    end
+                    TabPanel.Visible = true
+                    if Response.TabScrolls[TabTable.Name] then
+                        Body.CanvasPosition = Response.TabScrolls[TabTable.Name]
+                    else
+                        Body.CanvasPosition = Vector2.new(0, 0)
+                    end
+                    Airflow:CreateAnimation(hightlight,0.4,nil,{BackgroundTransparency = 0});
+                    Airflow:CreateAnimation(InputElement,0.4,nil,{BackgroundTransparency = 0.8});
+                    Airflow:CreateAnimation(IconImg,0.4,nil,{ImageTransparency = 0});
+                    if Bindable:GetAttribute('Value') ~= value and not TabTable.Disabled then
+                        Bindable:Fire(true);
+                        Bindable:SetAttribute('Value',value);
+                    end;
+                else
+                    if Bindable:GetAttribute('Value') ~= value and not TabTable.Disabled then
+                        Bindable:Fire(false);
+                        Bindable:SetAttribute('Value',value)
+                    end;
+                    Response.TabScrolls[TabTable.Name] = Body.CanvasPosition
+                    TabPanel.Visible = false
+                    Airflow:CreateAnimation(InputElement,0.4,nil,{BackgroundTransparency = 1});
+                    Airflow:CreateAnimation(hightlight,0.4,nil,{BackgroundTransparency = 1});
+                    Airflow:CreateAnimation(IconImg,0.4,nil,{ImageTransparency = 0.3});
+                end;
+            end;
+        end;
+
+        if not Response.TabElements[1] then
+            Response.OpenedTab = ChangeValue;
+            ChangeValue(true);
+        else
+            ChangeValue(false);
+            TabPanel.Visible = false;
+            task.delay(0.5,Bindable.Fire,Bindable,false)
+        end;
+
+        InputElement.MouseEnter:Connect(function()
+            if Response.OpenedTab ~= ChangeValue then
+                Airflow:CreateAnimation(InputElement,0.4,nil,{BackgroundTransparency = 0.85});
+            else
+                Airflow:CreateAnimation(InputElement,0.4,nil,{BackgroundTransparency = 0.8});
+            end;
+        end);
+
+        InputElement.MouseLeave:Connect(function()
+            if Response.OpenedTab ~= ChangeValue then
+                Airflow:CreateAnimation(InputElement,0.4,nil,{BackgroundTransparency = 1});
+            else
+                Airflow:CreateAnimation(InputElement,0.4,nil,{BackgroundTransparency = 0.8});
+            end;
+        end);
+
+        table.insert(Response.TabElements, ChangeValue);
+
+        local Button = Airflow:NewInput(InputElement,function()
+            for i,ChaValue in pairs(Response.TabElements) do
+                if ChaValue == ChangeValue then
+                    Response.OpenedTab = ChaValue;
+                    ChaValue(true);
+                else
+                    ChaValue(false);
+                end;
+            end;
+        end);
+
+        Button.Modal = Response.UnlockMouse;
+
+        function TabTable:Disable(value, reason)
+            TabTable.Disabled = value;
+        end;
+
         function TabTable:AddSection(cfg)
-            cfg = cfg or {Name = "Section", Position = "left"}
-            
+            cfg = cfg or {};
+            cfg.Name = cfg.Name or "Section";
+            cfg.Position = cfg.Position or "left";
+
             local SectionBase = Instance.new("Frame")
             local Section = Instance.new("Frame")
             local LabelFrame = Instance.new("TextLabel")
             local SectionLayout = Instance.new("UIListLayout")
-            
-            SectionBase.Parent = (cfg.Position == "left" and LeftColumn) or RightColumn
-            SectionBase.BackgroundTransparency = 1
+            local BoxStroke = Instance.new("UIStroke")
+
+            SectionBase.Name = Airflow:RandomString()
+            SectionBase.Parent = (string.lower(cfg.Position) == "left" and LeftColumn) or RightColumn;
+            SectionBase.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SectionBase.BackgroundTransparency = 1.000
             SectionBase.Size = UDim2.new(1, -6, 0, 150)
-            
+
+            Section.Name = Airflow:RandomString()
             Section.Parent = SectionBase
             Section.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             Section.BackgroundTransparency = 0.5
+            Section.BorderSizePixel = 0
             Section.Position = UDim2.new(0, 0, 0, 15)
             Section.Size = UDim2.new(1, 0, 1, -15)
             Section.ClipsDescendants = true
-            Instance.new("UICorner").CornerRadius = UDim.new(0, 4)
-            Instance.new("UICorner").Parent = Section
-            
-            local Stroke = Instance.new("UIStroke")
-            Stroke.Parent = Section
-            Stroke.Color = Color3.fromRGB(60, 60, 60)
-            Stroke.Thickness = 1
-            
+
+            local SectionCorner = Instance.new("UICorner")
+            SectionCorner.CornerRadius = UDim.new(0, 4)
+            SectionCorner.Parent = Section
+
+            BoxStroke.Parent = Section
+            BoxStroke.Color = Color3.fromRGB(60, 60, 60)
+            BoxStroke.Thickness = 1
+            BoxStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+            LabelFrame.Name = Airflow:RandomString()
             LabelFrame.Parent = SectionBase
             LabelFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
             LabelFrame.BackgroundTransparency = 1
             LabelFrame.Position = UDim2.new(0, 12, 0, 0)
             LabelFrame.Size = UDim2.new(0, 50, 0, 20)
+            LabelFrame.ZIndex = 11
             LabelFrame.Font = Enum.Font.GothamBold
             LabelFrame.Text = cfg.Name
             LabelFrame.TextColor3 = Color3.fromRGB(220, 220, 220)
             LabelFrame.TextSize = 12
             LabelFrame.TextXAlignment = Enum.TextXAlignment.Left
-            
+
             SectionLayout.Parent = Section
             SectionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
             SectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
             SectionLayout.Padding = UDim.new(0, 3)
-            
+
             local Padding = Instance.new("UIPadding")
             Padding.Parent = Section
             Padding.PaddingTop = UDim.new(0, 5)
             Padding.PaddingBottom = UDim.new(0, 5)
-            
-            local SectionElements = Airflow:Elements(Section, Bindable, config)
-            
+
+            Bindable.Event:Connect(function(value)
+                if value then
+                    task.wait(0.1);
+                    Airflow:CreateAnimation(LabelFrame,1.2,nil,{TextTransparency = 0;})
+                    Airflow:CreateAnimation(Section,1.2,nil,{BackgroundTransparency = 0.5;})
+                    Airflow:CreateAnimation(BoxStroke,1.2,nil,{Transparency = 0;})
+                else
+                    Airflow:CreateAnimation(LabelFrame,0.5,nil,{TextTransparency = 1;})
+                    Airflow:CreateAnimation(Section,0.5,nil,{BackgroundTransparency = 1;})
+                    Airflow:CreateAnimation(BoxStroke,0.5,nil,{Transparency = 1;})
+                end
+            end)
+
             SectionLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
                 local newSize = SectionLayout.AbsoluteContentSize.Y + 10
-                SectionBase.Size = UDim2.new(1, -6, 0, newSize + 15)
+                Airflow:CreateAnimation(SectionBase, 0.4, Enum.EasingStyle.Quint, {Size = UDim2.new(1, -6, 0, newSize + 15)});
                 Section.Size = UDim2.new(1, 0, 0, newSize)
-                UpdatePanelHeight()
-            end)
-            
-            table.insert(TabTable.Sections, SectionElements)
-            
-            -- Register elements for search
-            local function RegisterElementsRecursive(elementsTable, sectionName)
-                for id, info in pairs(elementsTable:GetInfo() or {}) do
-                    if info.Name then
-                        table.insert(Response.AllElements, {
-                            Title = info.Name,
-                            Frame = info.API._frame or SectionBase,
-                            Section = sectionName
-                        })
-                    end
-                end
-            end
-            
-            RegisterElementsRecursive(SectionElements, cfg.Name)
-            
-            return SectionElements
-        end
-        
+            end);
+
+            local ID = "Section_"..cfg.Name.."_"..TabTable.Name.."_"..tostring(#Response.TabElements).."_"..tostring(ElementId);
+            local SectionElements = Airflow:Elements(Section, Bindable, Response)
+
+            ElementId += 1;
+
+            table.insert(TabTable.Sections, {
+                Elements = SectionElements,
+                ID = ID,
+            })
+
+            return SectionElements;
+        end;
+
+        function TabTable:GetSectionFromKey(idx)
+            local codeX = string.split(idx,"_");
+            local ID = codeX[#codeX];
+            for i,v in pairs(TabTable.Sections) do
+                if v.ID == ID or tostring(v.ID) == tostring(ID) or v.ID == idx then
+                    return v.Elements;
+                end;
+            end;
+        end;
+
+        function TabTable:GetSectionFromId(idx)
+            for i,v in pairs(TabTable.Sections) do
+                if v.ID == idx or tostring(v.ID) == tostring(idx) then
+                    return v.Elements;
+                end;
+            end;
+        end;
+
         function TabTable:GetConfigs()
-            local sections = {}
-            for i, v in pairs(TabTable.Sections) do
-                sections["Section_"..i] = v:GetConfigs()
-            end
+            local sections = {};
+            for i,v in pairs(TabTable.Sections) do
+                sections[v.ID] = v.Elements:GetConfigs();
+            end;
             return {
                 Left = LeftElements:GetConfigs(),
                 Right = RightElements:GetConfigs(),
                 Sections = sections,
-            }
+            };
+        end;
+
+        table.insert(Response.TabConfig, TabTable);
+
+        return TabTable;
+    end;
+
+    local dragToggle = nil;
+    local dragSpeed = 0.25;
+    local dragStart = nil;
+    local startPos = nil;
+
+    local function updateInput(input)
+        local delta = input.Position - dragStart;
+        local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y);
+        Airflow:CreateAnimation(WindowFrame,dragSpeed,nil,{Position = position});
+    end;
+
+    WindowFrame.InputBegan:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then 
+            local guiObjects = AirflowWindow:GetGuiObjectsAtPosition(input.Position.X, input.Position.Y)
+            local topObject = guiObjects[1]
+            if topObject ~= WindowFrame and topObject ~= MainPanel and topObject ~= TabInputs and topObject ~= LogoContainer and topObject ~= InternalHeader then
+                return
+            end
+            dragToggle = true
+            dragStart = input.Position
+            startPos = WindowFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragToggle = false
+                end
+            end)
         end
-        
-        table.insert(Response.TabConfig, TabTable)
-        return TabTable
-    end
-    
-    -- Resizable (optional)
-    if config.Resizable then
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            if dragToggle then
+                updateInput(input)
+            end
+        end
+    end);
+
+    UserInputService.InputBegan:Connect(function(input, IsType)
+        if (input.KeyCode.Name == config.Keybind or input.KeyCode == config.Keybind) and not IsType then
+            Response.Toggle = not Response.Toggle;
+            ToggleWindow(Response.Toggle);
+        end;
+    end);
+
+    function Response:SetKeybind(new)
+        config.Keybind = new;
+    end;
+
+    function Response:GetButton()
+        local backpack = Instance.new("ImageButton")
+        local UICorner = Instance.new("UICorner")
+        local RowLabel = Instance.new("Frame")
+        local UIListLayout = Instance.new("UIListLayout")
+        local StyledTextLabel = Instance.new("TextLabel")
+        local UITextSizeConstraint = Instance.new("UITextSizeConstraint")
+        local UIPadding = Instance.new("UIPadding")
+        local IconHost = Instance.new("Frame")
+        local IntegrationIconFrame = Instance.new("Frame")
+        local UIListLayout_2 = Instance.new("UIListLayout")
+        local IntegrationIcon = Instance.new("ImageLabel")
+        local SelectedHighlighter = Instance.new("Frame")
+        local corner = Instance.new("UICorner")
+        local Highlighter = Instance.new("Frame")
+        local corner_2 = Instance.new("UICorner")
+        local _5 = Instance.new("Frame")
+
+        backpack.Name = "airflow";
+        backpack.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        backpack.BackgroundTransparency = 1.000
+        backpack.BorderSizePixel = 0
+        backpack.LayoutOrder = 9
+        backpack.Size = UDim2.new(1, 0, 0, 56)
+        backpack.AutoButtonColor = false
+
+        UICorner.CornerRadius = UDim.new(0, 10)
+        UICorner.Parent = backpack
+
+        RowLabel.Name = "RowLabel"
+        RowLabel.Parent = backpack
+        RowLabel.BackgroundTransparency = 1.000
+        RowLabel.BorderSizePixel = 0
+        RowLabel.LayoutOrder = 9
+        RowLabel.Size = UDim2.new(1, 0, 1, 0)
+
+        UIListLayout.Parent = RowLabel
+        UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+        UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+        UIListLayout.Padding = UDim.new(0, 8)
+
+        StyledTextLabel.Name = "StyledTextLabel"
+        StyledTextLabel.Parent = RowLabel
+        StyledTextLabel.BackgroundTransparency = 1.000
+        StyledTextLabel.Size = UDim2.new(1, -52, 1, 0)
+        StyledTextLabel.Font = Enum.Font.BuilderSansBold
+        StyledTextLabel.Text = config.Name
+        StyledTextLabel.TextColor3 = Color3.fromRGB(247, 247, 248)
+        StyledTextLabel.TextScaled = true
+        StyledTextLabel.TextSize = 20.000
+        StyledTextLabel.TextWrapped = true
+        StyledTextLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+        UITextSizeConstraint.Parent = StyledTextLabel
+        UITextSizeConstraint.MaxTextSize = 20
+        UITextSizeConstraint.MinTextSize = 15
+
+        UIPadding.Parent = RowLabel
+        UIPadding.PaddingLeft = UDim.new(0, 8)
+        UIPadding.PaddingRight = UDim.new(0, 8)
+
+        IconHost.Name = "IconHost"
+        IconHost.Parent = RowLabel
+        IconHost.BackgroundTransparency = 1.000
+        IconHost.BorderSizePixel = 0
+        IconHost.LayoutOrder = 9
+        IconHost.Size = UDim2.new(0, 44, 0, 44)
+        IconHost.ZIndex = 9
+
+        IntegrationIconFrame.Name = "IntegrationIconFrame"
+        IntegrationIconFrame.Parent = IconHost
+        IntegrationIconFrame.BackgroundTransparency = 1.000
+        IntegrationIconFrame.BorderSizePixel = 0
+        IntegrationIconFrame.Size = UDim2.new(1, 0, 1, 0)
+
+        UIListLayout_2.Parent = IntegrationIconFrame
+        UIListLayout_2.FillDirection = Enum.FillDirection.Horizontal
+        UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
+
+        IntegrationIcon.Name = "IntegrationIcon"
+        IntegrationIcon.Parent = IntegrationIconFrame
+        IntegrationIcon.BackgroundTransparency = 1.000
+        IntegrationIcon.Size = UDim2.new(0, 36, 0, 36)
+        IntegrationIcon.Image = config.Logo
+        IntegrationIcon.ImageColor3 = Color3.fromRGB(247, 247, 248)
+
+        SelectedHighlighter.Name = "SelectedHighlighter"
+        SelectedHighlighter.Parent = IconHost
+        SelectedHighlighter.AnchorPoint = Vector2.new(0.5, 0.5)
+        SelectedHighlighter.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SelectedHighlighter.BackgroundTransparency = 0.850
+        SelectedHighlighter.BorderSizePixel = 0
+        SelectedHighlighter.Position = UDim2.new(0.5, 0, 0.5, 0)
+        SelectedHighlighter.Size = UDim2.new(0, 36, 0, 36)
+        SelectedHighlighter.Visible = false
+
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Name = "corner"
+        corner.Parent = SelectedHighlighter
+
+        Highlighter.Name = "Highlighter"
+        Highlighter.Parent = IconHost
+        Highlighter.AnchorPoint = Vector2.new(0.5, 0.5)
+        Highlighter.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Highlighter.BackgroundTransparency = 0.850
+        Highlighter.BorderSizePixel = 0
+        Highlighter.Position = UDim2.new(0.5, 0, 0.5, 0)
+        Highlighter.Size = UDim2.new(0, 36, 0, 36)
+        Highlighter.Visible = false
+
+        corner_2.CornerRadius = UDim.new(1, 0)
+        corner_2.Name = "corner"
+        corner_2.Parent = Highlighter
+
+        _5.Name = "5"
+        _5.Parent = IconHost
+        _5.BackgroundTransparency = 1.000
+        _5.Size = UDim2.new(1, 0, 1, 0)
+        _5.ZIndex = 2
+
+        backpack.MouseButton1Click:Connect(function()
+            Response.Toggle = not Response.Toggle;
+            ToggleWindow(Response.Toggle)
+        end);
+
+        backpack.MouseEnter:Connect(function()
+            Airflow:CreateAnimation(backpack,0.3,nil,{BackgroundColor3 = config.Hightlight, BackgroundTransparency = 0.85})
+        end)
+
+        backpack.MouseLeave:Connect(function()
+            Airflow:CreateAnimation(backpack,0.3,nil,{BackgroundTransparency = 1})
+        end)
+
+        return backpack;
+    end;
+
+    local CreateResizable = function()
+        Airflow:CreateAnimation(WindowFrame,0.5,nil,{AnchorPoint = Vector2.zero, Position = UDim2.new(0, (AirflowUI.AbsoluteSize.X / 2) - (WindowFrame.Size.X.Offset / 1.5), 0, (AirflowUI.AbsoluteSize.Y / 2) - (WindowFrame.Size.Y.Offset / 1.5))})
         local Resize = Instance.new("TextButton")
+        local IsHold = false;
+        Resize.Name = Airflow:RandomString();
         Resize.Parent = WindowFrame
         Resize.AnchorPoint = Vector2.new(0.5, 0.5)
-        Resize.BackgroundTransparency = 1
+        Resize.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Resize.BackgroundTransparency = 1.000
+        Resize.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Resize.BorderSizePixel = 0
         Resize.Position = UDim2.new(1, 0, 1, 0)
-        Resize.Size = UDim2.new(0.075, 0, 0.075, 0)
+        Resize.Rotation = 0.010
+        Resize.Size = UDim2.new(0.075000003, 0, 0.075000003, 0)
         Resize.SizeConstraint = Enum.SizeConstraint.RelativeYY
+        Resize.ZIndex = 100
+        Resize.Font = Enum.Font.SourceSans
         Resize.Text = ""
-        
-        local isResizing = false
-        Resize.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                isResizing = true
+        Resize.TextColor3 = Color3.fromRGB(0, 0, 0)
+        Resize.TextSize = 14.000
+        Resize.Active = true
+        Resize.InputBegan:Connect(function(std)
+            if std.UserInputType == Enum.UserInputType.MouseButton1 or std.UserInputType == Enum.UserInputType.Touch then
+                IsHold = true
+                if UserInputService.TouchEnabled then
+                    Resize.Size = UDim2.new(0.15, 85, 0.15, 85)
+                end
             end
         end)
-        Resize.InputEnded:Connect(function()
-            isResizing = false
+        Resize.InputEnded:Connect(function(std)
+            if std.UserInputType == Enum.UserInputType.MouseButton1 or std.UserInputType == Enum.UserInputType.Touch then
+                IsHold = false
+                Resize.Size = UDim2.new(0.075, 0, 0.075, 0)
+            end
         end)
         UserInputService.InputChanged:Connect(function(input)
-            if isResizing and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local x = math.max(483, input.Position.X - WindowFrame.AbsolutePosition.X)
-                local y = math.max(297, input.Position.Y - WindowFrame.AbsolutePosition.Y)
-                WindowFrame.Size = UDim2.new(0, x, 0, y)
-                config.Scale = WindowFrame.Size
-            end
-        end)
-    end
-    
-    -- Start with window open
-    ToggleWindow(true)
-    
-    return Response
-end
+            if IsHold and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and Response.Toggle then
+                local pios = input.Position;
+                local x = (pios.X - WindowFrame.AbsolutePosition.X) 
+                local y = (pios.Y - WindowFrame.AbsolutePosition.Y) 
+                if x < 483 then x = 483 end
+                if y < 297 then y = 297 end
+                local Offset = UDim2.new(0,x,0,y)
+                TweenService:Create(WindowFrame, TweenInfo.new(0.05),{Size = Offset}):Play();
+                config.Scale = Offset;
+            end;
+        end);
+        function Response:SetResizable(value)
+            if value then
+                Resize.Visible = true
+            else
+                Resize.Visible = false
+            end;
+        end;
+    end;
 
-return Airflow
+    if config.Resizable then
+        CreateResizable();
+    else
+        function Response:SetResizable(value)
+            if value then
+                config.Resizable = true;
+                CreateResizable();
+            end;
+        end;
+    end;
+
+    if Airflow:IsMobile() then
+        Airflow:Notify({Title = "Mobile", Content = "Open roblox options to open/close menu"});
+    end;
+
+    task.spawn(function()
+        local IsExploit = pcall(function() 
+            return game:GetService('CoreGui'):FindFirstChild('TopBarApp');
+        end);
+        local TopBar;
+        if not IsExploit then
+            TopBar = game:GetService('ReplicatedStorage'):FindFirstChild('Icon') or (game:GetService('ReplicatedStorage'):FindFirstChild('Elements',true) and game:GetService('ReplicatedStorage'):FindFirstChild('Elements',true).Parent);
+            if TopBar then
+                TopBar = require(TopBar);
+                TopBar.new():setImage(config.Logo):setLabel(config.Name).toggled:Connect(function(val)
+                    Response.Toggle = not Response.Toggle;
+                    ToggleWindow(Response.Toggle)
+                end)
+                return;
+            end;
+        end;
+        while true do task.wait(0.1)
+            if IsExploit then
+                local SubMenuHost = game:GetService('CoreGui'):FindFirstChild('TopBarApp'):FindFirstChild('TopBarApp'):FindFirstChild('UnibarLeftFrame'):FindFirstChild('UnibarMenu'):WaitForChild('SubMenuHost');
+                if SubMenuHost:FindFirstChild('nine_dot') then
+                    local ScrollingFrame = SubMenuHost:FindFirstChild('nine_dot'):FindFirstChild('ScrollingFrame'):FindFirstChild('MainCanvas');
+                    if not ScrollingFrame:FindFirstChild('airflow') then
+                        local airflow = Response:GetButton();
+                        airflow.Parent = ScrollingFrame;
+                    else
+                        local UISizeConstraint = ScrollingFrame:FindFirstChild('UISizeConstraint');
+                        local UIListLayout = ScrollingFrame:FindFirstChild('UIListLayout');
+                        local BottomPadding = ScrollingFrame:FindFirstChild('BottomPadding');
+                        if UserInputService.TouchEnabled then
+                            ScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y);
+                        else
+                            UISizeConstraint.MinSize = Vector2.new(0,UIListLayout.AbsoluteContentSize.Y - BottomPadding.AbsoluteSize.Y);
+                        end;
+                    end;
+                end;
+            end;
+        end;
+    end)
+
+    ToggleWindow(true);
+    Response:Update();
+    return Response;
+end;
+
+function Airflow:DrawList(config)
+    config = config or {};
+    config.Icon = config.Icon or "keyboard";
+    config.Name = config.Name or "keybinds";
+
+    local Response = {Toggle = true};
+    local AirflowUI = Instance.new("ScreenGui")
+    local ListFrame = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
+    local MainFrame = Instance.new("Frame")
+    local LineV = Instance.new("Frame")
+    local UIListLayout = Instance.new("UIListLayout")
+    local UIStroke = Instance.new("UIStroke")
+    local Headers = Instance.new("Frame")
+    local UIListLayout_2 = Instance.new("UIListLayout")
+    local Icon = Instance.new("ImageLabel")
+    local UICorner_2 = Instance.new("UICorner")
+    local WindowName = Instance.new("TextLabel")
+    local static = Instance.new("ImageLabel")
+
+    local ToggleFun = function(value)
+        if value then
+            Airflow:CreateAnimation(ListFrame,0.3,nil,{BackgroundTransparency = 0.600});
+            Airflow:CreateAnimation(MainFrame,0.3,nil,{BackgroundTransparency = 0.3});
+            Airflow:CreateAnimation(LineV,0.3,nil,{BackgroundTransparency = 0.500});
+            Airflow:CreateAnimation(UIStroke,0.3,nil,{Transparency = 0.570});
+            Airflow:CreateAnimation(Icon,0.3,nil,{ImageTransparency = 0});
+            Airflow:CreateAnimation(WindowName,0.3,nil,{TextTransparency = 0.4});
+            Airflow:CreateAnimation(static,0.3,nil,{ImageTransparency = 0.9});
+            Airflow:CreateAnimation(ListFrame,0.3,nil,{Size = UDim2.new(0, 200, 0, UIListLayout.AbsoluteContentSize.Y + 40)});
+        else
+            Airflow:CreateAnimation(ListFrame,0.3,nil,{Size = UDim2.new(0, 200, 0, 0)});
+            Airflow:CreateAnimation(ListFrame,0.3,nil,{BackgroundTransparency = 1});
+            Airflow:CreateAnimation(MainFrame,0.3,nil,{BackgroundTransparency = 1});
+            Airflow:CreateAnimation(LineV,0.3,nil,{BackgroundTransparency = 1});
+            Airflow:CreateAnimation(UIStroke,0.3,nil,{Transparency = 1});
+            Airflow:CreateAnimation(Icon,0.3,nil,{ImageTransparency = 1});
+            Airflow:CreateAnimation(WindowName,0.3,nil,{TextTransparency = 1});
+            Airflow:CreateAnimation(static,0.3,nil,{ImageTransparency = 1});
+        end;
+    end;
+
+    AirflowUI.Name = Airflow:RandomString()
+    AirflowUI.Parent = CoreGui
+    AirflowUI.ResetOnSpawn = false
+    AirflowUI.IgnoreGuiInset = true
+    AirflowUI.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+    protect_gui(AirflowUI);
+    Airflow:Blur(ListFrame);
+
+    ListFrame.Active = true
+    ListFrame.Name = Airflow:RandomString()
+    ListFrame.Parent = AirflowUI
+    ListFrame.BackgroundColor3 = Color3.fromRGB(166, 166, 166)
+    ListFrame.BackgroundTransparency = 1
+    ListFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ListFrame.BorderSizePixel = 0
+    ListFrame.ClipsDescendants = true
+    ListFrame.Position = UDim2.new(0, 100, 0, 100)
+    ListFrame.Size = UDim2.new(0, 200, 0, 71)
+    ListFrame.ZIndex = 120
+
+    ListFrame:GetPropertyChangedSignal('Size'):Connect(function()
+        if ListFrame.BackgroundTransparency >= 0.95 then
+            AirflowUI.Enabled = false;
+        else
+            AirflowUI.Enabled = true;
+        end;
+    end)
+
+    UICorner.CornerRadius = UDim.new(0, 2)
+    UICorner.Parent = ListFrame
+
+    MainFrame.Name = Airflow:RandomString()
+    MainFrame.Parent = ListFrame
+    MainFrame.AnchorPoint = Vector2.new(0, 1)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    MainFrame.BackgroundTransparency = 1
+    MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.ClipsDescendants = true
+    MainFrame.Position = UDim2.new(0, 0, 1, 0)
+    MainFrame.Size = UDim2.new(1, 0, 1, -35)
+    MainFrame.ZIndex = 123
+
+    LineV.Name = Airflow:RandomString()
+    LineV.Parent = MainFrame
+    LineV.BackgroundColor3 = Color3.fromRGB(125, 125, 125)
+    LineV.BackgroundTransparency = 1
+    LineV.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    LineV.BorderSizePixel = 0
+    LineV.Size = UDim2.new(1, 0, 0, 1)
+    LineV.ZIndex = 124
+
+    UIListLayout.Parent = MainFrame
+    UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 5)
+
+    UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+        if Response.Toggle then
+            Airflow:CreateAnimation(ListFrame,0.3,nil,{Size = UDim2.new(0, 200, 0, UIListLayout.AbsoluteContentSize.Y + 40)});
+        end;
+    end)
+
+    UIStroke.Transparency = 1
+    UIStroke.Color = Color3.fromRGB(125, 125, 125)
+    UIStroke.Parent = ListFrame
+
+    Headers.Name = Airflow:RandomString()
+    Headers.Parent = ListFrame
+    Headers.AnchorPoint = Vector2.new(0.5, 0)
+    Headers.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Headers.BackgroundTransparency = 1.000
+    Headers.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Headers.BorderSizePixel = 0
+    Headers.Position = UDim2.new(0.5, 0, 0, 5)
+    Headers.Size = UDim2.new(1, -15, 0, 25)
+    Headers.ZIndex = 120
+
+    UIListLayout_2.Parent = Headers
+    UIListLayout_2.FillDirection = Enum.FillDirection.Horizontal
+    UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
+    UIListLayout_2.Padding = UDim.new(0, 5)
+
+    Icon.Name = Airflow:RandomString()
+    Icon.Parent = Headers
+    Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Icon.BackgroundTransparency = 1.000
+    Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Icon.BorderSizePixel = 0
+    Icon.Size = UDim2.new(0, 20, 0, 20)
+    Icon.ZIndex = 122
+    Icon.Image = Airflow:GetIcon(config.Icon);
+    Icon.ImageTransparency = 1
+
+    UICorner_2.CornerRadius = UDim.new(1, 0)
+    UICorner_2.Parent = Icon
+
+    WindowName.Name = Airflow:RandomString()
+    WindowName.Parent = Headers
+    WindowName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    WindowName.BackgroundTransparency = 1.000
+    WindowName.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    WindowName.BorderSizePixel = 0
+    WindowName.Size = UDim2.new(0, 60, 0, 20)
+    WindowName.ZIndex = 122
+    WindowName.Font = Enum.Font.GothamMedium
+    WindowName.Text = config.Name
+    WindowName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    WindowName.TextSize = 15.000
+    WindowName.TextTransparency = 1
+
+    static.Name = Airflow:RandomString()
+    static.Parent = ListFrame
+    static.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    static.BackgroundTransparency = 1.000
+    static.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    static.BorderSizePixel = 0
+    static.Size = UDim2.new(1, 0, 1, 0)
+    static.ZIndex = 120
+    static.Image = "rbxassetid://9579075682"
+    static.ImageTransparency = 0.9
+    static.ScaleType = Enum.ScaleType.Crop
+    static.ImageTransparency = 1
+
+    function Response:AddFrame(cfg)
+        cfg = cfg or {};
+        cfg.Key = cfg.Key or "key";
+        cfg.Value = cfg.Value or "Value";
+
+        local Frame = Instance.new("Frame")
+        local name = Instance.new("TextLabel")
+        local value = Instance.new("TextLabel")
+
+        Frame.Parent = MainFrame
+        Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Frame.BackgroundTransparency = 1.000
+        Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Frame.BorderSizePixel = 0
+        Frame.Size = UDim2.new(1, 0, 0, 25)
+        Frame.ZIndex = 124
+
+        name.Name = Airflow:RandomString()
+        name.Parent = Frame
+        name.AnchorPoint = Vector2.new(0, 0.5)
+        name.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        name.BackgroundTransparency = 1.000
+        name.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        name.BorderSizePixel = 0
+        name.Position = UDim2.new(0, 8, 0.5, 0)
+        name.Size = UDim2.new(1, 0, 1, 0)
+        name.ZIndex = 125
+        name.Font = Enum.Font.GothamMedium
+        name.Text = cfg.Key
+        name.TextColor3 = Color3.fromRGB(255, 255, 255)
+        name.TextSize = 14.000
+        name.TextXAlignment = Enum.TextXAlignment.Left
+
+        value.Name = Airflow:RandomString()
+        value.Parent = Frame
+        value.AnchorPoint = Vector2.new(1, 0.5)
+        value.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        value.BackgroundTransparency = 1.000
+        value.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        value.BorderSizePixel = 0
+        value.Position = UDim2.new(1, -8, 0.5, 0)
+        value.Size = UDim2.new(1, 0, 1, 0)
+        value.ZIndex = 125
+        value.Font = Enum.Font.GothamMedium
+        value.Text = cfg.Value
+        value.TextColor3 = Color3.fromRGB(255, 255, 255)
+        value.TextSize = 13.000
+        value.TextTransparency = 0.500
+        value.TextXAlignment = Enum.TextXAlignment.Right
+
+        return {
+            SetKey = function(self, KEY) cfg.Key = KEY; name.Text = cfg.Key end,
+            SetValue = function(self, VALUE) cfg.Value = VALUE; value.Text = cfg.Value end,
+            Visible = function(self, VALUE) Frame.Visible = VALUE end,
+        }
+    end;
+
+    ToggleFun(true);
+
+    function Response:Visible(value)
+        if value then
+            Response.Toggle = true
+            ToggleFun(true);
+        else
+            Response.Toggle = false
+            ToggleFun(false);
+        end;
+    end;
+
+    local dragToggle = nil;
+    local dragSpeed = 0.25;
+    local dragStart = nil;
+    local startPos = nil;
+
+    local function updateInput(input)
+        local delta = input.Position - dragStart
+        local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y);
+        Airflow:CreateAnimation(ListFrame,dragSpeed,nil,{Position = position});
+    end;
+
+    ListFrame.InputBegan:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then 
+            dragToggle = true
+            dragStart = input.Position
+            startPos = ListFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragToggle = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            if dragToggle then
+                updateInput(input)
+            end
+        end
+    end);
+
+    return Response;
+end;
+
+do
+    local Notifier = Instance.new("Frame")
+    local UIListLayout = Instance.new("UIListLayout")
+
+    Notifier.Name = Airflow:RandomString()
+    Notifier.Parent = Airflow.ScreenGui
+    Notifier.AnchorPoint = Vector2.new(1, 0)
+    Notifier.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Notifier.BackgroundTransparency = 1.000
+    Notifier.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Notifier.BorderSizePixel = 0
+    Notifier.Position = UDim2.new(1, -5, 0, 5)
+    Notifier.Size = UDim2.new(0, 150, 0, 10)
+
+    UIListLayout.Parent = Notifier
+    UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 0)
+
+    function Airflow:Notify(config)
+        config = config or {};
+        config.Title = config.Title or "Notification";
+        config.Content = config.Content or "";
+        config.Duration = config.Duration or 5;
+
+        local Frame = Instance.new("Frame")
+        local MainFrame = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
+        local UIStroke = Instance.new("UIStroke")
+        local static = Instance.new("ImageLabel")
+        local Title = Instance.new("TextLabel")
+        local Content = Instance.new("TextLabel")
+
+        Frame.Parent = Notifier
+        Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Frame.BackgroundTransparency = 1.000
+        Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Frame.BorderSizePixel = 0
+        Frame.Size = UDim2.new(0, 200, 0, 40)
+
+        MainFrame.Name = Airflow:RandomString()
+        MainFrame.Parent = Frame
+        MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+        MainFrame.BackgroundTransparency = 0.200
+        MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        MainFrame.BorderSizePixel = 0
+        MainFrame.Size = UDim2.new(0, 200, 0, 40)
+        MainFrame.ZIndex = 121
+        MainFrame.Position = UDim2.fromScale(1,0)
+
+        UICorner.CornerRadius = UDim.new(0, 4)
+        UICorner.Parent = MainFrame
+
+        UIStroke.Transparency = 0.570
+        UIStroke.Color = Color3.fromRGB(66, 66, 66)
+        UIStroke.Parent = MainFrame
+
+        static.Name = Airflow:RandomString()
+        static.Parent = MainFrame
+        static.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        static.BackgroundTransparency = 1.000
+        static.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        static.BorderSizePixel = 0
+        static.Size = UDim2.new(1, 0, 1, 0)
+        static.ZIndex = 120
+        static.Image = "rbxassetid://9579075682"
+        static.ImageTransparency = 0.900
+        static.ScaleType = Enum.ScaleType.Crop
+
+        Title.Name = Airflow:RandomString()
+        Title.Parent = MainFrame
+        Title.AnchorPoint = Vector2.new(0.5, 0)
+        Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Title.BackgroundTransparency = 1.000
+        Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Title.BorderSizePixel = 0
+        Title.Position = UDim2.new(0.5, 0, 0, 5)
+        Title.Size = UDim2.new(1, -10, 0, 15)
+        Title.ZIndex = 123
+        Title.Font = Enum.Font.GothamMedium
+        Title.Text = config.Title
+        Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Title.TextSize = 14.000
+        Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.TextTransparency = 1;
+
+        task.delay(0.275,Airflow.CreateAnimation,Airflow,Title,0.4,nil,{TextTransparency = 0})
+
+        Content.Name = Airflow:RandomString()
+        Content.Parent = MainFrame
+        Content.AnchorPoint = Vector2.new(0.5, 0)
+        Content.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Content.BackgroundTransparency = 1.000
+        Content.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Content.BorderSizePixel = 0
+        Content.Position = UDim2.new(0.5, 0, 0, 20)
+        Content.Size = UDim2.new(1, -10, 1, -20)
+        Content.ZIndex = 123
+        Content.Font = Enum.Font.GothamMedium
+        Content.Text = config.Content
+        Content.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Content.TextSize = 12.000
+        Content.TextTransparency = 1
+        Content.TextXAlignment = Enum.TextXAlignment.Left
+        Content.TextYAlignment = Enum.TextYAlignment.Top
+        task.delay(0.325,Airflow.CreateAnimation,Airflow,Content,0.5,nil,{TextTransparency = 0.3})
+
+        local UpdateScale = function()
+            local TitleScale = TextService:GetTextSize(Title.Text,Title.TextSize,Title.Font,Vector2.new(math.huge,math.huge));
+            if not Content.Text:byte() then
+                Airflow:CreateAnimation(Frame,0.2,nil,{Size = UDim2.fromOffset(TitleScale.X + 5, 45)});
+                Airflow:CreateAnimation(MainFrame,0.2,nil,{Size = UDim2.fromOffset(TitleScale.X + 5, 40)});
+            else
+                local ContentScale = TextService:GetTextSize(Content.Text,Content.TextSize,Content.Font,Vector2.new(math.huge,math.huge));
+                local Long = ((ContentScale.X > TitleScale.X) and ContentScale.X) or TitleScale.X;
+                Airflow:CreateAnimation(Frame,0.2,nil,{Size = UDim2.fromOffset(Long + 10, ContentScale.Y + 30)});
+                Airflow:CreateAnimation(MainFrame,0.2,nil,{Size = UDim2.fromOffset(Long + 10, ContentScale.Y + 25)});
+            end;
+        end;
+
+        UpdateScale();
+        Airflow:CreateAnimation(MainFrame,0.4,nil,{Position = UDim2.fromScale(0,0)})
+
+        if typeof(config.Duration) == 'boolean' then
+            return {
+                Close = function()
+                    Airflow:CreateAnimation(MainFrame,0.4,nil,{Position = UDim2.new(1.5,100,0,0)}).Completed:Connect(function()
+                        Airflow:CreateAnimation(Frame,0.4,nil,{Size = UDim2.fromScale(0,0)}).Completed:Connect(function()
+                            Frame:Destroy()
+                        end)
+                    end)
+                end,
+                SetText = function(self, i) Title.Text = i; UpdateScale(); end,
+                SetContent = function(self, i) Content.Text = i; UpdateScale(); end,
+            }
+        else
+            task.delay(config.Duration,function()
+                Airflow:CreateAnimation(MainFrame,0.4,nil,{Position = UDim2.new(1.5,100,0,0)}).Completed:Connect(function()
+                    Airflow:CreateAnimation(Frame,0.4,nil,{Size = UDim2.fromScale(0,0)}).Completed:Connect(function()
+                        Frame:Destroy()
+                    end)
+                end)
+            end)
+        end;
+    end;
+end;
+
+return Airflow;
