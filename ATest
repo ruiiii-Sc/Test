@@ -1980,7 +1980,7 @@ function Airflow:Init(config)
     WindowFrame.Name = Airflow:RandomString()
     WindowFrame.Parent = AirflowWindow
     WindowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    WindowFrame.BackgroundColor3 = Color3.fromRGB(166, 166, 166)
+    WindowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     WindowFrame.BackgroundTransparency = 100
     WindowFrame.Visible = false
     WindowFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -1988,7 +1988,7 @@ function Airflow:Init(config)
     WindowFrame.ClipsDescendants = true
     WindowFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     WindowFrame.Size = UDim2.new(config.Scale.X.Scale,config.Scale.X.Offset - 50,config.Scale.Y.Scale,config.Scale.Y.Offset - 50);
-    WindowFrame.Active = true
+    WindowFrame.Active = false
 
     UICorner.CornerRadius = UDim.new(0, 2)
     UICorner.Parent = WindowFrame
@@ -2044,7 +2044,7 @@ function Airflow:Init(config)
     SearchBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SearchBar.BackgroundTransparency = 0.5
     SearchBar.BorderSizePixel = 0
-    SearchBar.Position = UDim2.new(1, -10, 0.5, 0)
+    SearchBar.Position = UDim2.new(1, -200, 0.5, 0)
     SearchBar.Size = UDim2.new(0, 180, 0, 32)
     SearchBar.ZIndex = 12
     local SearchCorner = Instance.new("UICorner")
@@ -2089,7 +2089,7 @@ function Airflow:Init(config)
     HeaderButtons.Parent = InternalHeader
     HeaderButtons.AnchorPoint = Vector2.new(1, 0)
     HeaderButtons.BackgroundTransparency = 1
-    HeaderButtons.Position = UDim2.new(1, -200, 0, 0)
+    HeaderButtons.Position = UDim2.new(1, -10, 0, 0)
     HeaderButtons.Size = UDim2.new(0, 60, 1, 0)
     HeaderButtons.ZIndex = 11
 
