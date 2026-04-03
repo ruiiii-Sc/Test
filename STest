@@ -2179,8 +2179,6 @@ function Library:Window(Options)
         return TabObj
     end
 
-    WindowObj.ConfigTab = WindowObj:Tab({Title = "Configuration", Icon = Icons.Trash, IsConfig = true})
-
     return WindowObj
 end
 
