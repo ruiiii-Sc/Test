@@ -1428,11 +1428,183 @@ function Library:Window(Options)
         local function CreateRow(ComponentTitle, Height)
             TabObj.LayoutOrder = TabObj.LayoutOrder + 1
             local Row = Create("Frame", {Size = UDim2.new(1, 0, 0, Height or 40), BackgroundTransparency = 1, LayoutOrder = TabObj.LayoutOrder, Parent = TabContent})
-            local RowSep = Create("Frame", {Size = UDim2.new(1, -16, 0, 1), Position = UDim2.new(0, 8, 1, -1), BackgroundColor3 = Theme.Border, BackgroundTransparency = 0.5, BorderSizePixel = 0, Parent = Row})
             
-            ThemeUpdate(function() RowSep.BackgroundColor3 = Theme.Border end)
             table.insert(WindowObj.AllRows, {Row = Row, OriginalParent = TabContent, Title = ComponentTitle or ""})
             return Row
+        end
+
+        function TabObj:Line()
+            local Row = CreateRow("Separator", 3)
+            local RowSep = Create("Frame", {
+                Size = UDim2.new(1, -16, 0, 1),
+                Position = UDim2.new(0, 8, 0.5, 0),
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Theme.Border,
+                BackgroundTransparency = 0.5,
+                BorderSizePixel = 0,
+                Parent = Row
+            })
+            ThemeUpdate(function() RowSep.BackgroundColor3 = Theme.Border end)
+            return {Row = Row}
+        end
+
+        function TabObj:Row(Options)
+            local Title = Options.Title or "Row"
+            local RowFrame = CreateRow(Title, 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Theme.Font, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
+            ThemeUpdate(function() TitleLabel.TextColor3 = Theme.TextPrimary end)
+            
+            local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, Parent = RowFrame})
+            local Layout = Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = Container})
+
+            local RowObj = {Row = RowFrame}
+            
+            function RowObj:SubToggle(TOpts)
+                local TTitle = TOpts.Title or "Toggle"
+                local Default = TOpts.Default or false
+                local Callback = TOpts.Callback or function() end
+                local FlagName = TOpts.Flag or string.format("%s/Row/%s/Toggle/%s", TabObj.Title, Title, TTitle)
+                
+                local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
+
+                local State = Default
+                local function SetState(newState, triggerCallback)
+                    State = newState
+                    TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Theme.Accent or Theme.Search}):Play()
+                    if triggerCallback then Callback(State) end
+                end
+                Checkbox.MouseButton1Click:Connect(function() SetState(not State, true) end)
+                
+                local ToggleObj = {Row = RowFrame}
+                function ToggleObj:GetValue() return State end
+                function ToggleObj:SetValue(val) SetState(val, true) end
+                Library.Flags[FlagName] = ToggleObj
+                return ToggleObj
+            end
+            
+            function RowObj:SubTextbox(TOpts)
+                local TTitle = TOpts.Title or "Textbox"
+                local Default = TOpts.Default or ""
+                local Placeholder = TOpts.Placeholder or "Value"
+                local Callback = TOpts.Callback or function() end
+                local FlagName = TOpts.Flag or string.format("%s/Row/%s/Textbox/%s", TabObj.Title, Title, TTitle)
+                
+                local InputBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = Default, PlaceholderText = Placeholder, TextColor3 = Theme.TextPrimary, PlaceholderColor3 = Theme.TextSecondary, Font = Theme.Font, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = InputBox})
+                local Stroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
+                Create("UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = InputBox})
+                Create("UISizeConstraint", {MinSize = Vector2.new(60, 26), MaxSize = Vector2.new(150, 26), Parent = InputBox})
+
+                ThemeUpdate(function()
+                    InputBox.BackgroundColor3 = Theme.Search
+                    InputBox.TextColor3 = Theme.TextPrimary
+                    InputBox.PlaceholderColor3 = Theme.TextSecondary
+                    Stroke.Color = Theme.Border
+                end)
+
+                local CurrentValue = Default
+                InputBox.FocusLost:Connect(function() CurrentValue = InputBox.Text; Callback(CurrentValue) end)
+
+                local TextboxObj = {Row = RowFrame}
+                function TextboxObj:GetValue() return CurrentValue end
+                function TextboxObj:SetValue(val) CurrentValue = val; InputBox.Text = val; Callback(val) end
+                Library.Flags[FlagName] = TextboxObj
+                return TextboxObj
+            end
+
+            function RowObj:SubDropdown(DOpts)
+                local TTitle = DOpts.Title or "Dropdown"
+                local OptionsList = DOpts.Options or {}
+                local Multi = DOpts.Multi or false
+                local Default = DOpts.Default
+                local Callback = DOpts.Callback or function() end
+                
+                local FlagName = DOpts.Flag or string.format("%s/Row/%s/Dropdown/%s", TabObj.Title, Title, TTitle)
+                local SelectedItems = {}
+
+                if Multi then if type(Default) == "table" then for _, Item in Default do table.insert(SelectedItems, Item) end end
+                else if type(Default) == "string" and Default ~= "" then table.insert(SelectedItems, Default) end end
+                
+                local DropBtn = Create("TextButton", {Size = UDim2.new(0, 100, 0, 26), BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
+                local DropText = Create("TextLabel", {Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Theme.Font, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
+                local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, -16, 0.5, -6), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Theme.TextSecondary, Parent = DropBtn})
+
+                local function UpdateText()
+                    local str = table.concat(SelectedItems, ", ")
+                    if #str > 12 then str = str:sub(1, 9) .. "..." end
+                    DropText.Text = str == "" and "None" or str
+                end
+                UpdateText()
+
+                local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 120, 0, 0), BackgroundColor3 = Theme.Main, Visible = false, ClipsDescendants = true, ZIndex = 110, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Theme.Border, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ScreenGui})
+                Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = DropdownMenu})
+                local DropStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = DropdownMenu})
+                local MenuLayout = Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = DropdownMenu})
+
+                local OptionButtons = {}
+                local IsOpen = false
+
+                local function Close()
+                    IsOpen = false; TweenService:Create(Chevron, TweenSmooth, {Rotation = 0}):Play()
+                    local tw = TweenService:Create(DropdownMenu, TweenSmooth, {Size = UDim2.new(0, 120, 0, 0)})
+                    tw:Play(); tw.Completed:Connect(function() if not IsOpen then DropdownMenu.Visible = false end end)
+                end
+                table.insert(WindowObj.Popups, {Close = Close})
+
+                local function SetValue(val, trigger)
+                    SelectedItems = type(val) == "table" and val or {val}
+                    for opt, btn in OptionButtons do btn.TextColor3 = table.find(SelectedItems, opt) and Theme.Accent or Theme.TextSecondary end
+                    UpdateText(); if trigger then Callback(Multi and SelectedItems or SelectedItems[1]) end
+                end
+
+                local function Refresh()
+                    for _, b in OptionButtons do b:Destroy() end
+                    table.clear(OptionButtons)
+                    for _, opt in OptionsList do
+                        local btn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = opt, TextColor3 = table.find(SelectedItems, opt) and Theme.Accent or Theme.TextSecondary, Font = Theme.Font, TextSize = 11, ZIndex = 111, Parent = DropdownMenu})
+                        OptionButtons[opt] = btn
+                        btn.MouseButton1Click:Connect(function()
+                            if Multi then
+                                local i = table.find(SelectedItems, opt)
+                                if i then table.remove(SelectedItems, i) else table.insert(SelectedItems, opt) end
+                                SetValue(SelectedItems, true)
+                            else
+                                SetValue(opt, true); Close()
+                            end
+                        end)
+                    end
+                end
+                Refresh()
+
+                DropBtn.MouseButton1Click:Connect(function()
+                    IsOpen = not IsOpen
+                    if IsOpen then
+                        DropdownMenu.Visible = true; DropdownMenu.Position = UDim2.fromOffset(DropBtn.AbsolutePosition.X, DropBtn.AbsolutePosition.Y + 30)
+                        TweenService:Create(Chevron, TweenSmooth, {Rotation = 180}):Play()
+                        TweenService:Create(DropdownMenu, TweenSmooth, {Size = UDim2.new(0, 120, 0, math.min(MenuLayout.AbsoluteContentSize.Y + 8, 120))}):Play()
+                    else Close() end
+                end)
+
+                local DropObj = {Row = RowFrame}
+                function DropObj:SetOptions(opts) OptionsList = opts; Refresh() end
+                function DropObj:SetValue(val) SetValue(val, true) end
+                Library.Flags[FlagName] = DropObj
+                return DropObj
+            end
+            
+            function RowObj:SubButton(BOpts)
+                local BTitle = BOpts.Title or "Click"
+                local Callback = BOpts.Callback or function() end
+                local Btn = Create("TextButton", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = BTitle, TextColor3 = Theme.TextPrimary, Font = Theme.Font, TextSize = 11, AutoButtonColor = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Btn})
+                Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = Btn})
+                Btn.MouseButton1Click:Connect(Callback)
+                return {Row = RowFrame}
+            end
+
+            return RowObj
         end
 
         local function AttachColorPicker(TargetRow, CompTitle, ColorProps, RightOffset)
@@ -1754,171 +1926,8 @@ function Library:Window(Options)
             function TextboxObj:GetComponentType() return "Textbox" end
             function TextboxObj:GetValue() return CurrentValue end
             function TextboxObj:SetValue(val) SetValue(val, true) end
-            function TextboxObj:SetPlaceholder(val) InputBox.PlaceholderText = val end
             Library.Flags[FlagName] = TextboxObj
             return TextboxObj
-        end
-
-        function TabObj:Row(RowOpts)
-            local RowTitle = RowOpts.Title
-            local RowFrame = CreateRow(RowTitle, RowOpts.Height or 40)
-            local Container = Create("Frame", {
-                Size = UDim2.new(1, - (RowTitle and 120 or 20), 1, -4),
-                Position = UDim2.new(0, (RowTitle and 112 or 10), 0, 0),
-                BackgroundTransparency = 1,
-                Parent = RowFrame
-            })
-            Create("UIListLayout", {
-                FillDirection = Enum.FillDirection.Horizontal,
-                HorizontalAlignment = Enum.HorizontalAlignment.Right,
-                VerticalAlignment = Enum.VerticalAlignment.Center,
-                Padding = UDim.new(0, 10),
-                Parent = Container
-            })
-
-            local RowObj = {Frame = RowFrame, Container = Container}
-
-            function RowObj:SubButton(Opts)
-                local Title = Opts.Title or "Button"
-                local Action = Opts.Action or Title
-                local Callback = Opts.Callback or function() end
-                
-                local Btn = Create("TextButton", {
-                    Size = UDim2.new(0, 0, 0, 26),
-                    AutomaticSize = Enum.AutomaticSize.X,
-                    BackgroundColor3 = Theme.Search,
-                    Text = Action,
-                    TextColor3 = Theme.TextPrimary,
-                    Font = Theme.Font,
-                    TextSize = 12,
-                    AutoButtonColor = false,
-                    Parent = Container
-                })
-                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Btn})
-                Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = Btn})
-                
-                Btn.MouseButton1Click:Connect(function()
-                    TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Theme.Border}):Play()
-                    task.delay(0.15, function() TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Theme.Search}):Play() end)
-                    Callback()
-                end)
-                ThemeUpdate(function()
-                    Btn.BackgroundColor3 = Theme.Search
-                    Btn.TextColor3 = Theme.TextPrimary
-                end)
-                return {Fire = Callback}
-            end
-
-            function RowObj:SubToggle(Opts)
-                local Default = Opts.Default or false
-                local Callback = Opts.Callback or function() end
-                local FlagName = Opts.Flag or string.format("%s/%s/Toggle", TabObj.Title, Opts.Title or "Sub")
-                
-                local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
-                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
-                
-                local State = Default
-                local function SetState(s, trigger)
-                    State = s
-                    TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Theme.Accent or Theme.Search}):Play()
-                    if trigger then Callback(State) end
-                end
-                Checkbox.MouseButton1Click:Connect(function() SetState(not State, true) end)
-                
-                ThemeUpdate(function() Checkbox.BackgroundColor3 = State and Theme.Accent or Theme.Search end)
-
-                local Obj = {}
-                function Obj:GetValue() return State end
-                function Obj:SetValue(v) SetState(v, true) end
-                Library.Flags[FlagName] = Obj
-                return Obj
-            end
-
-            function RowObj:SubTextbox(Opts)
-                local Default = Opts.Default or ""
-                local Placeholder = Opts.Placeholder or "Value"
-                local Callback = Opts.Callback or function() end
-                local FlagName = Opts.Flag or string.format("%s/%s/Textbox", TabObj.Title, Opts.Title or "Sub")
-
-                local InputBox = Create("TextBox", {
-                    Size = UDim2.new(0, 60, 0, 24),
-                    BackgroundColor3 = Theme.Search,
-                    Text = Default,
-                    PlaceholderText = Placeholder,
-                    TextColor3 = Theme.TextPrimary,
-                    PlaceholderColor3 = Theme.TextSecondary,
-                    Font = Theme.Font,
-                    TextSize = 12,
-                    AutomaticSize = Enum.AutomaticSize.X,
-                    ClearTextOnFocus = false,
-                    Parent = Container
-                })
-                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = InputBox})
-                local Stroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
-                Create("UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = InputBox})
-                Create("UISizeConstraint", {MinSize = Vector2.new(60, 24), MaxSize = Vector2.new(150, 24), Parent = InputBox})
-
-                local function SetValue(val, trigger)
-                    InputBox.Text = tostring(val)
-                    if trigger then Callback(InputBox.Text) end
-                end
-                InputBox.FocusLost:Connect(function() SetValue(InputBox.Text, true) end)
-                
-                ThemeUpdate(function()
-                    InputBox.BackgroundColor3 = Theme.Search
-                    InputBox.TextColor3 = Theme.TextPrimary
-                    InputBox.PlaceholderColor3 = Theme.TextSecondary
-                    Stroke.Color = Theme.Border
-                end)
-
-                local Obj = {}
-                function Obj:GetValue() return InputBox.Text end
-                function Obj:SetValue(v) SetValue(v, true) end
-                function Obj:SetPlaceholder(v) InputBox.PlaceholderText = v end
-                Library.Flags[FlagName] = Obj
-                return Obj
-            end
-
-            function RowObj:SubDropdown(Opts)
-                local OptionsList = Opts.Options or {}
-                local Default = Opts.Default
-                local Callback = Opts.Callback or function() end
-                local FlagName = Opts.Flag or string.format("%s/%s/Dropdown", TabObj.Title, Opts.Title or "Sub")
-                
-                local DropBtn = Create("TextButton", {Size = UDim2.new(0, 100, 0, 24), BackgroundColor3 = Theme.Search, Text = Default or "Select", TextColor3 = Theme.TextPrimary, Font = Theme.Font, TextSize = 12, AutoButtonColor = false, Parent = Container})
-                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
-                
-                local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 100, 0, 0), BackgroundColor3 = Theme.Main, Visible = false, ZIndex = 20, BorderSizePixel = 0, ScrollBarThickness = 2, Parent = ScreenGui})
-                Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = DropdownMenu})
-                Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = DropdownMenu})
-                
-                local OptionButtons = {}
-                local function Close() DropdownMenu.Visible = false end
-                
-                local function SetValue(val, trigger)
-                    DropBtn.Text = tostring(val)
-                    if trigger then Callback(val) end
-                    Close()
-                end
-
-                for _, Opt in OptionsList do
-                    local btn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = Opt, TextColor3 = Theme.TextSecondary, Font = Theme.Font, TextSize = 11, Parent = DropdownMenu})
-                    btn.MouseButton1Click:Connect(function() SetValue(Opt, true) end)
-                    table.insert(OptionButtons, btn)
-                end
-
-                DropBtn.MouseButton1Click:Connect(function()
-                    DropdownMenu.Position = UDim2.fromOffset(DropBtn.AbsolutePosition.X, DropBtn.AbsolutePosition.Y + 28)
-                    DropdownMenu.Size = UDim2.new(0, 100, 0, math.min(#OptionsList * 24, 120))
-                    DropdownMenu.Visible = not DropdownMenu.Visible
-                end)
-
-                table.insert(WindowObj.Popups, {Close = Close})
-                
-                return {SetValue = function(v) SetValue(v, true) end}
-            end
-
-            return RowObj
         end
 
         function TabObj:Keybind(KOpts)
