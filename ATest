@@ -1981,7 +1981,7 @@ function Airflow:Init(config)
     WindowFrame.Parent = AirflowWindow
     WindowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
     WindowFrame.BackgroundColor3 = Color3.fromRGB(166, 166, 166)
-    WindowFrame.BackgroundTransparency = 1
+    WindowFrame.BackgroundTransparency = 100
     WindowFrame.Visible = false
     WindowFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
     WindowFrame.BorderSizePixel = 0
