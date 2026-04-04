@@ -1099,6 +1099,13 @@ end
 local ThemeConnections = {}
 local function ThemeUpdate(func)
     table.insert(ThemeConnections, func)
+    pcall(func)
+end
+
+local function ApplyTheme()
+    for _, func in ipairs(ThemeConnections) do
+        pcall(func)
+    end
 end
 
 local Library = {
@@ -1115,7 +1122,7 @@ function Library:GetTheme()
 end
 
 function Library:SetTheme(_NewTheme)
-    -- Theme is hardcoded as Catppuccin Mocha. This function is intentionally a no-op.
+    ApplyTheme()
 end
 
 function Library:Window(Options)
@@ -1448,7 +1455,8 @@ function Library:Window(Options)
             ThemeUpdate(function() TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244) end)
             
             local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, ClipsDescendants = true, Parent = RowFrame})
-            local Layout = Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = Container})
+            local Layout = Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = Container})
+            Create("UIPadding", {PaddingRight = UDim.new(0, 8), Parent = Container})
 
             local RowObj = {Row = RowFrame}
             
