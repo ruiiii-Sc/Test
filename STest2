@@ -1101,9 +1101,8 @@ local function ThemeUpdate(func)
     table.insert(ThemeConnections, func)
     pcall(func)
 end
-
 local function ApplyTheme()
-    for _, func in ipairs(ThemeConnections) do pcall(func) end
+    for _, f in ipairs(ThemeConnections) do pcall(f) end
 end
 
 local Library = {
@@ -1151,18 +1150,33 @@ function Library:Window(Options)
     local TabContainerNav = Create("Frame", {Size = UDim2.new(0, 300, 1, 0), Position = UDim2.new(0.5, -150, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
     Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = TabContainerNav})
 
-    local ActionContainer = Create("Frame", {Size = UDim2.new(0, 250, 1, 0), Position = UDim2.new(1, -270, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
-    Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = ActionContainer})
-    
-    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "", AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
+    local ActionContainer = Create("Frame", {Size = UDim2.new(0, 290, 1, 0), Position = UDim2.new(1, -310, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
+    Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = ActionContainer})
+
+    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(210, 49, 49), Text = "✕", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = DestroyBtn})
-    local DestroyIcon = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = Icons.Trash, ImageColor3 = Color3.fromRGB(166, 173, 200), Parent = DestroyBtn})
-    
+    local DestroyIcon = DestroyBtn
+
+    DestroyBtn.MouseEnter:Connect(function()
+        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(239, 68, 68)}):Play()
+    end)
+    DestroyBtn.MouseLeave:Connect(function()
+        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(210, 49, 49)}):Play()
+    end)
     DestroyBtn.MouseButton1Click:Connect(function()
         ScreenGui:Destroy()
     end)
 
-    local SearchBar = Create("Frame", {Size = UDim2.new(0, 160, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), LayoutOrder = 1, Parent = ActionContainer})
+    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "−", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
+    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MinimizeBtn})
+    MinimizeBtn.MouseEnter:Connect(function()
+        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(69, 71, 90)}):Play()
+    end)
+    MinimizeBtn.MouseLeave:Connect(function()
+        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(49, 50, 68)}):Play()
+    end)
+
+    local SearchBar = Create("Frame", {Size = UDim2.new(0, 140, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), LayoutOrder = 1, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = SearchBar})
     local SearchIcon = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 12, 0.5, -8), BackgroundTransparency = 1, Image = Icons.Search, ImageColor3 = Color3.fromRGB(166, 173, 200), Parent = SearchBar})
     local SearchBox = Create("TextBox", {Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 36, 0, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Search...", TextColor3 = Color3.fromRGB(205, 214, 244), PlaceholderColor3 = Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = SearchBar})
@@ -1196,19 +1210,54 @@ function Library:Window(Options)
         SearchBox.PlaceholderColor3 = Color3.fromRGB(166, 173, 200)
         SearchContent.ScrollBarImageColor3 = Color3.fromRGB(203, 166, 247)
         NoResultsLabel.TextColor3 = Color3.fromRGB(166, 173, 200)
-        
-        if WindowObj.CurrentTab and WindowObj.CurrentTab.IsConfig then
-            DestroyBtn.BackgroundColor3 = Color3.fromRGB(203, 166, 247)
-            DestroyIcon.ImageColor3 = Color3.fromRGB(17, 17, 17)
-        else
-            DestroyBtn.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-            DestroyIcon.ImageColor3 = Color3.fromRGB(166, 173, 200)
+        MinimizeBtn.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
+        MinimizeBtn.TextColor3 = Color3.fromRGB(205, 214, 244)
+    end)
+
+    local MiniFloatBtn = Create("TextButton", {
+        Size = UDim2.fromOffset(44, 44),
+        Position = UDim2.new(0, 20, 0.5, -22),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 46),
+        Text = "B",
+        TextColor3 = Color3.fromRGB(203, 166, 247),
+        Font = Enum.Font.FredokaOne,
+        TextSize = 20,
+        AutoButtonColor = false,
+        Visible = false,
+        Active = true,
+        Draggable = true,
+        ZIndex = 9999,
+        Parent = ScreenGui
+    })
+    Create("UICorner", {CornerRadius = UDim.new(0, 10), Parent = MiniFloatBtn})
+    Create("UIStroke", {Color = Color3.fromRGB(69, 71, 90), Thickness = 1.5, Parent = MiniFloatBtn})
+
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        for _, popup in WindowObj.Popups do
+            if type(popup.Close) == "function" then popup.Close() end
         end
+        local tw = TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 1})
+        tw:Play()
+        tw.Completed:Once(function()
+            MainFrame.Visible = false
+            MiniFloatBtn.Visible = true
+        end)
+        WindowObj.Visible = false
+        for _, wm in WindowObj.Watermarks do wm:UpdatePosition() end
+    end)
+
+    MiniFloatBtn.MouseButton1Click:Connect(function()
+        MiniFloatBtn.Visible = false
+        MainFrame.Visible = true
+        TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 0}):Play()
+        WindowObj.Visible = true
+        for _, wm in WindowObj.Watermarks do wm:UpdatePosition() end
     end)
 
     function WindowObj:ToggleVisibility()
         self.Visible = not self.Visible
         if self.Visible then
+            MiniFloatBtn.Visible = false
             MainFrame.Visible = true
             TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 0}):Play()
         else
@@ -1218,7 +1267,10 @@ function Library:Window(Options)
             local tw = TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 1})
             tw:Play()
             tw.Completed:Once(function()
-                if not self.Visible then MainFrame.Visible = false end
+                if not self.Visible then
+                    MainFrame.Visible = false
+                    MiniFloatBtn.Visible = true
+                end
             end)
         end
         for _, wm in self.Watermarks do wm:UpdatePosition() end
@@ -1391,8 +1443,7 @@ function Library:Window(Options)
                 end
 
                 if Tab.IsConfig then
-                    TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(49, 50, 68)}):Play()
-                    TweenService:Create(DestroyIcon, TweenFast, {ImageColor3 = Color3.fromRGB(166, 173, 200)}):Play()
+                    TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(210, 49, 49)}):Play()
                 else
                     TweenService:Create(Tab.TabButton, TweenFast, {BackgroundTransparency = 1}):Play()
                     TweenService:Create(Tab.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Color3.fromRGB(166, 173, 200)}):Play()
@@ -1404,8 +1455,7 @@ function Library:Window(Options)
             TweenService:Create(TabObj.Canvas, TweenSmooth, {GroupTransparency = 0}):Play()
 
             if TabObj.IsConfig then
-                TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(203, 166, 247)}):Play()
-                TweenService:Create(DestroyIcon, TweenFast, {ImageColor3 = Color3.fromRGB(17, 17, 17)}):Play()
+                TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(239, 68, 68)}):Play()
             else
                 TweenService:Create(TabObj.TabButton, TweenFast, {BackgroundTransparency = 0}):Play()
                 TweenService:Create(TabObj.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Color3.fromRGB(203, 166, 247)}):Play()
