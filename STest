@@ -1447,7 +1447,7 @@ function Library:Window(Options)
             local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
             ThemeUpdate(function() TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244) end)
             
-            local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, Parent = RowFrame})
+            local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, ClipsDescendants = true, Parent = RowFrame})
             local Layout = Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = Container})
 
             local RowObj = {Row = RowFrame}
@@ -2348,4 +2348,3 @@ function Library:Window(Options)
 end
 
 return Library
-
