@@ -1119,8 +1119,8 @@ function Library:GetTheme()
     return Theme
 end
 
-function Library:SetTheme(_NewTheme)
-    ApplyTheme()
+function Library:SetTheme()
+    return
 end
 
 function Library:Window(Options)
