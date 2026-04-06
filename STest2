@@ -7,18 +7,19 @@ local TextService = game:GetService("TextService")
 
 local LocalPlayer = Players.LocalPlayer
 
+-- Catppuccin Mocha – single source of truth for all colors
 local Theme = {
-    Body = Color3.fromRGB(30, 30, 46),
-    Sidebar = Color3.fromRGB(17, 17, 27),
-    Main = Color3.fromRGB(30, 30, 46),
-    Search = Color3.fromRGB(49, 50, 68),
-    TextPrimary = Color3.fromRGB(205, 214, 244),
+    Body          = Color3.fromRGB(30, 30, 46),
+    Sidebar       = Color3.fromRGB(17, 17, 27),
+    Main          = Color3.fromRGB(30, 30, 46),
+    Search        = Color3.fromRGB(49, 50, 68),
+    TextPrimary   = Color3.fromRGB(205, 214, 244),
     TextSecondary = Color3.fromRGB(166, 173, 200),
-    Accent = Color3.fromRGB(203, 166, 247),
-    Border = Color3.fromRGB(69, 71, 90),
-    Font = Enum.Font.FredokaOne
+    Accent        = Color3.fromRGB(203, 166, 247),
+    Border        = Color3.fromRGB(69, 71, 90),
+    Font          = Enum.Font.FredokaOne,
 }
-local Font = Enum.Font.FredokaOne
+local Font = Theme.Font
 
 local Icons = {
     Placeholder = "rbxassetid://11419709766",
@@ -29,7 +30,7 @@ local Icons = {
     Pipette = "rbxassetid://11419718822",
     PickerCursor = "rbxassetid://11293981586",
     Checkmark = "rbxassetid://10709790644",
-    X = "rbxassetid://10734919143",
+    X = "X",
     -- Lucide Icons (Common)
     ["home"] = "rbxassetid://10723407389",
     ["settings"] = "rbxassetid://10709810948",
