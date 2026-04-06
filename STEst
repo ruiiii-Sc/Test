@@ -1130,14 +1130,14 @@ function Library:Window(Options)
     local Success = pcall(function() ScreenGui.Parent = CoreGui end)
     if not Success then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
-    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 850, 0, 550), Position = UDim2.new(0.5, -425, 0.5, -275), BackgroundColor3 = Color3.fromRGB(30, 30, 46), BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
+    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 850, 0, 550), Position = UDim2.new(0.5, -425, 0.5, -275), BackgroundColor3 = Theme.Main, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MainFrame})
     Create("UIDragDetector", {Parent = MainFrame})
 
-    local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 64), Position = UDim2.new(0, 0, 1, -64), BackgroundColor3 = Color3.fromRGB(17, 17, 27), BorderSizePixel = 0, Parent = MainFrame})
+    local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 64), Position = UDim2.new(0, 0, 1, -64), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
     
     local ProfileFrame = Create("Frame", {Size = UDim2.new(0, 200, 1, 0), Position = UDim2.new(0, 20, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
-    local AvatarImage = Create("ImageLabel", {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0, 0, 0.5, -20), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Parent = ProfileFrame})
+    local AvatarImage = Create("ImageLabel", {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0, 0, 0.5, -20), BackgroundColor3 = Theme.Search, Parent = ProfileFrame})
     Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = AvatarImage})
     
     task.spawn(function()
@@ -1145,8 +1145,8 @@ function Library:Window(Options)
         if success then AvatarImage.Image = thumb end
     end)
     
-    local ProfileName = Create("TextLabel", {Size = UDim2.new(1, -52, 0, 20), Position = UDim2.new(0, 52, 0.5, -18), BackgroundTransparency = 1, Text = LocalPlayer.DisplayName or "User", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, Parent = ProfileFrame})
-    local ProfileSub = Create("TextLabel", {Size = UDim2.new(1, -52, 0, 16), Position = UDim2.new(0, 52, 0.5, 2), BackgroundTransparency = 1, Text = SubTitle, TextColor3 = Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = ProfileFrame})
+    local ProfileName = Create("TextLabel", {Size = UDim2.new(1, -52, 0, 20), Position = UDim2.new(0, 52, 0.5, -18), BackgroundTransparency = 1, Text = LocalPlayer.DisplayName or "User", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, Parent = ProfileFrame})
+    local ProfileSub = Create("TextLabel", {Size = UDim2.new(1, -52, 0, 16), Position = UDim2.new(0, 52, 0.5, 2), BackgroundTransparency = 1, Text = SubTitle, TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = ProfileFrame})
 
     local TabContainerNav = Create("Frame", {Size = UDim2.new(0, 300, 1, 0), Position = UDim2.new(0.5, -150, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
     Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = TabContainerNav})
@@ -1154,41 +1154,41 @@ function Library:Window(Options)
     local ActionContainer = Create("Frame", {Size = UDim2.new(0, 290, 1, 0), Position = UDim2.new(1, -310, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
     Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = ActionContainer})
 
-    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(210, 49, 49), Text = "✕", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
+    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Theme.Search, Text = "✕", TextColor3 = Color3.fromRGB(243, 139, 168), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = DestroyBtn})
     local DestroyIcon = DestroyBtn
 
     DestroyBtn.MouseEnter:Connect(function()
-        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(239, 68, 68)}):Play()
+        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Border}):Play()
     end)
     DestroyBtn.MouseLeave:Connect(function()
-        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(210, 49, 49)}):Play()
+        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Search}):Play()
     end)
     DestroyBtn.MouseButton1Click:Connect(function()
         ScreenGui:Destroy()
     end)
 
-    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "−", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
+    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Theme.Search, Text = "−", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MinimizeBtn})
     MinimizeBtn.MouseEnter:Connect(function()
-        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(69, 71, 90)}):Play()
+        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Border}):Play()
     end)
     MinimizeBtn.MouseLeave:Connect(function()
-        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(49, 50, 68)}):Play()
+        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Search}):Play()
     end)
 
-    local SearchBar = Create("Frame", {Size = UDim2.new(0, 140, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), LayoutOrder = 1, Parent = ActionContainer})
+    local SearchBar = Create("Frame", {Size = UDim2.new(0, 140, 0, 40), BackgroundColor3 = Theme.Search, LayoutOrder = 1, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = SearchBar})
-    local SearchIcon = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 12, 0.5, -8), BackgroundTransparency = 1, Image = Icons.Search, ImageColor3 = Color3.fromRGB(166, 173, 200), Parent = SearchBar})
-    local SearchBox = Create("TextBox", {Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 36, 0, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Search...", TextColor3 = Color3.fromRGB(205, 214, 244), PlaceholderColor3 = Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = SearchBar})
+    local SearchIcon = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 12, 0.5, -8), BackgroundTransparency = 1, Image = Icons.Search, ImageColor3 = Theme.TextSecondary, Parent = SearchBar})
+    local SearchBox = Create("TextBox", {Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 36, 0, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Search...", TextColor3 = Theme.TextPrimary, PlaceholderColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = SearchBar})
 
     local ContentArea = Create("Frame", {Size = UDim2.new(1, 0, 1, -64), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Parent = MainFrame})
     local TabContainer = Create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Parent = ContentArea})
     
-    local SearchContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Color3.fromRGB(203, 166, 247), CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = TabContainer})
+    local SearchContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Theme.Accent, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = TabContainer})
     Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = SearchContent})
 
-    local NoResultsLabel = Create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "No results found", TextColor3 = Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 16, Visible = false, Parent = TabContainer})
+    local NoResultsLabel = Create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "No results found", TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 16, Visible = false, Parent = TabContainer})
 
     local WindowObj = {
         ScreenGui = ScreenGui,
@@ -1201,26 +1201,28 @@ function Library:Window(Options)
     }
 
     ThemeUpdate(function()
-        MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 46)
-        BottomBar.BackgroundColor3 = Color3.fromRGB(17, 17, 27)
-        ProfileName.TextColor3 = Color3.fromRGB(205, 214, 244)
-        ProfileSub.TextColor3 = Color3.fromRGB(166, 173, 200)
-        SearchBar.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-        SearchIcon.ImageColor3 = Color3.fromRGB(166, 173, 200)
-        SearchBox.TextColor3 = Color3.fromRGB(205, 214, 244)
-        SearchBox.PlaceholderColor3 = Color3.fromRGB(166, 173, 200)
-        SearchContent.ScrollBarImageColor3 = Color3.fromRGB(203, 166, 247)
-        NoResultsLabel.TextColor3 = Color3.fromRGB(166, 173, 200)
-        MinimizeBtn.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-        MinimizeBtn.TextColor3 = Color3.fromRGB(205, 214, 244)
+        MainFrame.BackgroundColor3 = Theme.Main
+        BottomBar.BackgroundColor3 = Theme.Sidebar
+        ProfileName.TextColor3 = Theme.TextPrimary
+        ProfileSub.TextColor3 = Theme.TextSecondary
+        SearchBar.BackgroundColor3 = Theme.Search
+        SearchIcon.ImageColor3 = Theme.TextSecondary
+        SearchBox.TextColor3 = Theme.TextPrimary
+        SearchBox.PlaceholderColor3 = Theme.TextSecondary
+        SearchContent.ScrollBarImageColor3 = Theme.Accent
+        NoResultsLabel.TextColor3 = Theme.TextSecondary
+        MinimizeBtn.BackgroundColor3 = Theme.Search
+        MinimizeBtn.TextColor3 = Theme.TextPrimary
+        DestroyBtn.BackgroundColor3 = Theme.Search
+        DestroyBtn.TextColor3 = Color3.fromRGB(243, 139, 168)
     end)
 
     local MiniFloatBtn = Create("TextButton", {
         Size = UDim2.fromOffset(44, 44),
         Position = UDim2.new(0, 20, 0.5, -22),
-        BackgroundColor3 = Color3.fromRGB(30, 30, 46),
+        BackgroundColor3 = Theme.Main,
         Text = "B",
-        TextColor3 = Color3.fromRGB(203, 166, 247),
+        TextColor3 = Theme.Accent,
         Font = Enum.Font.FredokaOne,
         TextSize = 20,
         AutoButtonColor = false,
@@ -1231,7 +1233,7 @@ function Library:Window(Options)
         Parent = ScreenGui
     })
     Create("UICorner", {CornerRadius = UDim.new(0, 10), Parent = MiniFloatBtn})
-    Create("UIStroke", {Color = Color3.fromRGB(69, 71, 90), Thickness = 1.5, Parent = MiniFloatBtn})
+    Create("UIStroke", {Color = Theme.Border, Thickness = 1.5, Parent = MiniFloatBtn})
 
     MinimizeBtn.MouseButton1Click:Connect(function()
         for _, popup in WindowObj.Popups do
@@ -1288,17 +1290,17 @@ function Library:Window(Options)
     function WindowObj:Watermark(InitialText)
         local wmFrame = Create("Frame", {
             Parent = ScreenGui,
-            BackgroundColor3 = Color3.fromRGB(17, 17, 27),
+            BackgroundColor3 = Theme.Sidebar,
             Size = UDim2.fromOffset(0, 26),
             ClipsDescendants = true,
             ZIndex = 5000
         })
         Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = wmFrame})
-        local wmStroke = Create("UIStroke", {Color = Color3.fromRGB(69, 71, 90), Thickness = 1, Parent = wmFrame})
+        local wmStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = wmFrame})
         
         local topAccent = Create("Frame", {
             Parent = wmFrame,
-            BackgroundColor3 = Color3.fromRGB(203, 166, 247),
+            BackgroundColor3 = Theme.Accent,
             BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 0, 1),
             Position = UDim2.new(0, 0, 0, 0),
@@ -1321,7 +1323,7 @@ function Library:Window(Options)
             Size = UDim2.new(1, 0, 1, 0), 
             Text = InitialText or "",
             RichText = true,
-            TextColor3 = Color3.fromRGB(205, 214, 244),
+            TextColor3 = Theme.TextPrimary,
             Font = Enum.Font.FredokaOne,
             TextSize = 13,
             ZIndex = 5001
@@ -1329,10 +1331,10 @@ function Library:Window(Options)
         Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = wmText})
 
         ThemeUpdate(function()
-            wmFrame.BackgroundColor3 = Color3.fromRGB(17, 17, 27)
-            wmStroke.Color = Color3.fromRGB(69, 71, 90)
-            topAccent.BackgroundColor3 = Color3.fromRGB(203, 166, 247)
-            wmText.TextColor3 = Color3.fromRGB(205, 214, 244)
+            wmFrame.BackgroundColor3 = Theme.Sidebar
+            wmStroke.Color = Theme.Border
+            topAccent.BackgroundColor3 = Theme.Accent
+            wmText.TextColor3 = Theme.TextPrimary
         end)
 
         local wmObj = {Frame = wmFrame, PosString = "TopLeft", CurrentText = InitialText or ""}
@@ -1405,25 +1407,25 @@ function Library:Window(Options)
         local TabIcon = GetIcon(Options.Icon)
         local IsConfig = Options.IsConfig or false
 
-        local TabBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "", AutoButtonColor = false})
+        local TabBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundTransparency = 1, BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false})
         TabBtn.Parent = TabContainerNav
         
         Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = TabBtn})
-        local TabIconImage = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = TabIcon, ImageColor3 = Color3.fromRGB(166, 173, 200), Parent = TabBtn})
+        local TabIconImage = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = TabIcon, ImageColor3 = Theme.TextSecondary, Parent = TabBtn})
 
         local TabCanvas = Create("CanvasGroup", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, Parent = TabContainer})
-        local TabContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Color3.fromRGB(203, 166, 247), CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = TabCanvas})
+        local TabContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Theme.Accent, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = TabCanvas})
         Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4), Parent = TabContent})
 
         ThemeUpdate(function()
             if WindowObj.CurrentTab and WindowObj.CurrentTab.TabButton == TabBtn then
-                TabBtn.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                TabIconImage.ImageColor3 = Color3.fromRGB(203, 166, 247)
+                TabBtn.BackgroundColor3 = Theme.Search
+                TabIconImage.ImageColor3 = Theme.Accent
             else
-                TabBtn.BackgroundColor3 = Color3.fromRGB(17, 17, 27)
-                TabIconImage.ImageColor3 = Color3.fromRGB(166, 173, 200)
+                TabBtn.BackgroundColor3 = Theme.Sidebar
+                TabIconImage.ImageColor3 = Theme.TextSecondary
             end
-            TabContent.ScrollBarImageColor3 = Color3.fromRGB(203, 166, 247)
+            TabContent.ScrollBarImageColor3 = Theme.Accent
         end)
 
         local TabObj = {Canvas = TabCanvas, Container = TabContent, TabButton = TabBtn, Title = TabTitle, Icon = TabIcon, IsConfig = IsConfig, LayoutOrder = 0}
@@ -1447,7 +1449,7 @@ function Library:Window(Options)
                     TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(210, 49, 49)}):Play()
                 else
                     TweenService:Create(Tab.TabButton, TweenFast, {BackgroundTransparency = 1}):Play()
-                    TweenService:Create(Tab.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Color3.fromRGB(166, 173, 200)}):Play()
+                    TweenService:Create(Tab.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Theme.TextSecondary}):Play()
                 end
             end
             
@@ -1459,7 +1461,7 @@ function Library:Window(Options)
                 TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(239, 68, 68)}):Play()
             else
                 TweenService:Create(TabObj.TabButton, TweenFast, {BackgroundTransparency = 0}):Play()
-                TweenService:Create(TabObj.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Color3.fromRGB(203, 166, 247)}):Play()
+                TweenService:Create(TabObj.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Theme.Accent}):Play()
             end
 
             WindowObj.CurrentTab = TabObj
@@ -1488,12 +1490,12 @@ function Library:Window(Options)
                 Size = UDim2.new(1, -16, 0, 1),
                 Position = UDim2.new(0, 8, 0.5, 0),
                 AnchorPoint = Vector2.new(0, 0.5),
-                BackgroundColor3 = Color3.fromRGB(69, 71, 90),
+                BackgroundColor3 = Theme.Border,
                 BackgroundTransparency = 0.5,
                 BorderSizePixel = 0,
                 Parent = Row
             })
-            ThemeUpdate(function() RowSep.BackgroundColor3 = Color3.fromRGB(69, 71, 90) end)
+            ThemeUpdate(function() RowSep.BackgroundColor3 = Theme.Border end)
             return {Row = Row}
         end
 
@@ -1503,7 +1505,7 @@ function Library:Window(Options)
             local TextSize = LOpts.TextSize or 11
             local Height = LOpts.Height or (TextSize + 10)
             local Font = LOpts.Font or Enum.Font.FredokaOne
-            local Color = LOpts.Color or Color3.fromRGB(166, 173, 200)
+            local Color = LOpts.Color or Theme.TextSecondary
             local Row = CreateRow(Text, Height)
             local Lbl = Create("TextLabel", {
                 Size = UDim2.new(1, -16, 1, 0),
@@ -1526,8 +1528,8 @@ function Library:Window(Options)
         function TabObj:Row(Options)
             local Title = Options.Title or "Row"
             local RowFrame = CreateRow(Title, Options.Height or 40)
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = Options.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
-            ThemeUpdate(function() TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244) end)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = Options.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
+            ThemeUpdate(function() TitleLabel.TextColor3 = Theme.TextPrimary end)
             
             local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, ClipsDescendants = true, Parent = RowFrame})
             local Layout = Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = Container})
@@ -1541,13 +1543,13 @@ function Library:Window(Options)
                 local Callback = TOpts.Callback or function() end
                 local FlagName = TOpts.Flag or string.format("%s/Row/%s/Toggle/%s", TabObj.Title, Title, TTitle)
                 
-                local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = Default and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(49, 50, 68), Text = "", AutoButtonColor = false, Parent = Container})
+                local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
 
                 local State = Default
                 local function SetState(newState, triggerCallback)
                     State = newState
-                    TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(49, 50, 68)}):Play()
+                    TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Theme.Accent or Theme.Search}):Play()
                     if triggerCallback then Callback(State) end
                 end
                 Checkbox.MouseButton1Click:Connect(function() SetState(not State, true) end)
@@ -1566,17 +1568,17 @@ function Library:Window(Options)
                 local Callback = TOpts.Callback or function() end
                 local FlagName = TOpts.Flag or string.format("%s/Row/%s/Textbox/%s", TabObj.Title, Title, TTitle)
                 
-                local InputBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = Default, PlaceholderText = Placeholder, TextColor3 = Color3.fromRGB(205, 214, 244), PlaceholderColor3 = Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, Parent = Container})
+                local InputBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = Default, PlaceholderText = Placeholder, TextColor3 = Theme.TextPrimary, PlaceholderColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, Parent = Container})
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = InputBox})
-                local Stroke = Create("UIStroke", {Color = Color3.fromRGB(69, 71, 90), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
+                local Stroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
                 Create("UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = InputBox})
                 Create("UISizeConstraint", {MinSize = Vector2.new(60, 26), MaxSize = Vector2.new(150, 26), Parent = InputBox})
 
                 ThemeUpdate(function()
-                    InputBox.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                    InputBox.TextColor3 = Color3.fromRGB(205, 214, 244)
-                    InputBox.PlaceholderColor3 = Color3.fromRGB(166, 173, 200)
-                    Stroke.Color = Color3.fromRGB(69, 71, 90)
+                    InputBox.BackgroundColor3 = Theme.Search
+                    InputBox.TextColor3 = Theme.TextPrimary
+                    InputBox.PlaceholderColor3 = Theme.TextSecondary
+                    Stroke.Color = Theme.Border
                 end)
 
                 local CurrentValue = Default
@@ -1602,10 +1604,10 @@ function Library:Window(Options)
                 if Multi then if type(Default) == "table" then for _, Item in Default do table.insert(SelectedItems, Item) end end
                 else if type(Default) == "string" and Default ~= "" then table.insert(SelectedItems, Default) end end
                 
-                local DropBtn = Create("TextButton", {Size = UDim2.new(0, 100, 0, 26), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "", AutoButtonColor = false, Parent = Container})
+                local DropBtn = Create("TextButton", {Size = UDim2.new(0, 100, 0, 26), BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
-                local DropText = Create("TextLabel", {Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
-                local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, -16, 0.5, -6), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Color3.fromRGB(166, 173, 200), Parent = DropBtn})
+                local DropText = Create("TextLabel", {Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
+                local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, -16, 0.5, -6), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Theme.TextSecondary, Parent = DropBtn})
 
                 local function UpdateText()
                     local str = table.concat(SelectedItems, ", ")
@@ -1614,9 +1616,9 @@ function Library:Window(Options)
                 end
                 UpdateText()
 
-                local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 120, 0, 0), BackgroundColor3 = Color3.fromRGB(30, 30, 46), Visible = false, ClipsDescendants = true, ZIndex = 110, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Color3.fromRGB(69, 71, 90), CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ScreenGui})
+                local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 120, 0, 0), BackgroundColor3 = Theme.Main, Visible = false, ClipsDescendants = true, ZIndex = 110, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Theme.Border, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ScreenGui})
                 Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = DropdownMenu})
-                local DropStroke = Create("UIStroke", {Color = Color3.fromRGB(69, 71, 90), Thickness = 1, Parent = DropdownMenu})
+                local DropStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = DropdownMenu})
                 local MenuLayout = Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = DropdownMenu})
 
                 local OptionButtons = {}
@@ -1631,7 +1633,7 @@ function Library:Window(Options)
 
                 local function SetValue(val, trigger)
                     SelectedItems = type(val) == "table" and val or {val}
-                    for opt, btn in OptionButtons do btn.TextColor3 = table.find(SelectedItems, opt) and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(166, 173, 200) end
+                    for opt, btn in OptionButtons do btn.TextColor3 = table.find(SelectedItems, opt) and Theme.Accent or Theme.Border end
                     UpdateText(); if trigger then Callback(Multi and SelectedItems or SelectedItems[1]) end
                 end
 
@@ -1639,7 +1641,7 @@ function Library:Window(Options)
                     for _, b in OptionButtons do b:Destroy() end
                     table.clear(OptionButtons)
                     for _, opt in OptionsList do
-                        local btn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = opt, TextColor3 = table.find(SelectedItems, opt) and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 11, ZIndex = 111, Parent = DropdownMenu})
+                        local btn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = opt, TextColor3 = table.find(SelectedItems, opt) and Theme.Accent or Theme.Border, Font = Enum.Font.FredokaOne, TextSize = 11, ZIndex = 111, Parent = DropdownMenu})
                         OptionButtons[opt] = btn
                         btn.MouseButton1Click:Connect(function()
                             if Multi then
@@ -1673,7 +1675,7 @@ function Library:Window(Options)
             function RowObj:SubButton(BOpts)
                 local BTitle = BOpts.Title or "Click"
                 local Callback = BOpts.Callback or function() end
-                local Btn = Create("TextButton", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = BTitle, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 11, AutoButtonColor = false, Parent = Container})
+                local Btn = Create("TextButton", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = BTitle, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 11, AutoButtonColor = false, Parent = Container})
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Btn})
                 Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = Btn})
                 Btn.MouseButton1Click:Connect(Callback)
@@ -1688,9 +1690,9 @@ function Library:Window(Options)
                 local Waiting = false
                 local KeyBtn = Create("TextButton", {
                     Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X,
-                    BackgroundColor3 = Color3.fromRGB(49, 50, 68),
+                    BackgroundColor3 = Theme.Search,
                     Text = Default and Default.Name or "None",
-                    TextColor3 = Color3.fromRGB(205, 214, 244),
+                    TextColor3 = Theme.TextPrimary,
                     Font = Enum.Font.FredokaOne, TextSize = 11,
                     AutoButtonColor = false, Parent = Container
                 })
@@ -1700,7 +1702,7 @@ function Library:Window(Options)
                     if Waiting then return end
                     Waiting = true
                     KeyBtn.Text = "..."
-                    TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Color3.fromRGB(203, 166, 247)}):Play()
+                    TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Theme.Accent}):Play()
                     local conn
                     conn = UserInputService.InputBegan:Connect(function(inp)
                         if inp.UserInputType == Enum.UserInputType.Keyboard then
@@ -1708,7 +1710,7 @@ function Library:Window(Options)
                             Waiting = false
                             CurrentKey = inp.KeyCode
                             KeyBtn.Text = inp.KeyCode.Name
-                            TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Color3.fromRGB(205, 214, 244)}):Play()
+                            TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Theme.TextPrimary}):Play()
                             Callback(inp.KeyCode)
                         end
                     end)
@@ -1737,18 +1739,18 @@ function Library:Window(Options)
             Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = CPContainer})
 
             local PipetteBtn = Create("TextButton", {Size = UDim2.new(0, 16, 0, 16), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, LayoutOrder = 1, ZIndex = 10, Parent = CPContainer})
-            local PipetteIcon = Create("ImageLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = Icons.Pipette, ImageColor3 = Color3.fromRGB(166, 173, 200), ZIndex = 10, Parent = PipetteBtn})
+            local PipetteIcon = Create("ImageLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = Icons.Pipette, ImageColor3 = Theme.TextSecondary, ZIndex = 10, Parent = PipetteBtn})
 
             local ColorBtn = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = CurrentColor, Text = "", AutoButtonColor = false, LayoutOrder = 2, ZIndex = 10, Parent = CPContainer})
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = ColorBtn})
             
-            local HexBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = "", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, ClearTextOnFocus = false, LayoutOrder = 3, ZIndex = 10, Parent = CPContainer})
+            local HexBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, ClearTextOnFocus = false, LayoutOrder = 3, ZIndex = 10, Parent = CPContainer})
 
-            local TransparencyLabel = Create("TextLabel", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = "", TextColor3 = Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 4, ZIndex = 10, Parent = CPContainer})
+            local TransparencyLabel = Create("TextLabel", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 4, ZIndex = 10, Parent = CPContainer})
 
-            local PickerFrame = Create("Frame", {Parent = ScreenGui, BackgroundColor3 = Color3.fromRGB(30, 30, 46), BorderSizePixel = 0, Size = UDim2.new(0, 220, 0, 0), Visible = false, ClipsDescendants = true, ZIndex = 3000})
+            local PickerFrame = Create("Frame", {Parent = ScreenGui, BackgroundColor3 = Theme.Main, BorderSizePixel = 0, Size = UDim2.new(0, 220, 0, 0), Visible = false, ClipsDescendants = true, ZIndex = 3000})
             Create("UICorner", {Parent = PickerFrame, CornerRadius = UDim.new(0, 6)})
-            local PickerStroke = Create("UIStroke", {Parent = PickerFrame, Color = Color3.fromRGB(69, 71, 90), Thickness = 1})
+            local PickerStroke = Create("UIStroke", {Parent = PickerFrame, Color = Theme.Border, Thickness = 1})
             Create("UIPadding", {Parent = PickerFrame, PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10)})
             Create("UIDragDetector", {Parent = PickerFrame})
 
@@ -1766,13 +1768,13 @@ function Library:Window(Options)
             local function CreatePickerSlider(SliderTitle)
                 local SliderFrame = Create("Frame", {Parent = PickerFrame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 35), ZIndex = 3001})
                 local Top = Create("Frame", {Parent = SliderFrame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 15), ZIndex = 3001})
-                local TitleLab = Create("TextLabel", {Parent = Top, Text = SliderTitle, Size = UDim2.new(1, -30, 1, 0), BackgroundTransparency = 1, Font = Enum.Font.FredokaOne, TextSize = 12, TextColor3 = Color3.fromRGB(166, 173, 200), TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3001})
-                local ValLabel = Create("TextLabel", {Parent = Top, Text = "0", Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(1, -30, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.FredokaOne, TextSize = 12, TextColor3 = Color3.fromRGB(205, 214, 244), TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 3001})
+                local TitleLab = Create("TextLabel", {Parent = Top, Text = SliderTitle, Size = UDim2.new(1, -30, 1, 0), BackgroundTransparency = 1, Font = Enum.Font.FredokaOne, TextSize = 12, TextColor3 = Theme.TextSecondary, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3001})
+                local ValLabel = Create("TextLabel", {Parent = Top, Text = "0", Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(1, -30, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.FredokaOne, TextSize = 12, TextColor3 = Theme.TextPrimary, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 3001})
 
-                local Track = Create("TextButton", {Parent = SliderFrame, BackgroundColor3 = Color3.fromRGB(49, 50, 68), BorderSizePixel = 0, Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 4), Text = "", AutoButtonColor = false, ZIndex = 3001})
+                local Track = Create("TextButton", {Parent = SliderFrame, BackgroundColor3 = Theme.Search, BorderSizePixel = 0, Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 4), Text = "", AutoButtonColor = false, ZIndex = 3001})
                 Create("UICorner", {Parent = Track, CornerRadius = UDim.new(0, 2)})
 
-                local Fill = Create("Frame", {Parent = Track, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Color3.fromRGB(203, 166, 247), ZIndex = 3002})
+                local Fill = Create("Frame", {Parent = Track, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Accent, ZIndex = 3002})
                 Create("UICorner", {Parent = Fill, CornerRadius = UDim.new(0, 2)})
 
                 return {Frame = SliderFrame, Track = Track, Fill = Fill, Label = ValLabel, Title = TitleLab}
@@ -1788,21 +1790,21 @@ function Library:Window(Options)
             AlphaSlider.Frame.LayoutOrder = 3
 
             ThemeUpdate(function()
-                PipetteIcon.ImageColor3 = Color3.fromRGB(166, 173, 200)
-                HexBox.TextColor3 = Color3.fromRGB(205, 214, 244)
-                TransparencyLabel.TextColor3 = Color3.fromRGB(166, 173, 200)
-                PickerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 46)
-                PickerStroke.Color = Color3.fromRGB(69, 71, 90)
+                PipetteIcon.ImageColor3 = Theme.TextSecondary
+                HexBox.TextColor3 = Theme.TextPrimary
+                TransparencyLabel.TextColor3 = Theme.TextSecondary
+                PickerFrame.BackgroundColor3 = Theme.Main
+                PickerStroke.Color = Theme.Border
 
-                HueSlider.Track.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                HueSlider.Fill.BackgroundColor3 = Color3.fromRGB(203, 166, 247)
-                HueSlider.Label.TextColor3 = Color3.fromRGB(205, 214, 244)
-                HueSlider.Title.TextColor3 = Color3.fromRGB(166, 173, 200)
+                HueSlider.Track.BackgroundColor3 = Theme.Search
+                HueSlider.Fill.BackgroundColor3 = Theme.Accent
+                HueSlider.Label.TextColor3 = Theme.TextPrimary
+                HueSlider.Title.TextColor3 = Theme.TextSecondary
 
-                AlphaSlider.Track.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                AlphaSlider.Fill.BackgroundColor3 = Color3.fromRGB(203, 166, 247)
-                AlphaSlider.Label.TextColor3 = Color3.fromRGB(205, 214, 244)
-                AlphaSlider.Title.TextColor3 = Color3.fromRGB(166, 173, 200)
+                AlphaSlider.Track.BackgroundColor3 = Theme.Search
+                AlphaSlider.Fill.BackgroundColor3 = Theme.Accent
+                AlphaSlider.Label.TextColor3 = Theme.TextPrimary
+                AlphaSlider.Title.TextColor3 = Theme.TextSecondary
             end)
 
             local function UpdateVisuals(TriggerCallback)
@@ -1930,8 +1932,8 @@ function Library:Window(Options)
         function TabObj:Colorpicker(CPOpts)
             local Title = CPOpts.Title or "Colorpicker"
             local Row = CreateRow(Title, 40)
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -250, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
-            ThemeUpdate(function() TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244) end)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -250, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            ThemeUpdate(function() TitleLabel.TextColor3 = Theme.TextPrimary end)
             
             local CPObj = AttachColorPicker(Row, Title, CPOpts, 8)
             CPObj.Row = Row
@@ -1946,16 +1948,16 @@ function Library:Window(Options)
             local FlagName = BOpts.Flag or string.format("%s/Button/%s", TabObj.Title, Title)
             local Row = CreateRow(Title, BOpts.Height or 40)
 
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = BOpts.Font or Enum.Font.FredokaOne, TextSize = BOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = BOpts.Font or Enum.Font.FredokaOne, TextSize = BOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
 
             local Btn = Create("TextButton", {
                 Size = UDim2.new(0, 0, 0, 26),
                 Position = UDim2.new(1, -8, 0.5, 0),
                 AnchorPoint = Vector2.new(1, 0.5),
                 AutomaticSize = Enum.AutomaticSize.X,
-                BackgroundColor3 = Color3.fromRGB(49, 50, 68),
+                BackgroundColor3 = Theme.Search,
                 Text = Action,
-                TextColor3 = Color3.fromRGB(205, 214, 244),
+                TextColor3 = Theme.TextPrimary,
                 Font = Enum.Font.FredokaOne,
                 TextSize = 12,
                 AutoButtonColor = false,
@@ -1966,14 +1968,14 @@ function Library:Window(Options)
             Create("UIPadding", {PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16), Parent = Btn})
             
             ThemeUpdate(function()
-                TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244)
-                Btn.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                Btn.TextColor3 = Color3.fromRGB(205, 214, 244)
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                Btn.BackgroundColor3 = Theme.Search
+                Btn.TextColor3 = Theme.TextPrimary
             end)
 
             Btn.MouseButton1Click:Connect(function()
-                TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Color3.fromRGB(69, 71, 90)}):Play()
-                task.delay(0.15, function() TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Color3.fromRGB(49, 50, 68)}):Play() end)
+                TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Theme.Border}):Play()
+                task.delay(0.15, function() TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Theme.Search}):Play() end)
                 Callback()
             end)
 
@@ -1993,17 +1995,17 @@ function Library:Window(Options)
             local FlagName = TOpts.Flag or string.format("%s/Textbox/%s", TabObj.Title, Title)
             local Row = CreateRow(Title, 40)
 
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
 
             local InputBox = Create("TextBox", {
                 Size = UDim2.new(0, 100, 0, 26),
                 Position = UDim2.new(1, -8, 0.5, 0),
                 AnchorPoint = Vector2.new(1, 0.5),
-                BackgroundColor3 = Color3.fromRGB(49, 50, 68),
+                BackgroundColor3 = Theme.Search,
                 Text = Default,
                 PlaceholderText = Placeholder,
-                TextColor3 = Color3.fromRGB(205, 214, 244),
-                PlaceholderColor3 = Color3.fromRGB(166, 173, 200),
+                TextColor3 = Theme.TextPrimary,
+                PlaceholderColor3 = Theme.TextSecondary,
                 Font = Enum.Font.FredokaOne,
                 TextSize = 12,
                 TextXAlignment = Enum.TextXAlignment.Left,
@@ -2014,16 +2016,16 @@ function Library:Window(Options)
             })
             
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = InputBox})
-            local Stroke = Create("UIStroke", {Color = Color3.fromRGB(69, 71, 90), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
+            local Stroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
             Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = InputBox})
             Create("UISizeConstraint", {MinSize = Vector2.new(100, 26), MaxSize = Vector2.new(300, 26), Parent = InputBox})
 
             ThemeUpdate(function()
-                TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244)
-                InputBox.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                InputBox.TextColor3 = Color3.fromRGB(205, 214, 244)
-                InputBox.PlaceholderColor3 = Color3.fromRGB(166, 173, 200)
-                Stroke.Color = Color3.fromRGB(69, 71, 90)
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                InputBox.BackgroundColor3 = Theme.Search
+                InputBox.TextColor3 = Theme.TextPrimary
+                InputBox.PlaceholderColor3 = Theme.TextSecondary
+                Stroke.Color = Theme.Border
             end)
 
             local CurrentValue = Default
@@ -2034,8 +2036,8 @@ function Library:Window(Options)
             end
 
             InputBox.FocusLost:Connect(function() SetValue(InputBox.Text, true) end)
-            InputBox.Focused:Connect(function() TweenService:Create(Stroke, TweenFast, {Color = Color3.fromRGB(203, 166, 247)}):Play() end)
-            InputBox.FocusLost:Connect(function() TweenService:Create(Stroke, TweenFast, {Color = Color3.fromRGB(69, 71, 90)}):Play() end)
+            InputBox.Focused:Connect(function() TweenService:Create(Stroke, TweenFast, {Color = Theme.Accent}):Play() end)
+            InputBox.FocusLost:Connect(function() TweenService:Create(Stroke, TweenFast, {Color = Theme.Border}):Play() end)
 
             local TextboxObj = {}
             function TextboxObj:GetComponentType() return "Textbox" end
@@ -2054,40 +2056,40 @@ function Library:Window(Options)
             local CurrentKey = Default
 
             local Row = CreateRow(Title, 40)
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
 
             local KeyContainer = Create("TextButton", {Size = UDim2.new(0, 150, 1, 0), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, Parent = Row})
             Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = KeyContainer})
 
-            local KeyText = Create("TextLabel", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = FormatKeyName(Default), TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 2, Parent = KeyContainer})
+            local KeyText = Create("TextLabel", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = FormatKeyName(Default), TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 2, Parent = KeyContainer})
             local KeyIconContainer = Create("Frame", {Size = UDim2.new(0, 24, 0, 18), BackgroundTransparency = 1, LayoutOrder = 1, Parent = KeyContainer})
-            local KeyboardIcon = Create("ImageLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = Icons.Keyboard, ImageColor3 = Color3.fromRGB(205, 214, 244), Parent = KeyIconContainer})
+            local KeyboardIcon = Create("ImageLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = Icons.Keyboard, ImageColor3 = Theme.TextPrimary, Parent = KeyIconContainer})
 
             local BindConnection
             
             ThemeUpdate(function()
-                TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244)
+                TitleLabel.TextColor3 = Theme.TextPrimary
                 if BindConnection then
-                    KeyText.TextColor3 = Color3.fromRGB(203, 166, 247)
-                    KeyboardIcon.ImageColor3 = Color3.fromRGB(203, 166, 247)
+                    KeyText.TextColor3 = Theme.Accent
+                    KeyboardIcon.ImageColor3 = Theme.Accent
                 else
-                    KeyText.TextColor3 = Color3.fromRGB(205, 214, 244)
-                    KeyboardIcon.ImageColor3 = Color3.fromRGB(205, 214, 244)
+                    KeyText.TextColor3 = Theme.TextPrimary
+                    KeyboardIcon.ImageColor3 = Theme.TextPrimary
                 end
             end)
             
             local function SetValue(keyEnum, triggerCallback)
                 CurrentKey = keyEnum
                 KeyText.Text = FormatKeyName(keyEnum)
-                TweenService:Create(KeyText, TweenFast, {TextColor3 = Color3.fromRGB(205, 214, 244)}):Play()
-                TweenService:Create(KeyboardIcon, TweenFast, {ImageColor3 = Color3.fromRGB(205, 214, 244)}):Play()
+                TweenService:Create(KeyText, TweenFast, {TextColor3 = Theme.TextPrimary}):Play()
+                TweenService:Create(KeyboardIcon, TweenFast, {ImageColor3 = Theme.TextPrimary}):Play()
                 if triggerCallback then Callback(CurrentKey) end
             end
 
             KeyContainer.MouseButton1Click:Connect(function()
                 KeyText.Text = "..."
-                TweenService:Create(KeyText, TweenFast, {TextColor3 = Color3.fromRGB(203, 166, 247)}):Play()
-                TweenService:Create(KeyboardIcon, TweenFast, {ImageColor3 = Color3.fromRGB(203, 166, 247)}):Play()
+                TweenService:Create(KeyText, TweenFast, {TextColor3 = Theme.Accent}):Play()
+                TweenService:Create(KeyboardIcon, TweenFast, {ImageColor3 = Theme.Accent}):Play()
 
                 if BindConnection then BindConnection:Disconnect() end
                 
@@ -2137,33 +2139,33 @@ function Library:Window(Options)
 
             local Row = CreateRow(Title, 52)
 
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(0, 200, 0, 20), Position = UDim2.new(0, 8, 0, 8), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
-            local ValueLabel = Create("TextLabel", {Size = UDim2.new(0, 150, 0, 20), Position = UDim2.new(1, -158, 0, 8), BackgroundTransparency = 1, Text = "", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Right, Parent = Row})
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(0, 200, 0, 20), Position = UDim2.new(0, 8, 0, 8), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local ValueLabel = Create("TextLabel", {Size = UDim2.new(0, 150, 0, 20), Position = UDim2.new(1, -158, 0, 8), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Right, Parent = Row})
 
             local TrackBtn = Create("TextButton", {Size = UDim2.new(1, -16, 0, 20), Position = UDim2.new(0, 8, 0, 28), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, Parent = Row})
-            local Track = Create("Frame", {Size = UDim2.new(1, 0, 0, 4), Position = UDim2.new(0, 0, 0.5, -2), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Parent = TrackBtn})
+            local Track = Create("Frame", {Size = UDim2.new(1, 0, 0, 4), Position = UDim2.new(0, 0, 0.5, -2), BackgroundColor3 = Theme.Search, Parent = TrackBtn})
             Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Track})
 
-            local Fill = Create("Frame", {Size = UDim2.new(0, 0, 1, 0), Position = UDim2.new(0, 0, 0, 0), BackgroundColor3 = Color3.fromRGB(203, 166, 247), Parent = Track})
+            local Fill = Create("Frame", {Size = UDim2.new(0, 0, 1, 0), Position = UDim2.new(0, 0, 0, 0), BackgroundColor3 = Theme.Accent, Parent = Track})
             Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Fill})
 
-            local Handle1 = Create("Frame", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(205, 214, 244), Parent = Fill})
+            local Handle1 = Create("Frame", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Theme.TextPrimary, Parent = Fill})
             Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Handle1})
             
             local Handle2
             if Dual then
                 Handle1.Position = UDim2.new(0, 0, 0.5, 0)
-                Handle2 = Create("Frame", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(205, 214, 244), Parent = Fill})
+                Handle2 = Create("Frame", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Theme.TextPrimary, Parent = Fill})
                 Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Handle2})
             end
 
             ThemeUpdate(function()
-                TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244)
-                ValueLabel.TextColor3 = Color3.fromRGB(205, 214, 244)
-                Track.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                Fill.BackgroundColor3 = Color3.fromRGB(203, 166, 247)
-                Handle1.BackgroundColor3 = Color3.fromRGB(205, 214, 244)
-                if Handle2 then Handle2.BackgroundColor3 = Color3.fromRGB(205, 214, 244) end
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                ValueLabel.TextColor3 = Theme.TextPrimary
+                Track.BackgroundColor3 = Theme.Search
+                Fill.BackgroundColor3 = Theme.Accent
+                Handle1.BackgroundColor3 = Theme.TextPrimary
+                if Handle2 then Handle2.BackgroundColor3 = Theme.TextPrimary end
             end)
 
             local function FormatValue(val)
@@ -2276,21 +2278,21 @@ function Library:Window(Options)
             local FlagName = TOpts.Flag or string.format("%s/Toggle/%s", TabObj.Title, Title)
 
             local Row = CreateRow(Title, TOpts.Height or 40)
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = TOpts.Font or Enum.Font.FredokaOne, TextSize = TOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = TOpts.Font or Enum.Font.FredokaOne, TextSize = TOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
 
-            local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Default and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(49, 50, 68), Text = "", AutoButtonColor = false, Parent = Row})
+            local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Row})
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
 
             local State = Default
             
             ThemeUpdate(function()
-                Checkbox.BackgroundColor3 = State and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(49, 50, 68)
-                TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244)
+                Checkbox.BackgroundColor3 = State and Theme.Accent or Theme.Search
+                TitleLabel.TextColor3 = Theme.TextPrimary
             end)
             
             local function SetState(newState, triggerCallback)
                 State = newState
-                TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(49, 50, 68)}):Play()
+                TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Theme.Accent or Theme.Search}):Play()
                 if triggerCallback then Callback(State) end
             end
 
@@ -2331,13 +2333,13 @@ function Library:Window(Options)
             end
             
             local Row = CreateRow(Title, 40)
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
 
-            local DropBtn = Create("TextButton", {Size = UDim2.new(0, 160, 0, 26), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "", AutoButtonColor = false, Parent = Row})
+            local DropBtn = Create("TextButton", {Size = UDim2.new(0, 160, 0, 26), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false, Parent = Row})
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
             
-            local DropdownText = Create("TextLabel", {Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
-            local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(1, -20, 0.5, -8), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Color3.fromRGB(166, 173, 200), Parent = DropBtn})
+            local DropdownText = Create("TextLabel", {Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
+            local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(1, -20, 0.5, -8), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Theme.TextSecondary, Parent = DropBtn})
 
             local function UpdateDropdownText()
                 local Str = ""
@@ -2347,9 +2349,9 @@ function Library:Window(Options)
                 DropdownText.Text = Str
             end
 
-            local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 160, 0, 0), BackgroundColor3 = Color3.fromRGB(30, 30, 46), Visible = false, ClipsDescendants = true, ZIndex = 10, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Color3.fromRGB(69, 71, 90), CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ScreenGui})
+            local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 160, 0, 0), BackgroundColor3 = Theme.Main, Visible = false, ClipsDescendants = true, ZIndex = 10, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Theme.Border, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ScreenGui})
             Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = DropdownMenu})
-            local DropStroke = Create("UIStroke", {Color = Color3.fromRGB(69, 71, 90), Thickness = 1, Parent = DropdownMenu})
+            local DropStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = DropdownMenu})
             Create("UIPadding", {PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4), Parent = DropdownMenu})
             local MenuLayout = Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = DropdownMenu})
 
@@ -2375,7 +2377,7 @@ function Library:Window(Options)
                     elseif type(val) == "table" and #val > 0 then table.insert(SelectedItems, val[1]) end
                 end
                 for Option, OptBtn in OptionButtons do
-                    TweenService:Create(OptBtn, TweenFast, {TextColor3 = table.find(SelectedItems, Option) and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(166, 173, 200)}):Play()
+                    TweenService:Create(OptBtn, TweenFast, {TextColor3 = table.find(SelectedItems, Option) and Theme.Accent or Theme.Border}):Play()
                 end
                 UpdateDropdownText()
                 if triggerCallback then Callback(Multi and SelectedItems or SelectedItems[1]) end
@@ -2392,7 +2394,7 @@ function Library:Window(Options)
                 SelectedItems = newSelected
 
                 for Index, Option in OptionsList do
-                    local OptBtn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, Text = Option, TextColor3 = table.find(SelectedItems, Option) and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(166, 173, 200), Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11, Parent = DropdownMenu})
+                    local OptBtn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, Text = Option, TextColor3 = table.find(SelectedItems, Option) and Theme.Accent or Theme.Border, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11, Parent = DropdownMenu})
                     Create("UIPadding", {PaddingLeft = UDim.new(0, 10), Parent = OptBtn})
                     OptionButtons[Option] = OptBtn
 
@@ -2417,13 +2419,13 @@ function Library:Window(Options)
             SetOptionsList(OptionsList)
             
             ThemeUpdate(function()
-                TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244)
-                DropdownText.TextColor3 = Color3.fromRGB(205, 214, 244)
-                Chevron.ImageColor3 = Color3.fromRGB(166, 173, 200)
-                DropBtn.BackgroundColor3 = Color3.fromRGB(49, 50, 68)
-                DropdownMenu.BackgroundColor3 = Color3.fromRGB(30, 30, 46)
-                DropStroke.Color = Color3.fromRGB(69, 71, 90)
-                for Option, OptBtn in OptionButtons do OptBtn.TextColor3 = table.find(SelectedItems, Option) and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(166, 173, 200) end
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                DropdownText.TextColor3 = Theme.TextPrimary
+                Chevron.ImageColor3 = Theme.TextSecondary
+                DropBtn.BackgroundColor3 = Theme.Search
+                DropdownMenu.BackgroundColor3 = Theme.Main
+                DropStroke.Color = Theme.Border
+                for Option, OptBtn in OptionButtons do OptBtn.TextColor3 = table.find(SelectedItems, Option) and Theme.Accent or Theme.Border end
             end)
 
             DropBtn.MouseButton1Click:Connect(function()
