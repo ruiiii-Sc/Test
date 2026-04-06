@@ -1154,7 +1154,7 @@ function Library:Window(Options)
     local ActionContainer = Create("Frame", {Size = UDim2.new(0, 290, 1, 0), Position = UDim2.new(1, -310, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
     Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = ActionContainer})
 
-    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(210, 49, 49), Text = "✕", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
+    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(210, 49, 49), Text = "✕", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = DestroyBtn})
     local DestroyIcon = DestroyBtn
 
@@ -1168,7 +1168,7 @@ function Library:Window(Options)
         ScreenGui:Destroy()
     end)
 
-    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "−", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
+    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Color3.fromRGB(49, 50, 68), Text = "−", TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MinimizeBtn})
     MinimizeBtn.MouseEnter:Connect(function()
         TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(69, 71, 90)}):Play()
@@ -1497,10 +1497,36 @@ function Library:Window(Options)
             return {Row = Row}
         end
 
+        function TabObj:Label(LOpts)
+            LOpts = LOpts or {}
+            local Text = LOpts.Title or LOpts.Text or "Label"
+            local TextSize = LOpts.TextSize or 11
+            local Height = LOpts.Height or (TextSize + 10)
+            local Font = LOpts.Font or Enum.Font.FredokaOne
+            local Color = LOpts.Color or Color3.fromRGB(166, 173, 200)
+            local Row = CreateRow(Text, Height)
+            local Lbl = Create("TextLabel", {
+                Size = UDim2.new(1, -16, 1, 0),
+                Position = UDim2.new(0, 8, 0, 0),
+                BackgroundTransparency = 1,
+                Text = Text,
+                TextColor3 = Color,
+                Font = Font,
+                TextSize = TextSize,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = Row
+            })
+            ThemeUpdate(function() Lbl.TextColor3 = Color end)
+            local LabelObj = {Row = Row}
+            function LabelObj:SetText(t) Lbl.Text = t end
+            function LabelObj:SetColor(c) Lbl.TextColor3 = c; Color = c end
+            return LabelObj
+        end
+
         function TabObj:Row(Options)
             local Title = Options.Title or "Row"
-            local RowFrame = CreateRow(Title, 40)
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
+            local RowFrame = CreateRow(Title, Options.Height or 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = Options.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
             ThemeUpdate(function() TitleLabel.TextColor3 = Color3.fromRGB(205, 214, 244) end)
             
             local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, ClipsDescendants = true, Parent = RowFrame})
@@ -1652,6 +1678,45 @@ function Library:Window(Options)
                 Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = Btn})
                 Btn.MouseButton1Click:Connect(Callback)
                 return {Row = RowFrame}
+            end
+
+            function RowObj:SubKeybind(KOpts)
+                local KTitle = KOpts.Title or "Keybind"
+                local Default = KOpts.Default
+                local Callback = KOpts.Callback or function() end
+                local CurrentKey = Default
+                local Waiting = false
+                local KeyBtn = Create("TextButton", {
+                    Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X,
+                    BackgroundColor3 = Color3.fromRGB(49, 50, 68),
+                    Text = Default and Default.Name or "None",
+                    TextColor3 = Color3.fromRGB(205, 214, 244),
+                    Font = Enum.Font.FredokaOne, TextSize = 11,
+                    AutoButtonColor = false, Parent = Container
+                })
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = KeyBtn})
+                Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = KeyBtn})
+                KeyBtn.MouseButton1Click:Connect(function()
+                    if Waiting then return end
+                    Waiting = true
+                    KeyBtn.Text = "..."
+                    TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Color3.fromRGB(203, 166, 247)}):Play()
+                    local conn
+                    conn = UserInputService.InputBegan:Connect(function(inp)
+                        if inp.UserInputType == Enum.UserInputType.Keyboard then
+                            conn:Disconnect()
+                            Waiting = false
+                            CurrentKey = inp.KeyCode
+                            KeyBtn.Text = inp.KeyCode.Name
+                            TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Color3.fromRGB(205, 214, 244)}):Play()
+                            Callback(inp.KeyCode)
+                        end
+                    end)
+                end)
+                local KbObj = {Row = RowFrame}
+                function KbObj:GetValue() return CurrentKey end
+                function KbObj:SetValue(key) CurrentKey = key; KeyBtn.Text = key and key.Name or "None"; Callback(key) end
+                return KbObj
             end
 
             return RowObj
@@ -1879,9 +1944,9 @@ function Library:Window(Options)
             local Callback = BOpts.Callback or function() end
             
             local FlagName = BOpts.Flag or string.format("%s/Button/%s", TabObj.Title, Title)
-            local Row = CreateRow(Title, 40)
+            local Row = CreateRow(Title, BOpts.Height or 40)
 
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = BOpts.Font or Enum.Font.FredokaOne, TextSize = BOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
 
             local Btn = Create("TextButton", {
                 Size = UDim2.new(0, 0, 0, 26),
@@ -2210,8 +2275,8 @@ function Library:Window(Options)
             
             local FlagName = TOpts.Flag or string.format("%s/Toggle/%s", TabObj.Title, Title)
 
-            local Row = CreateRow(Title, 40)
-            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local Row = CreateRow(Title, TOpts.Height or 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Color3.fromRGB(205, 214, 244), Font = TOpts.Font or Enum.Font.FredokaOne, TextSize = TOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
 
             local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Default and Color3.fromRGB(203, 166, 247) or Color3.fromRGB(49, 50, 68), Text = "", AutoButtonColor = false, Parent = Row})
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
