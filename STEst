@@ -1,1175 +1,14 @@
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local ContextActionService = game:GetService("ContextActionService")
-local HttpService = game:GetService("HttpService")
-local CoreGui = game:GetService("CoreGui")
+local TextService = game:GetService("TextService")
 
-local LP = Players.LocalPlayer
-local IDestroy = game.Destroy
+local LocalPlayer = Players.LocalPlayer
 
-if _G.__BeyonderKill then _G.__BeyonderKill() end
-local _alive = true
-
-local _connections = {}
-local function connect(signal, callback)
-	local conn = signal:Connect(callback)
-	table.insert(_connections, conn)
-	return conn
-end
-
-local SG = nil
-_G.__BeyonderKill = function()
-	_alive = false
-	for _, c in ipairs(_connections) do pcall(function() c:Disconnect() end) end
-	table.clear(_connections)
-	pcall(function()
-		_G.stopAll()
-		if SG then SG:Destroy() end
-	end)
-end
-
-local function cleanUI()
-	pcall(function()
-		for _, name in ipairs({"Beyonder","BeyonderNotify"}) do
-			local old = CoreGui:FindFirstChild(name) or LP.PlayerGui:FindFirstChild(name)
-			if old then old:Destroy() end
-		end
-	end)
-end
-cleanUI()
-
-local CFG_KEY = "Beyonder"
-
-local defaultCfg = {
-	spam = false,
-	noclip = false,
-	airwalk = false,
-	inviscam = false,
-	zoom = false,
-	aimbot = false,
-	autoHideAbility = false,
-	spamCount = 1,
-	spamDelay = 0.1,
-	valWalkSpeed = 32,
-	valJumpPower = 50,
-	adjustHeight = false,
-	saveAirwalk = false,
-	stateInfJump = false,
-	esp = false,
-	disableStatus = false,
-	noCameraShake = false,
-	autoStartDungeon = false,
-	autoRetryDungeon = false,
-	autoEquipBest = false,
-	priorityStat = "Health",
-	autoEquipInterval = 2,
-	autoSell = false,
-	sellTypes = {Armors = true, Weapons = true, Rings = true},
-	sellRarity = "<Uncommon",
-	sellLevel = "<11",
-	autoStats = false,
-	autoStatTarget = "stamina",
-	counterBarX = -152,
-	counterBarY = 2,
-	counterBarHidden = false,
-	heightKeyUp = "N",
-	heightKeyDown = "M",
-	heightStep = 3,
-	renderingDisabled = false,
-	invisibleChar = false,
-}
-
-local cfg = {}
-for k,v in pairs(defaultCfg) do cfg[k] = v end
-
-local function loadCfg()
-	local ok, raw = pcall(function() return readfile and readfile(CFG_KEY .. ".json") end)
-	if ok and raw then
-		local ok2, t = pcall(HttpService.JSONDecode, HttpService, raw)
-		if ok2 and type(t) == "table" then
-			for k, v in pairs(t) do cfg[k] = v end
-		end
-	end
-end
-loadCfg()
-
-local stateSpam            = cfg.spam == true
-local stateNoclip          = cfg.noclip == true
-local stateAirwalk         = cfg.airwalk == true
-local stateInviscam        = cfg.inviscam == true
-local stateZoom            = cfg.zoom == true
-local stateAimbot          = cfg.aimbot == true
-local stateAutoHideAbility = cfg.autoHideAbility == true
-local spamCount            = tonumber(cfg.spamCount) or 1
-local spamDelay            = math.max(tonumber(cfg.spamDelay) or 0.1, 0.07)
-local stateSaveAirwalk     = cfg.saveAirwalk == true
-local stateDisableStatus   = cfg.disableStatus == true
-local stateNoCameraShake   = cfg.noCameraShake == true
-local stateAutoStartDungeon= cfg.autoStartDungeon == true
-local stateAutoRetry       = cfg.autoRetryDungeon == true
-local stateAutoEquipBest   = cfg.autoEquipBest == true
-local valPriorityStat      = cfg.priorityStat or "Health"
-local autoEquipInterval    = tonumber(cfg.autoEquipInterval) or 2
-local stateAutoSell        = cfg.autoSell == true
-local sellTypes            = cfg.sellTypes or {Armors = true, Weapons = true, Rings = true}
-local sellRarity           = cfg.sellRarity or "<Uncommon"
-local sellLevel            = cfg.sellLevel or "<11"
-local stateAdjustHeight    = cfg.adjustHeight == true
-local heightKeyUp          = cfg.heightKeyUp or "N"
-local heightKeyDown        = cfg.heightKeyDown or "M"
-local heightStep           = tonumber(cfg.heightStep) or 3
-local valWalkSpeed         = tonumber(cfg.valWalkSpeed) or 16
-local valJumpPower         = tonumber(cfg.valJumpPower) or 10
-local stateInfJump         = cfg.stateInfJump == true
-local stateESP             = cfg.esp == true
-local stateWalkSpeed       = true
-local stateJumpPower       = true
-local stateAutoStats       = cfg.autoStats == true
-local autoStatTarget       = cfg.autoStatTarget or "stamina"
-local stateRenderingDisabled = cfg.renderingDisabled == true
-local stateInvisibleChar   = cfg.invisibleChar == true
-
-local function saveCfg()
-	local toSave = {}
-	for k, v in pairs(cfg) do toSave[k] = v end
-	toSave.spam = stateSpam
-	toSave.noclip = stateNoclip
-	toSave.airwalk = false
-	toSave.inviscam = stateInviscam
-	toSave.zoom = stateZoom
-	toSave.aimbot = stateAimbot
-	toSave.autoHideAbility = stateAutoHideAbility
-	toSave.spamCount = spamCount
-	toSave.spamDelay = spamDelay
-	toSave.valWalkSpeed = valWalkSpeed
-	toSave.valJumpPower = valJumpPower
-	toSave.adjustHeight = stateAdjustHeight
-	toSave.heightKeyUp = heightKeyUp
-	toSave.heightKeyDown = heightKeyDown
-	toSave.heightStep = heightStep
-	toSave.saveAirwalk = false
-	toSave.disableStatus = stateDisableStatus
-	toSave.stateInfJump = stateInfJump
-	toSave.esp = stateESP
-	toSave.noCameraShake = stateNoCameraShake
-	toSave.autoStartDungeon = stateAutoStartDungeon
-	toSave.autoRetryDungeon = stateAutoRetry
-	toSave.autoEquipBest    = stateAutoEquipBest
-	toSave.priorityStat     = valPriorityStat
-	toSave.autoEquipInterval = autoEquipInterval
-	toSave.autoSell         = stateAutoSell
-	toSave.sellTypes        = sellTypes
-	toSave.sellRarity       = sellRarity
-	toSave.sellLevel        = sellLevel
-	toSave.autoStats        = stateAutoStats
-	toSave.autoStatTarget   = autoStatTarget
-	toSave.renderingDisabled = stateRenderingDisabled
-	toSave.invisibleChar = stateInvisibleChar
-	pcall(function()
-		if writefile then writefile(CFG_KEY .. ".json", HttpService:JSONEncode(toSave)) end
-	end)
-end
-
-local spamLoops, remoteList = {}, {}
-local noclipConn, airwalkConn, aimbotConn = nil, nil, nil
-local abilityCleanupConn = nil
-local abilityNamesToHide = {}
-local airwalkY = 0
-local heightNoclipConn = nil
-local heightActiveKeys = {}
-local stateAdjustHeightActionName = "__BeyonderHeightAdjust"
-
-local startSpam, stopSpam
-local startAimbot, stopAimbot
-local startAirwalk, stopAirwalk
-local startNoclip, stopNoclip
-local startAutoHideAbility, stopAutoHideAbility
-local startAdjustHeight, stopAdjustHeight
-local abilitySpamToggleUpdater
-local airwalkUpdater
-
-local function safeDestroy(inst)
-	if inst and inst.Parent then
-		pcall(IDestroy, inst)
-	end
-end
-
-local function vfxCleanup(v)
-	if not _alive then return end
-	if not v or not v.Parent then return end
-	local name = v.Name:lower()
-	if name:find("cryonox") or name:find("ice elemental") or name:find("elemental") then return end
-	if name:find("deatheffect") or name:find("npcdeath") or name:find("smite") or name:find("spirit") or name:find("phantom") then
-		task.defer(safeDestroy, v)
-		return
-	end
-	if stateAutoHideAbility or v:IsA("ParticleEmitter") then
-		if v:IsA("ParticleEmitter") or v:IsA("Beam") or v:IsA("Trail") then
-			task.defer(safeDestroy, v)
-			return
-		end
-		if v:IsA("Model") or v:IsA("Folder") or v:IsA("BasePart") then
-			for _, abName in ipairs(abilityNamesToHide) do
-				if name:find(abName, 1, true) then
-					task.defer(safeDestroy, v)
-					return
-				end
-			end
-		end
-	end
-end
-
-local function applyInvisibleChar(char)
-	if not char then return end
-	local function hide(d)
-		if d:IsA("BasePart") or d:IsA("Decal") then
-			d.Transparency = stateInvisibleChar and 1 or 0
-			if d.Name == "face" and stateInvisibleChar then d.Transparency = 1 end
-		end
-	end
-	for _, d in ipairs(char:GetDescendants()) do hide(d) end
-	local gear = workspace:FindFirstChild("asupotc") and workspace.asupotc:FindFirstChild("WeaponGear")
-	if gear then
-		for _, d in ipairs(gear:GetDescendants()) do
-			if d:IsA("BasePart") or d:IsA("Decal") then d.Transparency = stateInvisibleChar and 1 or 0 end
-		end
-	end
-	-- specific hides for WeaponGear, ChestGear, HelmetGear
-	pcall(function()
-		local gearFolder = workspace:FindFirstChild("asupotc")
-		if gearFolder then
-			local targets = {"WeaponGear", "ChestGear", "HelmetGear"}
-			for _, t in ipairs(targets) do
-				local g = gearFolder:FindFirstChild(t)
-				if g then
-					for _, d in ipairs(g:GetDescendants()) do
-						if d:IsA("BasePart") or d:IsA("Decal") then d.Transparency = stateInvisibleChar and 1 or 0 end
-					end
-				end
-			end
-		end
-	end)
-end
-
-connect(workspace.DescendantAdded, vfxCleanup)
-task.spawn(function()
-	local all = workspace:GetDescendants()
-	for i, v in ipairs(all) do
-		vfxCleanup(v)
-		if i % 200 == 0 then task.wait() end
-	end
-end)
-
-local cameraShakeConn = nil
-local function applyCameraShakeFix()
-	if cameraShakeConn then cameraShakeConn:Disconnect(); cameraShakeConn = nil end
-	if not stateNoCameraShake then return end
-	local lastCF = workspace.CurrentCamera and workspace.CurrentCamera.CFrame
-	cameraShakeConn = connect(RunService.RenderStepped, function()
-		if not stateNoCameraShake then
-			if cameraShakeConn then cameraShakeConn:Disconnect(); cameraShakeConn = nil end
-			return
-		end
-		local cam = workspace.CurrentCamera
-		if not cam then return end
-		if lastCF then
-			local cur = cam.CFrame
-			local diff = (cur.Position - lastCF.Position).Magnitude
-			if diff < 0.5 then
-				cam.CFrame = lastCF
-			else
-				lastCF = cur
-			end
-		else
-			lastCF = cam.CFrame
-		end
-	end)
-end
-task.spawn(applyCameraShakeFix)
-
-local function setupAnti(char)
-	local hum = char:WaitForChild("Humanoid", 5)
-	if hum then
-		pcall(function()
-			hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-		end)
-	end
-	connect(char.DescendantAdded, vfxCleanup)
-end
-	if LP.Character then 
-		setupAnti(LP.Character) 
-		applyInvisibleChar(LP.Character)
-	end
-	connect(LP.CharacterAdded, function(char)
-		setupAnti(char)
-		applyInvisibleChar(char)
-	end)
-
-pcall(function()
-	local function blockAnimateOverride(char)
-		if not char then return end
-		local anim = char:FindFirstChild("Animate")
-		if anim and anim:IsA("LocalScript") then
-			anim.Disabled = true
-		end
-	end
-	if LP.Character then blockAnimateOverride(LP.Character) end
-	connect(LP.CharacterAdded, blockAnimateOverride)
-end)
-
-local function applyZoom()
-	pcall(function() LP.CameraMaxZoomDistance = 9e9 end)
-end
-
-local function applyInvisicam()
-	if stateInviscam then
-		LP.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
-	else
-		LP.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
-	end
-end
-
-local enemyCache = {}
-local lastEnemyScan = 0
-
-local function getEnemies()
-	local now = tick()
-	if now - lastEnemyScan < 0.3 then return enemyCache end
-	lastEnemyScan = now
-
-	local current = {}
-	local char = LP.Character
-	if not char then return current end
-
-	local ENEMY_COUNTER_BLACKLIST = {"Kraken Tentacle"}
-	local function addEnemy(model)
-		if not model or model == char then return end
-		if Players:GetPlayerFromCharacter(model) then return end
-		for _, bl in ipairs(ENEMY_COUNTER_BLACKLIST) do
-			if model.Name == bl then return false end
-		end
-		local hum = model:FindFirstChildOfClass("Humanoid")
-		if hum and hum.Health > 0 then
-			table.insert(current, model)
-			return true
-		end
-		return false
-	end
-
-	local dungeon = workspace:FindFirstChild("dungeon")
-	if dungeon then
-		for _, room in ipairs(dungeon:GetChildren()) do
-			local enemyFolder = room:FindFirstChild("enemyFolder")
-			if enemyFolder then
-				for _, enemy in ipairs(enemyFolder:GetChildren()) do
-					if enemy:IsA("Model") then addEnemy(enemy) end
-				end
-			end
-			for _, child in ipairs(room:GetChildren()) do
-				if child:IsA("Model") and child.Name ~= "enemyFolder" then addEnemy(child) end
-			end
-		end
-	end
-
-	for _, child in ipairs(workspace:GetChildren()) do
-		if child:IsA("Model") and child ~= char and child.Name ~= "dungeon" then
-			addEnemy(child)
-		end
-	end
-
-	enemyCache = current
-	return current
-end
-
-local function getNearestEnemy()
-	local char = LP.Character
-	if not char then return nil end
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return nil end
-	local origin = hrp.Position
-	local best, bestDist = nil, math.huge
-	local enemies = getEnemies()
-	for _, enemy in ipairs(enemies) do
-		local hum = enemy:FindFirstChildOfClass("Humanoid")
-		if hum and hum.Health > 0 then
-			local root = enemy:FindFirstChild("HumanoidRootPart")
-				or enemy:FindFirstChild("RootPart")
-				or enemy:FindFirstChild("Root")
-				or enemy:FindFirstChildOfClass("BasePart")
-			if root then
-				local dist = (root.Position - origin).Magnitude
-				if dist < bestDist then
-					bestDist = dist
-					best = root
-				end
-			end
-		end
-	end
-	return best
-end
-
-local function applyESP(enemy)
-	if not enemy or not stateESP then return end
-	if not enemy:FindFirstChild("__BeyonderESP") then
-		local h = Instance.new("Highlight")
-		h.Name = "__BeyonderESP"
-		h.FillColor = Color3.fromRGB(180, 80, 255)
-		h.OutlineColor = Color3.fromRGB(220, 180, 255)
-		h.FillTransparency = 0.55
-		h.OutlineTransparency = 0.1
-		h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		h.Parent = enemy
-	end
-end
-
-local function removeESP(enemy)
-	local h = enemy and enemy:FindFirstChild("__BeyonderESP")
-	if h then h:Destroy() end
-end
-
-local function updateESP()
-	for _, e in ipairs(enemyCache) do
-		if stateESP then applyESP(e) else removeESP(e) end
-	end
-end
-
-stopAimbot = function()
-	if aimbotConn then aimbotConn:Disconnect(); aimbotConn = nil end
-	local char = LP.Character
-	if char then
-		local hum = char:FindFirstChildOfClass("Humanoid")
-		if hum then hum.AutoRotate = true end
-	end
-end
-
-startAimbot = function()
-	stopAimbot()
-	aimbotConn = connect(RunService.Heartbeat, function()
-		if not _alive or not stateAimbot then return end
-		local char = LP.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		if not hrp or not hum then return end
-		local target = getNearestEnemy()
-		if target then
-			hum.AutoRotate = false
-			hrp.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z))
-		else
-			hum.AutoRotate = true
-		end
-	end)
-end
-
-connect(UserInputService.JumpRequest, function()
-	if not _alive or not stateInfJump then return end
-	local char = LP.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-end)
-
-local wsVelInst = nil
-local wsAttInst = nil
-
-local function rebuildWalkVelocity(char)
-	if wsVelInst then pcall(function() wsVelInst:Destroy() end) end
-	if wsAttInst then pcall(function() wsAttInst:Destroy() end) end
-	wsVelInst = nil; wsAttInst = nil
-	if not char then return end
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
-	local att = Instance.new("Attachment")
-	att.Name = "__WsAtt"
-	att.Parent = hrp
-	local lv = Instance.new("LinearVelocity")
-	lv.Name = "__WsVel"
-	lv.Attachment0 = att
-	lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Plane
-	lv.PrimaryTangentAxis = Vector3.new(1, 0, 0)
-	lv.SecondaryTangentAxis = Vector3.new(0, 0, 1)
-	lv.PlaneVelocity = Vector2.new(0, 0)
-	lv.MaxForce = 0
-	lv.Parent = hrp
-	wsAttInst = att
-	wsVelInst = lv
-end
-
-connect(LP.CharacterAdded, function(char)
-	task.defer(rebuildWalkVelocity, char)
-end)
-if LP.Character then task.defer(rebuildWalkVelocity, LP.Character) end
-
-connect(RunService.Heartbeat, function()
-	if not _alive then return end
-	local char = LP.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if hum then
-		if stateWalkSpeed then hum.WalkSpeed = valWalkSpeed end
-		if stateJumpPower then
-			hum.UseJumpPower = true
-			hum.JumpPower = valJumpPower
-		end
-	end
-end)
-
-local function hideModel(model)
-	if not model or not model.Parent then return end
-	pcall(function()
-		for _, d in ipairs(model:GetDescendants()) do
-			if d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail") then d.Enabled = false end
-		end
-		model:Destroy()
-	end)
-end
-
-local function scanAbilityNames()
-	abilityNamesToHide = {}
-	local sources = {LP:FindFirstChild("Backpack"), LP.Character}
-	for _, src in ipairs(sources) do
-		if src then
-			for _, tool in ipairs(src:GetChildren()) do
-				if tool:IsA("Tool") then
-					if tool:FindFirstChild("abilityEvent") or tool:FindFirstChild("spellEvent") then
-						local firstWord = tool.Name:lower():match("^%S+")
-						if firstWord then
-							table.insert(abilityNamesToHide, firstWord)
-						end
-					end
-				end
-			end
-		end
-	end
-end
-
-stopAutoHideAbility = function()
-	if abilityCleanupConn then abilityCleanupConn:Disconnect(); abilityCleanupConn = nil end
-end
-
-startAutoHideAbility = function()
-	scanAbilityNames()
-end
-
-local function fireRemote(remote, ...)
-	if remote and remote.Parent and remote:IsA("RemoteEvent") then
-		remote:FireServer(...)
-	end
-end
-
-pcall(function()
-	local remotes = game:GetService("ReplicatedStorage"):WaitForChild("remotes", 10)
-	if remotes then
-		local alertRemote = remotes:FindFirstChild("alertPlayer")
-		if alertRemote then
-			connect(alertRemote.OnClientEvent, function() end)
-		end
-	end
-end)
-
-local function triggerAutoStart()
-	pcall(function()
-		local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("remotes")
-		if not remotes then return end
-		local startDungeon = remotes:FindFirstChild("startDungeon")
-		local changeStart  = remotes:FindFirstChild("changeStartValue")
-		if changeStart then changeStart:FireServer(true) end
-		if startDungeon then startDungeon:FireServer() end
-	end)
-end
-
-local function triggerAutoRetry()
-	pcall(function()
-		local Utility = game:GetService("ReplicatedStorage"):WaitForChild("Utility")
-		local BridgeNet2 = require(Utility:WaitForChild("BridgeNet2"))
-		local DungeonRetryBridge = BridgeNet2.ClientBridge("DungeonRetryBridge")
-		local actionRef = BridgeNet2.ReferenceIdentifier("action")
-		DungeonRetryBridge:Fire({
-			[actionRef] = "vote",
-			["vote"] = true
-		})
-	end)
-end
-
-stopSpam = function()
-	for _, v in ipairs(spamLoops) do
-		if type(v) == "thread" then pcall(task.cancel, v)
-		elseif type(v) == "table" then pcall(function() v:Disconnect() end) end
-	end
-	table.clear(spamLoops)
-	local char = LP.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if hum then hum.AutoRotate = true end
-end
-
-local function collectRemotes()
-	local res = {}
-	local added = {}
-	local function add(child)
-		if not child or not (child:IsA("RemoteEvent") or child:IsA("UnreliableRemoteEvent")) then return end
-		if added[child] then return end
-		local name = child.Name:lower()
-		if name == "abilityevent" or name == "spellevent" or name == "abilitycast" or name == "abilityused" or name == "abilityCast" or name == "abilityUsed" then
-			added[child] = true
-			table.insert(res, {name = child.Name, remote = child})
-		end
-	end
-	local function scan(src)
-		if not src then return end
-		for _, child in ipairs(src:GetChildren()) do add(child); scan(child) end
-	end
-	local bp = LP:FindFirstChild("Backpack")
-	if bp then for _, t in ipairs(bp:GetChildren()) do if t:IsA("Tool") then scan(t) end end end
-	if LP.Character then for _, t in ipairs(LP.Character:GetChildren()) do if t:IsA("Tool") then scan(t) end end end
-	local rsRemotes = game:GetService("ReplicatedStorage"):FindFirstChild("remotes") or game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
-	if rsRemotes then
-		for _, r in ipairs(rsRemotes:GetChildren()) do add(r) end
-		local abs = rsRemotes:FindFirstChild("abilities") or rsRemotes:FindFirstChild("Abilities")
-		if abs then for _, r in ipairs(abs:GetChildren()) do add(r) end end
-	end
-	return res
-end
-
-local function refreshRemotes()
-	remoteList = collectRemotes()
-	scanAbilityNames()
-end
-
-task.defer(function()
-	local bp = LP:WaitForChild("Backpack", 10)
-	if bp then
-		connect(bp.ChildAdded, function(c) if c:IsA("Tool") then task.defer(refreshRemotes) end end)
-	end
-	connect(LP.CharacterAdded, function(char)
-		connect(char.ChildAdded, function(c) if c:IsA("Tool") then task.defer(refreshRemotes) end end)
-	end)
-	if LP.Character then
-		connect(LP.Character.ChildAdded, function(c) if c:IsA("Tool") then task.defer(refreshRemotes) end end)
-	end
-end)
-
-startSpam = function()
-	stopSpam()
-	refreshRemotes()
-	local thread = task.spawn(function()
-		while _alive do
-			if not stateSpam then task.wait(0.1); continue end
-			local char = LP.Character
-			local hrp = char and char:FindFirstChild("HumanoidRootPart")
-			local target = getNearestEnemy()
-			if target and hrp then
-				local hum = char:FindFirstChildOfClass("Humanoid")
-				if hum then
-					hum.AutoRotate = false
-					hrp.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z))
-				end
-			end
-			local pos = (target and target.Position) or (char and char:GetPivot().Position) or Vector3.zero
-			local count = math.clamp(tonumber(spamCount) or 1, 1, 50)
-			local bp = LP:FindFirstChild("Backpack")
-			if bp then
-				for _, tool in ipairs(bp:GetChildren()) do
-					if not tool:IsA("Tool") then continue end
-					local cdLen = tool:FindFirstChild("cooldownLength") or tool:FindFirstChild("cooldown")
-					if cdLen then pcall(function() cdLen.Value = 0 end) end
-					local slotVal = tool:FindFirstChild("abilitySlot")
-					if slotVal then
-						local k = slotVal.Value
-						local n = (k == "q" or k == "ability_q") and 1 or 2
-						pcall(function() LP:SetAttribute("AbilitySlot" .. n .. "Cooldown", 0) end)
-					end
-				end
-			end
-			if #remoteList > 0 then
-				for _, data in ipairs(remoteList) do
-					if data.remote and data.remote.Parent then
-						for _ = 1, count do
-							pcall(function() data.remote:FireServer(pos) end)
-						end
-					end
-				end
-			end
-			task.wait(spamDelay)
-		end
-	end)
-	table.insert(spamLoops, thread)
-end
-
-stopNoclip = function()
-	if noclipConn then noclipConn:Disconnect(); noclipConn = nil end
-	local char = LP.Character
-	if char then
-		for _, p in ipairs(char:GetChildren()) do
-			if p:IsA("BasePart") and p.Name ~= "HumanoidRootPart" then
-				p.CanCollide = true
-			end
-		end
-	end
-end
-
-startNoclip = function()
-	stopNoclip()
-	noclipConn = connect(RunService.Stepped, function()
-		if stateNoclip then
-			local char = LP.Character
-			if char then
-				for _, p in ipairs(char:GetDescendants()) do
-					if p:IsA("BasePart") and p.CanCollide then p.CanCollide = false end
-				end
-			end
-		end
-	end)
-end
-
-stopAirwalk = function()
-	if airwalkConn then airwalkConn:Disconnect(); airwalkConn = nil end
-	local char = LP.Character
-	local hrp = char and char:FindFirstChild("HumanoidRootPart")
-	if hrp then
-		local att = hrp:FindFirstChild("__AirwalkAtt")
-		local vel = hrp:FindFirstChild("__AirwalkVel")
-		if att then att:Destroy() end
-		if vel then vel:Destroy() end
-	end
-	local oldPlat = workspace:FindFirstChild("__AirwalkPlatform")
-	if oldPlat then oldPlat:Destroy() end
-end
-
-local airwalkPlat = nil
-
-startAirwalk = function()
-	stopAirwalk()
-	local char = LP.Character or LP.CharacterAdded:Wait()
-	local hrp = char:WaitForChild("HumanoidRootPart")
-
-	local att = Instance.new("Attachment")
-	att.Name = "__AirwalkAtt"
-	att.Parent = hrp
-
-	local vel = Instance.new("LinearVelocity")
-	vel.Name = "__AirwalkVel"
-	vel.Attachment0 = att
-	vel.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
-	vel.VectorVelocity = Vector3.zero
-	vel.ForceLimitMode = Enum.ForceLimitMode.PerAxis
-	vel.MaxAxesForce = Vector3.new(0, 1e7, 0)
-	vel.Parent = hrp
-
-	local plat = Instance.new("Part")
-	plat.Name = "__AirwalkPlatform"
-	plat.Size = Vector3.new(7, 1, 7)
-	plat.Transparency = 1
-	plat.Anchored = true
-	plat.CanCollide = true
-	plat.Parent = workspace
-	airwalkPlat = plat
-
-	airwalkConn = connect(RunService.Stepped, function()
-		if not _alive or not stateAirwalk then return end
-		local c = LP.Character
-		local r = c and c:FindFirstChild("HumanoidRootPart")
-		if r and plat.Parent then
-			plat.CFrame = CFrame.new(r.Position.X, r.Position.Y - 3.2, r.Position.Z)
-		end
-	end)
-
-	connect(UserInputService.JumpRequest, function()
-		if not _alive or not stateAirwalk then return end
-		if vel and vel.Parent then
-			vel.MaxAxesForce = Vector3.zero
-			if airwalkPlat then airwalkPlat.CanCollide = false end
-			task.wait(0.4)
-			if _alive and stateAirwalk and vel and vel.Parent then
-				vel.MaxAxesForce = Vector3.new(0, 1e7, 0)
-				if airwalkPlat then airwalkPlat.CanCollide = true end
-			end
-		end
-	end)
-end
-
-task.spawn(function()
-	while _alive do
-		if #enemyCache == 0 then getEnemies() end
-		updateESP()
-		task.wait(2)
-	end
-end)
-
-stopAdjustHeight = function()
-	ContextActionService:UnbindAction(stateAdjustHeightActionName)
-	if heightNoclipConn then heightNoclipConn:Disconnect(); heightNoclipConn = nil end
-	table.clear(heightActiveKeys)
-end
-
-local function getHeightKeyEnum(keyName)
-	return Enum.KeyCode[keyName] or Enum.KeyCode.Unknown
-end
-
-startAdjustHeight = function()
-	stopAdjustHeight()
-	if not stateAirwalk then
-		if airwalkUpdater then airwalkUpdater(true) end
-		stateAirwalk = true
-		saveCfg()
-		startAirwalk()
-	end
-	local upKey   = getHeightKeyEnum(heightKeyUp)
-	local downKey = getHeightKeyEnum(heightKeyDown)
-	ContextActionService:BindActionAtPriority(stateAdjustHeightActionName, function(_, inputState, inputObject)
-		if not stateAdjustHeight then return Enum.ContextActionResult.Pass end
-		local key = inputObject.KeyCode
-		if key ~= upKey and key ~= downKey then
-			return Enum.ContextActionResult.Pass
-		end
-		local char = LP.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		if not hrp then return Enum.ContextActionResult.Sink end
-		local vel = hrp:FindFirstChild("__AirwalkVel")
-		if not vel then return Enum.ContextActionResult.Sink end
-		if inputState == Enum.UserInputState.Begin then
-			heightActiveKeys[key] = true
-		elseif inputState == Enum.UserInputState.End then
-			heightActiveKeys[key] = nil
-		end
-		local moveDir = 0
-		if heightActiveKeys[upKey] then moveDir = 1 end
-		if heightActiveKeys[downKey] then moveDir = -1 end
-		vel.VectorVelocity = Vector3.new(0, moveDir * 35, 0)
-		if airwalkPlat then airwalkPlat.CanCollide = (moveDir == 0) end
-		return Enum.ContextActionResult.Sink
-	end, false, 9e10, upKey, downKey)
-end
-
-applyZoom()
-applyInvisicam()
-
-local function sendNotification(title, body, duration)
-	pcall(function()
-		local notifSG = CoreGui:FindFirstChild("BeyonderNotify")
-		if not notifSG then
-			notifSG = Instance.new("ScreenGui")
-			notifSG.Name = "BeyonderNotify"
-			notifSG.ResetOnSpawn = false
-			notifSG.DisplayOrder = 9999
-			notifSG.Parent = CoreGui
-		end
-		local frame = Instance.new("Frame")
-		frame.Size = UDim2.new(0, 280, 0, 0)
-		frame.AutomaticSize = Enum.AutomaticSize.Y
-		frame.Position = UDim2.new(1, -300, 1, -80)
-		frame.AnchorPoint = Vector2.new(0, 1)
-		frame.BackgroundColor3 = Color3.fromRGB(17, 17, 27)
-		frame.BorderSizePixel = 0
-		frame.ClipsDescendants = false
-		frame.Parent = notifSG
-		Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
-		local stroke = Instance.new("UIStroke", frame)
-		stroke.Color = Color3.fromRGB(69, 71, 90)
-		stroke.Thickness = 1
-		local accent = Instance.new("Frame", frame)
-		accent.Size = UDim2.new(0, 3, 1, 0)
-		accent.BackgroundColor3 = Color3.fromRGB(203, 166, 247)
-		accent.BorderSizePixel = 0
-		Instance.new("UICorner", accent).CornerRadius = UDim.new(0, 8)
-		local pad = Instance.new("UIPadding", frame)
-		pad.PaddingLeft = UDim.new(0, 14)
-		pad.PaddingRight = UDim.new(0, 10)
-		pad.PaddingTop = UDim.new(0, 8)
-		pad.PaddingBottom = UDim.new(0, 8)
-		local layout = Instance.new("UIListLayout", frame)
-		layout.SortOrder = Enum.SortOrder.LayoutOrder
-		layout.Padding = UDim.new(0, 2)
-		local titleLbl = Instance.new("TextLabel", frame)
-		titleLbl.Size = UDim2.new(1, 0, 0, 18)
-		titleLbl.BackgroundTransparency = 1
-		titleLbl.Text = title
-		titleLbl.TextColor3 = Color3.fromRGB(205, 214, 244)
-		titleLbl.Font = Enum.Font.FredokaOne
-		titleLbl.TextSize = 14
-		titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-		titleLbl.RichText = true
-		titleLbl.LayoutOrder = 1
-		local bodyLbl = Instance.new("TextLabel", frame)
-		bodyLbl.Size = UDim2.new(1, 0, 0, 0)
-		bodyLbl.AutomaticSize = Enum.AutomaticSize.Y
-		bodyLbl.BackgroundTransparency = 1
-		bodyLbl.Text = body or ""
-		bodyLbl.TextColor3 = Color3.fromRGB(166, 173, 200)
-		bodyLbl.Font = Enum.Font.FredokaOne
-		bodyLbl.TextSize = 12
-		bodyLbl.TextXAlignment = Enum.TextXAlignment.Left
-		bodyLbl.TextWrapped = true
-		bodyLbl.RichText = true
-		bodyLbl.LayoutOrder = 2
-		frame.BackgroundTransparency = 1
-		TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-		task.delay(duration or 4, function()
-			pcall(function()
-				TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-				task.wait(0.35)
-				frame:Destroy()
-			end)
-		end)
-	end)
-end
-
-local function getBestStatValue(item, stat)
-	local d = item.data or item
-	if stat == "Health" then
-		return d.health or d.maxHealth or d.Health or 0
-	elseif stat == "Physical" then
-		return d.physicalPower or d.physPower or d.PhysicalPower or 0
-	elseif stat == "Spell" then
-		return d.spellPower or d.magicalPower or d.SpellPower or 0
-	elseif stat == "Damage" or item.itemType == "ability" then
-		return d.damage or d.Damage or 0
-	end
-	return 0
-end
-
-local lastEquipCheck = 0
-local function doEquipBest()
-	pcall(function()
-		local Utility = game:GetService("ReplicatedStorage"):WaitForChild("Utility", 5)
-		if not Utility then return end
-		local BridgeNet2 = require(Utility:WaitForChild("BridgeNet2", 5))
-		local GetInv = BridgeNet2.ClientBridge("GetInventoryBridge")
-		local EquipBridge = BridgeNet2.ClientBridge("EquipItemBridge")
-		local raw = GetInv:InvokeServerAsync()
-		local str = typeof(raw) == "buffer" and buffer.tostring(raw) or raw
-		local inv = HttpService:JSONDecode(str)
-		local playerLevel = 0
-		pcall(function() playerLevel = tonumber(LP.leaderstats.Level.Value) or 0 end)
-		local allowedTypes = {weapon = true, helmet = true, chest = true}
-		local bestItems, maxValues, bestIds = {}, {}, {}
-		for id, item in pairs(inv) do
-			if type(item) ~= "table" then continue end
-			local iType = item.itemType
-			if not iType or not allowedTypes[iType] then continue end
-			if iType == "weapon" and valPriorityStat == "Health" then continue end
-			local d = item.data or item
-			local itemLevel = tonumber(d.levelReq) or 0
-			if itemLevel > playerLevel then continue end
-			local val = getBestStatValue(item, valPriorityStat)
-			if not bestItems[iType] or val > (maxValues[iType] or 0) then
-				maxValues[iType] = val; bestItems[iType] = item; bestIds[iType] = tostring(id)
-			elseif val == maxValues[iType] then
-				local lv = (item.data and item.data.levelReq) or 0
-				local blv = (bestItems[iType].data and bestItems[iType].data.levelReq) or 0
-				if lv > blv then bestItems[iType] = item; bestIds[iType] = tostring(id) end
-			end
-		end
-		for iType, item in pairs(bestItems) do
-			if item and not item.equipped then
-				EquipBridge:InvokeServerAsync({id = bestIds[iType], itemType = item.itemType, data = item.data})
-				task.wait(0.15)
-			end
-		end
-	end)
-end
-local function triggerAutoEquip()
-	if not stateAutoEquipBest then return end
-	doEquipBest()
-end
-
-local rarityLevels = { ["Common"] = 1, ["Uncommon"] = 2, ["Rare"] = 3, ["Epic"] = 4, ["Legendary"] = 5, ["Ultimate"] = 6, ["All"] = 99 }
-local function shouldSell(item)
-	if not item then return false end
-	local iType = item.itemType
-	if iType == "ring" then
-		local eq = item.equipped
-		if type(eq) == "table" then
-			for _, v in pairs(eq) do if v == true then return false end end
-		elseif eq == true then
-			return false
-		end
-	else
-		if item.equipped then return false end
-	end
-	local mapped = (iType == "helmet" or iType == "chest") and "Armors" or (iType == "weapon" and "Weapons") or (iType == "ring" and "Rings")
-	if not mapped or not sellTypes[mapped] then return false end
-	local d = item.data or item
-	local r = d.rarity or "Common"
-	local lv = tonumber(d.levelReq) or 0
-	if sellRarity ~= "All" and sellRarity:sub(1,1) == "<" then
-		if (rarityLevels[r] or 1) >= (rarityLevels[sellRarity:sub(2)] or 2) then return false end
-	end
-	if sellLevel ~= "All" and sellLevel:sub(1,1) == "<" then
-		if lv >= (tonumber(sellLevel:sub(2)) or 11) then return false end
-	end
-	return true
-end
-
-local isSelling = false
-local function doSellNow()
-	pcall(function()
-		local RS = game:GetService("ReplicatedStorage")
-		local sellEvent = RS.remotes and RS.remotes:FindFirstChild("sellItemEvent")
-		if not sellEvent then return end
-		local inv = RS.remotes.reloadInvy:InvokeServer()
-		if not inv then return end
-		local grouped = {ability={}, chest={}, helmet={}, ring={}, weapon={}}
-		local prefixMap = {weapon=7, ability=8, chest=6, helmet=7, ring=5}
-		local function processType(tbl, typeName)
-			if not tbl then return end
-			for key, item in pairs(tbl) do
-				if type(item) ~= "table" then continue end
-				item.itemType = typeName
-				if not shouldSell(item) then continue end
-				local num = tonumber(string.sub(key, prefixMap[typeName] + 1))
-				if num then table.insert(grouped[typeName], num) end
-			end
-		end
-		processType(inv.weapons, "weapon")
-		processType(inv.abilities, "ability")
-		processType(inv.chests, "chest")
-		processType(inv.helmets, "helmet")
-		processType(inv.rings, "ring")
-		local hasAny = false
-		for _, t in pairs(grouped) do if #t > 0 then hasAny = true; break end end
-		if hasAny then sellEvent:FireServer(grouped) end
-	end)
-end
-local function triggerAutoSell()
-	if not stateAutoSell or isSelling then return end
-	isSelling = true
-	task.spawn(function() doSellNow(); isSelling = false end)
-end
-
-_G.TweenSpeed = _G.TweenSpeed or 33
-
-local moveToTween = nil
-local function moveTo(targetCFrame)
-	local char = LP.Character
-	local hrp = char and char:FindFirstChild("HumanoidRootPart")
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if not hrp or not hum then return end
-	if moveToTween then moveToTween:Cancel(); moveToTween = nil end
-	hum.PlatformStand = true
-	local dist = (hrp.Position - targetCFrame.Position).Magnitude
-	local duration = math.max(dist / math.max(_G.TweenSpeed, 1), 0.05)
-	moveToTween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
-	moveToTween:Play()
-	moveToTween.Completed:Connect(function()
-		moveToTween = nil
-		task.wait(0.1)
-		if hum and hum.Parent then hum.PlatformStand = false end
-	end)
-end
-
-local stateAutoFarm = false
-local autoFarmThread = nil
-local function startAutoFarm()
-	if autoFarmThread then task.cancel(autoFarmThread); autoFarmThread = nil end
-	autoFarmThread = task.spawn(function()
-		while _alive and stateAutoFarm do
-			local target = getNearestEnemy()
-			if target then
-				local targetCF = CFrame.new(target.Position + Vector3.new(0, 3, 0))
-				moveTo(targetCF)
-			end
-			task.wait(0.3)
-		end
-		local char = LP.Character
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		if hum and hum.Parent then task.wait(0.1); hum.PlatformStand = false end
-	end)
-end
-local function stopAutoFarm()
-	stateAutoFarm = false
-	if autoFarmThread then task.cancel(autoFarmThread); autoFarmThread = nil end
-	if moveToTween then moveToTween:Cancel(); moveToTween = nil end
-	local char = LP.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if hum and hum.Parent then task.wait(0.1); hum.PlatformStand = false end
-end
-
-local function doAutoClaimQuest()
-	pcall(function()
-		local RS = game:GetService("ReplicatedStorage")
-		local dataEv = RS:FindFirstChild("dataRemoteEvent")
-		if not dataEv then return end
-		local seen = {}
-		local pg = LP:WaitForChild("PlayerGui")
-		for _, desc in ipairs(pg:GetDescendants()) do
-			local uid = desc:GetAttribute("uniqueId")
-			if uid and not seen[uid] and (uid:find("Daily") or uid:find("Weekly") or uid:find("Event")) then
-				local completed = desc:GetAttribute("completed")
-				local claimed   = desc:GetAttribute("claimed")
-				if completed and not claimed then
-					seen[uid] = true
-					dataEv:FireServer({
-						{
-							utf8.char(1),
-							{
-								[utf8.char(3)] = "ClaimQuest",
-								uniqueId = uid
-							}
-						},
-						"F"
-					})
-					task.wait(0.2)
-				end
-			end
-		end
-	end)
-end
-
-local function spendSkillPoint(statName, amount)
-	local statMap = {
-		["Stamina"] = "stamina", ["stamina"] = "stamina",
-		["SpellPower"] = "spellPower", ["spell"] = "spellPower", ["spellPower"] = "spellPower",
-		["PhysicalPower"] = "physicalPower", ["physical"] = "physicalPower", ["physicalPower"] = "physicalPower"
-	}
-	local actualStat = statMap[statName]
-	if not actualStat then return end
-	pcall(function()
-		local Utility = game:GetService("ReplicatedStorage"):WaitForChild("Utility")
-		local BridgeNet2 = require(Utility:WaitForChild("BridgeNet2"))
-		local SkillpointBridge = BridgeNet2.ClientBridge("SkillpointBridge")
-		local points = 0
-		local valObj = LP:FindFirstChild("skillPoints") or (LP:FindFirstChild("leaderstats") and LP.leaderstats:FindFirstChild("Skill Points"))
-		if valObj then
-			points = valObj.Value
-		else
-			local PlayerValues = require(Utility:WaitForChild("PlayerValues"))
-			local done = false
-			PlayerValues.GetValueAsync(LP, "skillPoints"):andThen(function(v)
-				points = v or 0
-				done = true
-			end)
-			local start = tick()
-			while not done and tick() - start < 1.5 do task.wait() end
-		end
-		local toSpend = math.min(points, amount or points)
-		if toSpend > 0 then
-			SkillpointBridge:InvokeServerAsync({stat = actualStat, amount = toSpend})
-		end
-	end)
-end
-
-local Serpent, LibContent = nil, nil
-pcall(function()
-	if readfile and isfile and isfile("SerpentLib.lua") then
-		LibContent = readfile("SerpentLib.lua")
-	else
-		LibContent = game:HttpGet("https://raw.githubusercontent.com/ruiiii-Sc/Test/refs/heads/main/STEst")
-	end
-	if LibContent then
-		local func = loadstring(LibContent)
-		if func then Serpent = func() end
-	end
-end)
-
-if not Serpent then
-	sendNotification("Fatal Error", "Failed to load library - SerpentLib not found.")
-	return
-end
-
-
-Serpent:SetWindowKeybind(Enum.KeyCode.RightControl)
-local Window = Serpent:Window({SubTitle = "I / BEYONDER"})
-Serpent:SetTheme({
+-- Catppuccin Mocha – single source of truth for all colors
+local Theme = {
     Body          = Color3.fromRGB(30, 30, 46),
     Sidebar       = Color3.fromRGB(17, 17, 27),
     Main          = Color3.fromRGB(30, 30, 46),
@@ -1178,272 +17,2468 @@ Serpent:SetTheme({
     TextSecondary = Color3.fromRGB(166, 173, 200),
     Accent        = Color3.fromRGB(203, 166, 247),
     Border        = Color3.fromRGB(69, 71, 90),
-})
-SG = Window.ScreenGui
+    Font          = Enum.Font.FredokaOne,
+}
+local Font = Theme.Font
 
-local MainTab = Window:Tab({Title = "Combat", Icon = "Sword"})
-local MiscTab = Window:Tab({Title = "Misc", Icon = "Settings"})
+local Icons = {
+    Placeholder = "rbxassetid://11419709766",
+    Trash = "rbxassetid://10734819059",
+    Search = "rbxassetid://11293977875",
+    Keyboard = "rbxassetid://12974370712",
+    ChevronDown = "rbxassetid://11421095840",
+    Pipette = "rbxassetid://11419718822",
+    PickerCursor = "rbxassetid://11293981586",
+    Checkmark = "rbxassetid://10709790644",
+    X = "X",
+    -- Lucide Icons (Common)
+    ["home"] = "rbxassetid://10723407389",
+    ["settings"] = "rbxassetid://10709810948",
+    ["user"] = "rbxassetid://10747372167",
+    ["code"] = "rbxassetid://10709810463",
+    ["info"] = "rbxassetid://10723415903",
+    ["alert-circle"] = "rbxassetid://10709752996",
+    ["check"] = "rbxassetid://10709790644",
+    ["trash-2"] = "rbxassetid://10734819059",
+    ["search"] = "rbxassetid://11293977875",
+    ["keyboard"] = "rbxassetid://12974370712",
+    ["mouse-pointer"] = "rbxassetid://10734898476",
+    ["file-text"] = "rbxassetid://10723367380",
+    ["folder"] = "rbxassetid://10723387563",
+    ["layout"] = "rbxassetid://10723425376"
+}
 
-local SpamRow = MainTab:Row({Title = "Auto Cast"})
-SpamRow:SubToggle({Title = "Auto-Cast", Default = stateSpam, Callback = function(val)
-	stateSpam = val; cfg.spam = val; saveCfg()
-	if val then task.spawn(startSpam) else stopSpam() end
-end})
+local Compkiller = { Lucide = {} }
 
-SpamRow:SubTextbox({Title = "Burst", Placeholder = "Rate (1-9e9)", Default = tostring(spamCount), Callback = function(val)
-	local num = tonumber(val) or 1
-	spamCount = num; cfg.spamCount = num; saveCfg()
-	if stateSpam then task.spawn(startSpam) end
-end})
-SpamRow:SubTextbox({Title = "Interval", Placeholder = "Delay (0.1)", Default = tostring(spamDelay), Callback = function(val)
-	spamDelay = math.max(tonumber(val) or 0.1, 0.07); cfg.spamDelay = spamDelay; saveCfg()
-	if stateSpam then task.spawn(startSpam) end
-end})
+local function GetIcon(Icon)
+    if typeof(Icon) == "string" then
+        local CleanName = Icon:gsub("[%[%]]", ""):lower()
+        if Icons[CleanName] then return Icons[CleanName] end
+        if CleanName:match("^lucide%-") then
+            if Compkiller.Lucide[CleanName] then return Compkiller.Lucide[CleanName] end
+        else
+            if Compkiller.Lucide["lucide-" .. CleanName] then return Compkiller.Lucide["lucide-" .. CleanName] end
+        end
+        if Icon:find("rbxassetid://") then return Icon end
+    end
+    return Icons.Placeholder
+end
 
-MainTab:Toggle({Title = "Aim Assist", Default = stateAimbot, Callback = function(val)
-	stateAimbot = val; cfg.aimbot = val; saveCfg()
-	if val then task.spawn(startAimbot) else stopAimbot() end
-end})
+Compkiller.Lucide = {
+	['lucide-mouse-2'] = "rbxassetid://10088146939",
+	['lucide-internet'] = "rbxassetid://12785195438",
+	['lucide-earth'] = "rbxassetid://115986292591138",
+	['lucide-settings-3'] = "rbxassetid://14007344336",
+	["lucide-accessibility"] = "rbxassetid://10709751939",
+	["lucide-activity"] = "rbxassetid://10709752035",
+	["lucide-air-vent"] = "rbxassetid://10709752131",
+	["lucide-airplay"] = "rbxassetid://10709752254",
+	["lucide-alarm-check"] = "rbxassetid://10709752405",
+	["lucide-alarm-clock"] = "rbxassetid://10709752630",
+	["lucide-alarm-clock-off"] = "rbxassetid://10709752508",
+	["lucide-alarm-minus"] = "rbxassetid://10709752732",
+	["lucide-alarm-plus"] = "rbxassetid://10709752825",
+	["lucide-album"] = "rbxassetid://10709752906",
+	["lucide-alert-circle"] = "rbxassetid://10709752996",
+	["lucide-alert-octagon"] = "rbxassetid://10709753064",
+	["lucide-alert-triangle"] = "rbxassetid://10709753149",
+	["lucide-align-center"] = "rbxassetid://10709753570",
+	["lucide-align-center-horizontal"] = "rbxassetid://10709753272",
+	["lucide-align-center-vertical"] = "rbxassetid://10709753421",
+	["lucide-align-end-horizontal"] = "rbxassetid://10709753692",
+	["lucide-align-end-vertical"] = "rbxassetid://10709753808",
+	["lucide-align-horizontal-distribute-center"] = "rbxassetid://10747779791",
+	["lucide-align-horizontal-distribute-end"] = "rbxassetid://10747784534",
+	["lucide-align-horizontal-distribute-start"] = "rbxassetid://10709754118",
+	["lucide-align-horizontal-justify-center"] = "rbxassetid://10709754204",
+	["lucide-align-horizontal-justify-end"] = "rbxassetid://10709754317",
+	["lucide-align-horizontal-justify-start"] = "rbxassetid://10709754436",
+	["lucide-align-horizontal-space-around"] = "rbxassetid://10709754590",
+	["lucide-align-horizontal-space-between"] = "rbxassetid://10709754749",
+	["lucide-align-justify"] = "rbxassetid://10709759610",
+	["lucide-align-left"] = "rbxassetid://10709759764",
+	["lucide-align-right"] = "rbxassetid://10709759895",
+	["lucide-align-start-horizontal"] = "rbxassetid://10709760051",
+	["lucide-align-start-vertical"] = "rbxassetid://10709760244",
+	["lucide-align-vertical-distribute-center"] = "rbxassetid://10709760351",
+	["lucide-align-vertical-distribute-end"] = "rbxassetid://10709760434",
+	["lucide-align-vertical-distribute-start"] = "rbxassetid://10709760612",
+	["lucide-align-vertical-justify-center"] = "rbxassetid://10709760814",
+	["lucide-align-vertical-justify-end"] = "rbxassetid://10709761003",
+	["lucide-align-vertical-justify-start"] = "rbxassetid://10709761176",
+	["lucide-align-vertical-space-around"] = "rbxassetid://10709761324",
+	["lucide-align-vertical-space-between"] = "rbxassetid://10709761434",
+	["lucide-anchor"] = "rbxassetid://10709761530",
+	["lucide-angry"] = "rbxassetid://10709761629",
+	["lucide-annoyed"] = "rbxassetid://10709761722",
+	["lucide-aperture"] = "rbxassetid://10709761813",
+	["lucide-apple"] = "rbxassetid://10709761889",
+	["lucide-archive"] = "rbxassetid://10709762233",
+	["lucide-archive-restore"] = "rbxassetid://10709762058",
+	["lucide-armchair"] = "rbxassetid://10709762327",
+	["lucide-arrow-big-down"] = "rbxassetid://10747796644",
+	["lucide-arrow-big-left"] = "rbxassetid://10709762574",
+	["lucide-arrow-big-right"] = "rbxassetid://10709762727",
+	["lucide-arrow-big-up"] = "rbxassetid://10709762879",
+	["lucide-arrow-down"] = "rbxassetid://10709767827",
+	["lucide-arrow-down-circle"] = "rbxassetid://10709763034",
+	["lucide-arrow-down-left"] = "rbxassetid://10709767656",
+	["lucide-arrow-down-right"] = "rbxassetid://10709767750",
+	["lucide-arrow-left"] = "rbxassetid://10709768114",
+	["lucide-arrow-left-circle"] = "rbxassetid://10709767936",
+	["lucide-arrow-left-right"] = "rbxassetid://10709768019",
+	["lucide-arrow-right"] = "rbxassetid://10709768347",
+	["lucide-arrow-right-circle"] = "rbxassetid://10709768226",
+	["lucide-arrow-up"] = "rbxassetid://10709768939",
+	["lucide-arrow-up-circle"] = "rbxassetid://10709768432",
+	["lucide-arrow-up-down"] = "rbxassetid://10709768538",
+	["lucide-arrow-up-left"] = "rbxassetid://10709768661",
+	["lucide-arrow-up-right"] = "rbxassetid://10709768787",
+	["lucide-asterisk"] = "rbxassetid://10709769095",
+	["lucide-at-sign"] = "rbxassetid://10709769286",
+	["lucide-award"] = "rbxassetid://10709769406",
+	["lucide-axe"] = "rbxassetid://10709769508",
+	["lucide-axis-3d"] = "rbxassetid://10709769598",
+	["lucide-baby"] = "rbxassetid://10709769732",
+	["lucide-backpack"] = "rbxassetid://10709769841",
+	["lucide-baggage-claim"] = "rbxassetid://10709769935",
+	["lucide-banana"] = "rbxassetid://10709770005",
+	["lucide-banknote"] = "rbxassetid://10709770178",
+	["lucide-bar-chart"] = "rbxassetid://10709773755",
+	["lucide-bar-chart-2"] = "rbxassetid://10709770317",
+	["lucide-bar-chart-3"] = "rbxassetid://10709770431",
+	["lucide-bar-chart-4"] = "rbxassetid://10709770560",
+	["lucide-bar-chart-horizontal"] = "rbxassetid://10709773669",
+	["lucide-barcode"] = "rbxassetid://10747360675",
+	["lucide-baseline"] = "rbxassetid://10709773863",
+	["lucide-bath"] = "rbxassetid://10709773963",
+	["lucide-battery"] = "rbxassetid://10709774640",
+	["lucide-battery-charging"] = "rbxassetid://10709774068",
+	["lucide-battery-full"] = "rbxassetid://10709774206",
+	["lucide-battery-low"] = "rbxassetid://10709774370",
+	["lucide-battery-medium"] = "rbxassetid://10709774513",
+	["lucide-beaker"] = "rbxassetid://10709774756",
+	["lucide-bed"] = "rbxassetid://10709775036",
+	["lucide-bed-double"] = "rbxassetid://10709774864",
+	["lucide-bed-single"] = "rbxassetid://10709774968",
+	["lucide-beer"] = "rbxassetid://10709775167",
+	["lucide-bell"] = "rbxassetid://10709775704",
+	["lucide-bell-minus"] = "rbxassetid://10709775241",
+	["lucide-bell-off"] = "rbxassetid://10709775320",
+	["lucide-bell-plus"] = "rbxassetid://10709775448",
+	["lucide-bell-ring"] = "rbxassetid://10709775560",
+	["lucide-bike"] = "rbxassetid://10709775894",
+	["lucide-binary"] = "rbxassetid://10709776050",
+	["lucide-bitcoin"] = "rbxassetid://10709776126",
+	["lucide-bluetooth"] = "rbxassetid://10709776655",
+	["lucide-bluetooth-connected"] = "rbxassetid://10709776240",
+	["lucide-bluetooth-off"] = "rbxassetid://10709776344",
+	["lucide-bluetooth-searching"] = "rbxassetid://10709776501",
+	["lucide-bold"] = "rbxassetid://10747813908",
+	["lucide-bomb"] = "rbxassetid://10709781460",
+	["lucide-bone"] = "rbxassetid://10709781605",
+	["lucide-book"] = "rbxassetid://10709781824",
+	["lucide-book-open"] = "rbxassetid://10709781717",
+	["lucide-bookmark"] = "rbxassetid://10709782154",
+	["lucide-bookmark-minus"] = "rbxassetid://10709781919",
+	["lucide-bookmark-plus"] = "rbxassetid://10709782044",
+	["lucide-bot"] = "rbxassetid://10709782230",
+	["lucide-box"] = "rbxassetid://10709782497",
+	["lucide-box-select"] = "rbxassetid://10709782342",
+	["lucide-boxes"] = "rbxassetid://10709782582",
+	["lucide-briefcase"] = "rbxassetid://10709782662",
+	["lucide-brush"] = "rbxassetid://10709782758",
+	["lucide-bug"] = "rbxassetid://10709782845",
+	["lucide-building"] = "rbxassetid://10709783051",
+	["lucide-building-2"] = "rbxassetid://10709782939",
+	["lucide-bus"] = "rbxassetid://10709783137",
+	["lucide-cake"] = "rbxassetid://10709783217",
+	["lucide-calculator"] = "rbxassetid://10709783311",
+	["lucide-calendar"] = "rbxassetid://10709789505",
+	["lucide-calendar-check"] = "rbxassetid://10709783474",
+	["lucide-calendar-check-2"] = "rbxassetid://10709783392",
+	["lucide-calendar-clock"] = "rbxassetid://10709783577",
+	["lucide-calendar-days"] = "rbxassetid://10709783673",
+	["lucide-calendar-heart"] = "rbxassetid://10709783835",
+	["lucide-calendar-minus"] = "rbxassetid://10709783959",
+	["lucide-calendar-off"] = "rbxassetid://10709788784",
+	["lucide-calendar-plus"] = "rbxassetid://10709788937",
+	["lucide-calendar-range"] = "rbxassetid://10709789053",
+	["lucide-calendar-search"] = "rbxassetid://10709789200",
+	["lucide-calendar-x"] = "rbxassetid://10709789407",
+	["lucide-calendar-x-2"] = "rbxassetid://10709789329",
+	["lucide-camera"] = "rbxassetid://10709789686",
+	["lucide-camera-off"] = "rbxassetid://10747822677",
+	["lucide-car"] = "rbxassetid://10709789810",
+	["lucide-carrot"] = "rbxassetid://10709789960",
+	["lucide-cast"] = "rbxassetid://10709790097",
+	["lucide-charge"] = "rbxassetid://10709790202",
+	["lucide-check"] = "rbxassetid://10709790644",
+	["lucide-check-circle"] = "rbxassetid://10709790387",
+	["lucide-check-circle-2"] = "rbxassetid://10709790298",
+	["lucide-check-square"] = "rbxassetid://10709790537",
+	["lucide-chef-hat"] = "rbxassetid://10709790757",
+	["lucide-cherry"] = "rbxassetid://10709790875",
+	["lucide-chevron-down"] = "rbxassetid://10709790948",
+	["lucide-chevron-first"] = "rbxassetid://10709791015",
+	["lucide-chevron-last"] = "rbxassetid://10709791130",
+	["lucide-chevron-left"] = "rbxassetid://10709791281",
+	["lucide-chevron-right"] = "rbxassetid://10709791437",
+	["lucide-chevron-up"] = "rbxassetid://10709791523",
+	["lucide-chevrons-down"] = "rbxassetid://10709796864",
+	["lucide-chevrons-down-up"] = "rbxassetid://10709791632",
+	["lucide-chevrons-left"] = "rbxassetid://10709797151",
+	["lucide-chevrons-left-right"] = "rbxassetid://10709797006",
+	["lucide-chevrons-right"] = "rbxassetid://10709797382",
+	["lucide-chevrons-right-left"] = "rbxassetid://10709797274",
+	["lucide-chevrons-up"] = "rbxassetid://10709797622",
+	["lucide-chevrons-up-down"] = "rbxassetid://10709797508",
+	["lucide-chrome"] = "rbxassetid://10709797725",
+	["lucide-circle"] = "rbxassetid://10709798174",
+	["lucide-circle-dot"] = "rbxassetid://10709797837",
+	["lucide-circle-ellipsis"] = "rbxassetid://10709797985",
+	["lucide-circle-slashed"] = "rbxassetid://10709798100",
+	["lucide-citrus"] = "rbxassetid://10709798276",
+	["lucide-clapperboard"] = "rbxassetid://10709798350",
+	["lucide-clipboard"] = "rbxassetid://10709799288",
+	["lucide-clipboard-check"] = "rbxassetid://10709798443",
+	["lucide-clipboard-copy"] = "rbxassetid://10709798574",
+	["lucide-clipboard-edit"] = "rbxassetid://10709798682",
+	["lucide-clipboard-list"] = "rbxassetid://10709798792",
+	["lucide-clipboard-signature"] = "rbxassetid://10709798890",
+	["lucide-clipboard-type"] = "rbxassetid://10709798999",
+	["lucide-clipboard-x"] = "rbxassetid://10709799124",
+	["lucide-clock"] = "rbxassetid://10709805144",
+	["lucide-clock-1"] = "rbxassetid://10709799535",
+	["lucide-clock-10"] = "rbxassetid://10709799718",
+	["lucide-clock-11"] = "rbxassetid://10709799818",
+	["lucide-clock-12"] = "rbxassetid://10709799962",
+	["lucide-clock-2"] = "rbxassetid://10709803876",
+	["lucide-clock-3"] = "rbxassetid://10709803989",
+	["lucide-clock-4"] = "rbxassetid://10709804164",
+	["lucide-clock-5"] = "rbxassetid://10709804291",
+	["lucide-clock-6"] = "rbxassetid://10709804435",
+	["lucide-clock-7"] = "rbxassetid://10709804599",
+	["lucide-clock-8"] = "rbxassetid://10709804784",
+	["lucide-clock-9"] = "rbxassetid://10709804996",
+	["lucide-cloud"] = "rbxassetid://10709806740",
+	["lucide-cloud-cog"] = "rbxassetid://10709805262",
+	["lucide-cloud-drizzle"] = "rbxassetid://10709805371",
+	["lucide-cloud-fog"] = "rbxassetid://10709805477",
+	["lucide-cloud-hail"] = "rbxassetid://10709805596",
+	["lucide-cloud-lightning"] = "rbxassetid://10709805727",
+	["lucide-cloud-moon"] = "rbxassetid://10709805942",
+	["lucide-cloud-moon-rain"] = "rbxassetid://10709805838",
+	["lucide-cloud-off"] = "rbxassetid://10709806060",
+	["lucide-cloud-rain"] = "rbxassetid://10709806277",
+	["lucide-cloud-rain-wind"] = "rbxassetid://10709806166",
+	["lucide-cloud-snow"] = "rbxassetid://10709806374",
+	["lucide-cloud-sun"] = "rbxassetid://10709806631",
+	["lucide-cloud-sun-rain"] = "rbxassetid://10709806475",
+	["lucide-cloudy"] = "rbxassetid://10709806859",
+	["lucide-clover"] = "rbxassetid://10709806995",
+	["lucide-code"] = "rbxassetid://10709810463",
+	["lucide-code-2"] = "rbxassetid://10709807111",
+	["lucide-codepen"] = "rbxassetid://10709810534",
+	["lucide-codesandbox"] = "rbxassetid://10709810676",
+	["lucide-coffee"] = "rbxassetid://10709810814",
+	["lucide-cog"] = "rbxassetid://10709810948",
+	["lucide-coins"] = "rbxassetid://10709811110",
+	["lucide-columns"] = "rbxassetid://10709811261",
+	["lucide-command"] = "rbxassetid://10709811365",
+	["lucide-compass"] = "rbxassetid://10709811445",
+	["lucide-component"] = "rbxassetid://10709811595",
+	["lucide-concierge-bell"] = "rbxassetid://10709811706",
+	["lucide-connection"] = "rbxassetid://10747361219",
+	["lucide-contact"] = "rbxassetid://10709811834",
+	["lucide-contrast"] = "rbxassetid://10709811939",
+	["lucide-cookie"] = "rbxassetid://10709812067",
+	["lucide-copy"] = "rbxassetid://10709812159",
+	["lucide-copyleft"] = "rbxassetid://10709812251",
+	["lucide-copyright"] = "rbxassetid://10709812311",
+	["lucide-corner-down-left"] = "rbxassetid://10709812396",
+	["lucide-corner-down-right"] = "rbxassetid://10709812485",
+	["lucide-corner-left-down"] = "rbxassetid://10709812632",
+	["lucide-corner-left-up"] = "rbxassetid://10709812784",
+	["lucide-corner-right-down"] = "rbxassetid://10709812939",
+	["lucide-corner-right-up"] = "rbxassetid://10709813094",
+	["lucide-corner-up-left"] = "rbxassetid://10709813185",
+	["lucide-corner-up-right"] = "rbxassetid://10709813281",
+	["lucide-cpu"] = "rbxassetid://10709813383",
+	["lucide-croissant"] = "rbxassetid://10709818125",
+	["lucide-crop"] = "rbxassetid://10709818245",
+	["lucide-cross"] = "rbxassetid://10709818399",
+	["lucide-crosshair"] = "rbxassetid://10709818534",
+	["lucide-crown"] = "rbxassetid://10709818626",
+	["lucide-cup-soda"] = "rbxassetid://10709818763",
+	["lucide-curly-braces"] = "rbxassetid://10709818847",
+	["lucide-currency"] = "rbxassetid://10709818931",
+	["lucide-database"] = "rbxassetid://10709818996",
+	["lucide-delete"] = "rbxassetid://10709819059",
+	["lucide-diamond"] = "rbxassetid://10709819149",
+	["lucide-dice-1"] = "rbxassetid://10709819266",
+	["lucide-dice-2"] = "rbxassetid://10709819361",
+	["lucide-dice-3"] = "rbxassetid://10709819508",
+	["lucide-dice-4"] = "rbxassetid://10709819670",
+	["lucide-dice-5"] = "rbxassetid://10709819801",
+	["lucide-dice-6"] = "rbxassetid://10709819896",
+	["lucide-dices"] = "rbxassetid://10723343321",
+	["lucide-diff"] = "rbxassetid://10723343416",
+	["lucide-disc"] = "rbxassetid://10723343537",
+	["lucide-divide"] = "rbxassetid://10723343805",
+	["lucide-divide-circle"] = "rbxassetid://10723343636",
+	["lucide-divide-square"] = "rbxassetid://10723343737",
+	["lucide-dollar-sign"] = "rbxassetid://10723343958",
+	["lucide-download"] = "rbxassetid://10723344270",
+	["lucide-download-cloud"] = "rbxassetid://10723344088",
+	["lucide-droplet"] = "rbxassetid://10723344432",
+	["lucide-droplets"] = "rbxassetid://10734883356",
+	["lucide-drumstick"] = "rbxassetid://10723344737",
+	["lucide-edit"] = "rbxassetid://10734883598",
+	["lucide-edit-2"] = "rbxassetid://10723344885",
+	["lucide-edit-3"] = "rbxassetid://10723345088",
+	["lucide-egg"] = "rbxassetid://10723345518",
+	["lucide-egg-fried"] = "rbxassetid://10723345347",
+	["lucide-electricity"] = "rbxassetid://10723345749",
+	["lucide-electricity-off"] = "rbxassetid://10723345643",
+	["lucide-equal"] = "rbxassetid://10723345990",
+	["lucide-equal-not"] = "rbxassetid://10723345866",
+	["lucide-eraser"] = "rbxassetid://10723346158",
+	["lucide-euro"] = "rbxassetid://10723346372",
+	["lucide-expand"] = "rbxassetid://10723346553",
+	["lucide-external-link"] = "rbxassetid://10723346684",
+	["lucide-eye"] = "rbxassetid://10723346959",
+	["lucide-eye-off"] = "rbxassetid://10723346871",
+	["lucide-factory"] = "rbxassetid://10723347051",
+	["lucide-fan"] = "rbxassetid://10723354359",
+	["lucide-fast-forward"] = "rbxassetid://10723354521",
+	["lucide-feather"] = "rbxassetid://10723354671",
+	["lucide-figma"] = "rbxassetid://10723354801",
+	["lucide-file"] = "rbxassetid://10723374641",
+	["lucide-file-archive"] = "rbxassetid://10723354921",
+	["lucide-file-audio"] = "rbxassetid://10723355148",
+	["lucide-file-audio-2"] = "rbxassetid://10723355026",
+	["lucide-file-axis-3d"] = "rbxassetid://10723355272",
+	["lucide-file-badge"] = "rbxassetid://10723355622",
+	["lucide-file-badge-2"] = "rbxassetid://10723355451",
+	["lucide-file-bar-chart"] = "rbxassetid://10723355887",
+	["lucide-file-bar-chart-2"] = "rbxassetid://10723355746",
+	["lucide-file-box"] = "rbxassetid://10723355989",
+	["lucide-file-check"] = "rbxassetid://10723356210",
+	["lucide-file-check-2"] = "rbxassetid://10723356100",
+	["lucide-file-clock"] = "rbxassetid://10723356329",
+	["lucide-file-code"] = "rbxassetid://10723356507",
+	["lucide-file-cog"] = "rbxassetid://10723356830",
+	["lucide-file-cog-2"] = "rbxassetid://10723356676",
+	["lucide-file-diff"] = "rbxassetid://10723357039",
+	["lucide-file-digit"] = "rbxassetid://10723357151",
+	["lucide-file-down"] = "rbxassetid://10723357322",
+	["lucide-file-edit"] = "rbxassetid://10723357495",
+	["lucide-file-heart"] = "rbxassetid://10723357637",
+	["lucide-file-image"] = "rbxassetid://10723357790",
+	["lucide-file-input"] = "rbxassetid://10723357933",
+	["lucide-file-json"] = "rbxassetid://10723364435",
+	["lucide-file-json-2"] = "rbxassetid://10723364361",
+	["lucide-file-key"] = "rbxassetid://10723364605",
+	["lucide-file-key-2"] = "rbxassetid://10723364515",
+	["lucide-file-line-chart"] = "rbxassetid://10723364725",
+	["lucide-file-lock"] = "rbxassetid://10723364957",
+	["lucide-file-lock-2"] = "rbxassetid://10723364861",
+	["lucide-file-minus"] = "rbxassetid://10723365254",
+	["lucide-file-minus-2"] = "rbxassetid://10723365086",
+	["lucide-file-output"] = "rbxassetid://10723365457",
+	["lucide-file-pie-chart"] = "rbxassetid://10723365598",
+	["lucide-file-plus"] = "rbxassetid://10723365877",
+	["lucide-file-plus-2"] = "rbxassetid://10723365766",
+	["lucide-file-question"] = "rbxassetid://10723365987",
+	["lucide-file-scan"] = "rbxassetid://10723366167",
+	["lucide-file-search"] = "rbxassetid://10723366550",
+	["lucide-file-search-2"] = "rbxassetid://10723366340",
+	["lucide-file-signature"] = "rbxassetid://10723366741",
+	["lucide-file-spreadsheet"] = "rbxassetid://10723366962",
+	["lucide-file-symlink"] = "rbxassetid://10723367098",
+	["lucide-file-terminal"] = "rbxassetid://10723367244",
+	["lucide-file-text"] = "rbxassetid://10723367380",
+	["lucide-file-type"] = "rbxassetid://10723367606",
+	["lucide-file-type-2"] = "rbxassetid://10723367509",
+	["lucide-file-up"] = "rbxassetid://10723367734",
+	["lucide-file-video"] = "rbxassetid://10723373884",
+	["lucide-file-video-2"] = "rbxassetid://10723367834",
+	["lucide-file-volume"] = "rbxassetid://10723374172",
+	["lucide-file-volume-2"] = "rbxassetid://10723374030",
+	["lucide-file-warning"] = "rbxassetid://10723374276",
+	["lucide-file-x"] = "rbxassetid://10723374544",
+	["lucide-file-x-2"] = "rbxassetid://10723374378",
+	["lucide-files"] = "rbxassetid://10723374759",
+	["lucide-film"] = "rbxassetid://10723374981",
+	["lucide-filter"] = "rbxassetid://10723375128",
+	["lucide-fingerprint"] = "rbxassetid://10723375250",
+	["lucide-flag"] = "rbxassetid://10723375890",
+	["lucide-flag-off"] = "rbxassetid://10723375443",
+	["lucide-flag-triangle-left"] = "rbxassetid://10723375608",
+	["lucide-flag-triangle-right"] = "rbxassetid://10723375727",
+	["lucide-flame"] = "rbxassetid://10723376114",
+	["lucide-flashlight"] = "rbxassetid://10723376471",
+	["lucide-flashlight-off"] = "rbxassetid://10723376365",
+	["lucide-flask-conical"] = "rbxassetid://10734883986",
+	["lucide-flask-round"] = "rbxassetid://10723376614",
+	["lucide-flip-horizontal"] = "rbxassetid://10723376884",
+	["lucide-flip-horizontal-2"] = "rbxassetid://10723376745",
+	["lucide-flip-vertical"] = "rbxassetid://10723377138",
+	["lucide-flip-vertical-2"] = "rbxassetid://10723377026",
+	["lucide-flower"] = "rbxassetid://10747830374",
+	["lucide-flower-2"] = "rbxassetid://10723377305",
+	["lucide-focus"] = "rbxassetid://10723377537",
+	["lucide-folder"] = "rbxassetid://10723387563",
+	["lucide-folder-archive"] = "rbxassetid://10723384478",
+	["lucide-folder-check"] = "rbxassetid://10723384605",
+	["lucide-folder-clock"] = "rbxassetid://10723384731",
+	["lucide-folder-closed"] = "rbxassetid://10723384893",
+	["lucide-folder-cog"] = "rbxassetid://10723385213",
+	["lucide-folder-cog-2"] = "rbxassetid://10723385036",
+	["lucide-folder-down"] = "rbxassetid://10723385338",
+	["lucide-folder-edit"] = "rbxassetid://10723385445",
+	["lucide-folder-heart"] = "rbxassetid://10723385545",
+	["lucide-folder-input"] = "rbxassetid://10723385721",
+	["lucide-folder-key"] = "rbxassetid://10723385848",
+	["lucide-folder-lock"] = "rbxassetid://10723386005",
+	["lucide-folder-minus"] = "rbxassetid://10723386127",
+	["lucide-folder-open"] = "rbxassetid://10723386277",
+	["lucide-folder-output"] = "rbxassetid://10723386386",
+	["lucide-folder-plus"] = "rbxassetid://10723386531",
+	["lucide-folder-search"] = "rbxassetid://10723386787",
+	["lucide-folder-search-2"] = "rbxassetid://10723386674",
+	["lucide-folder-symlink"] = "rbxassetid://10723386930",
+	["lucide-folder-tree"] = "rbxassetid://10723387085",
+	["lucide-folder-up"] = "rbxassetid://10723387265",
+	["lucide-folder-x"] = "rbxassetid://10723387448",
+	["lucide-folders"] = "rbxassetid://10723387721",
+	["lucide-form-input"] = "rbxassetid://10723387841",
+	["lucide-forward"] = "rbxassetid://10723388016",
+	["lucide-frame"] = "rbxassetid://10723394389",
+	["lucide-framer"] = "rbxassetid://10723394565",
+	["lucide-frown"] = "rbxassetid://10723394681",
+	["lucide-fuel"] = "rbxassetid://10723394846",
+	["lucide-function-square"] = "rbxassetid://10723395041",
+	["lucide-gamepad"] = "rbxassetid://10723395457",
+	["lucide-gamepad-2"] = "rbxassetid://10723395215",
+	["lucide-gauge"] = "rbxassetid://10723395708",
+	["lucide-gavel"] = "rbxassetid://10723395896",
+	["lucide-gem"] = "rbxassetid://10723396000",
+	["lucide-ghost"] = "rbxassetid://10723396107",
+	["lucide-gift"] = "rbxassetid://10723396402",
+	["lucide-gift-card"] = "rbxassetid://10723396225",
+	["lucide-git-branch"] = "rbxassetid://10723396676",
+	["lucide-git-branch-plus"] = "rbxassetid://10723396542",
+	["lucide-git-commit"] = "rbxassetid://10723396812",
+	["lucide-git-compare"] = "rbxassetid://10723396954",
+	["lucide-git-fork"] = "rbxassetid://10723397049",
+	["lucide-git-merge"] = "rbxassetid://10723397165",
+	["lucide-git-pull-request"] = "rbxassetid://10723397431",
+	["lucide-git-pull-request-closed"] = "rbxassetid://10723397268",
+	["lucide-git-pull-request-draft"] = "rbxassetid://10734884302",
+	["lucide-glass"] = "rbxassetid://10723397788",
+	["lucide-glass-2"] = "rbxassetid://10723397529",
+	["lucide-glass-water"] = "rbxassetid://10723397678",
+	["lucide-glasses"] = "rbxassetid://10723397895",
+	["lucide-globe"] = "rbxassetid://10723404337",
+	["lucide-globe-2"] = "rbxassetid://10723398002",
+	["lucide-grab"] = "rbxassetid://10723404472",
+	["lucide-graduation-cap"] = "rbxassetid://10723404691",
+	["lucide-grape"] = "rbxassetid://10723404822",
+	["lucide-grid"] = "rbxassetid://10723404936",
+	["lucide-grip-horizontal"] = "rbxassetid://10723405089",
+	["lucide-grip-vertical"] = "rbxassetid://10723405236",
+	["lucide-hammer"] = "rbxassetid://10723405360",
+	["lucide-hand"] = "rbxassetid://10723405649",
+	["lucide-hand-metal"] = "rbxassetid://10723405508",
+	["lucide-hard-drive"] = "rbxassetid://10723405749",
+	["lucide-hard-hat"] = "rbxassetid://10723405859",
+	["lucide-hash"] = "rbxassetid://10723405975",
+	["lucide-haze"] = "rbxassetid://10723406078",
+	["lucide-headphones"] = "rbxassetid://10723406165",
+	["lucide-heart"] = "rbxassetid://10723406885",
+	["lucide-heart-crack"] = "rbxassetid://10723406299",
+	["lucide-heart-handshake"] = "rbxassetid://10723406480",
+	["lucide-heart-off"] = "rbxassetid://10723406662",
+	["lucide-heart-pulse"] = "rbxassetid://10723406795",
+	["lucide-help-circle"] = "rbxassetid://10723406988",
+	["lucide-hexagon"] = "rbxassetid://10723407092",
+	["lucide-highlighter"] = "rbxassetid://10723407192",
+	["lucide-history"] = "rbxassetid://10723407335",
+	["lucide-home"] = "rbxassetid://10723407389",
+	["lucide-hourglass"] = "rbxassetid://10723407498",
+	["lucide-ice-cream"] = "rbxassetid://10723414308",
+	["lucide-image"] = "rbxassetid://10723415040",
+	["lucide-image-minus"] = "rbxassetid://10723414487",
+	["lucide-image-off"] = "rbxassetid://10723414677",
+	["lucide-image-plus"] = "rbxassetid://10723414827",
+	["lucide-import"] = "rbxassetid://10723415205",
+	["lucide-inbox"] = "rbxassetid://10723415335",
+	["lucide-indent"] = "rbxassetid://10723415494",
+	["lucide-indian-rupee"] = "rbxassetid://10723415642",
+	["lucide-infinity"] = "rbxassetid://10723415766",
+	["lucide-info"] = "rbxassetid://10723415903",
+	["lucide-inspect"] = "rbxassetid://10723416057",
+	["lucide-italic"] = "rbxassetid://10723416195",
+	["lucide-japanese-yen"] = "rbxassetid://10723416363",
+	["lucide-joystick"] = "rbxassetid://10723416527",
+	["lucide-key"] = "rbxassetid://10723416652",
+	["lucide-keyboard"] = "rbxassetid://10723416765",
+	["lucide-lamp"] = "rbxassetid://10723417513",
+	["lucide-lamp-ceiling"] = "rbxassetid://10723416922",
+	["lucide-lamp-desk"] = "rbxassetid://10723417016",
+	["lucide-lamp-floor"] = "rbxassetid://10723417131",
+	["lucide-lamp-wall-down"] = "rbxassetid://10723417240",
+	["lucide-lamp-wall-up"] = "rbxassetid://10723417356",
+	["lucide-landmark"] = "rbxassetid://10723417608",
+	["lucide-languages"] = "rbxassetid://10723417703",
+	["lucide-laptop"] = "rbxassetid://10723423881",
+	["lucide-laptop-2"] = "rbxassetid://10723417797",
+	["lucide-lasso"] = "rbxassetid://10723424235",
+	["lucide-lasso-select"] = "rbxassetid://10723424058",
+	["lucide-laugh"] = "rbxassetid://10723424372",
+	["lucide-layers"] = "rbxassetid://10723424505",
+	["lucide-layout"] = "rbxassetid://10723425376",
+	["lucide-layout-dashboard"] = "rbxassetid://10723424646",
+	["lucide-layout-grid"] = "rbxassetid://10723424838",
+	["lucide-layout-list"] = "rbxassetid://10723424963",
+	["lucide-layout-template"] = "rbxassetid://10723425187",
+	["lucide-leaf"] = "rbxassetid://10723425539",
+	["lucide-library"] = "rbxassetid://10723425615",
+	["lucide-life-buoy"] = "rbxassetid://10723425685",
+	["lucide-lightbulb"] = "rbxassetid://10723425852",
+	["lucide-lightbulb-off"] = "rbxassetid://10723425762",
+	["lucide-line-chart"] = "rbxassetid://10723426393",
+	["lucide-link"] = "rbxassetid://10723426722",
+	["lucide-link-2"] = "rbxassetid://10723426595",
+	["lucide-link-2-off"] = "rbxassetid://10723426513",
+	["lucide-list"] = "rbxassetid://10723433811",
+	["lucide-list-checks"] = "rbxassetid://10734884548",
+	["lucide-list-end"] = "rbxassetid://10723426886",
+	["lucide-list-minus"] = "rbxassetid://10723426986",
+	["lucide-list-music"] = "rbxassetid://10723427081",
+	["lucide-list-ordered"] = "rbxassetid://10723427199",
+	["lucide-list-plus"] = "rbxassetid://10723427334",
+	["lucide-list-start"] = "rbxassetid://10723427494",
+	["lucide-list-video"] = "rbxassetid://10723427619",
+	["lucide-list-x"] = "rbxassetid://10723433655",
+	["lucide-loader"] = "rbxassetid://10723434070",
+	["lucide-loader-2"] = "rbxassetid://10723433935",
+	["lucide-locate"] = "rbxassetid://10723434557",
+	["lucide-locate-fixed"] = "rbxassetid://10723434236",
+	["lucide-locate-off"] = "rbxassetid://10723434379",
+	["lucide-lock"] = "rbxassetid://10723434711",
+	["lucide-log-in"] = "rbxassetid://10723434830",
+	["lucide-log-out"] = "rbxassetid://10723434906",
+	["lucide-luggage"] = "rbxassetid://10723434993",
+	["lucide-magnet"] = "rbxassetid://10723435069",
+	["lucide-mail"] = "rbxassetid://10734885430",
+	["lucide-mail-check"] = "rbxassetid://10723435182",
+	["lucide-mail-minus"] = "rbxassetid://10723435261",
+	["lucide-mail-open"] = "rbxassetid://10723435342",
+	["lucide-mail-plus"] = "rbxassetid://10723435443",
+	["lucide-mail-question"] = "rbxassetid://10723435515",
+	["lucide-mail-search"] = "rbxassetid://10734884739",
+	["lucide-mail-warning"] = "rbxassetid://10734885015",
+	["lucide-mail-x"] = "rbxassetid://10734885247",
+	["lucide-mails"] = "rbxassetid://10734885614",
+	["lucide-map"] = "rbxassetid://10734886202",
+	["lucide-map-pin"] = "rbxassetid://10734886004",
+	["lucide-map-pin-off"] = "rbxassetid://10734885803",
+	["lucide-maximize"] = "rbxassetid://10734886735",
+	["lucide-maximize-2"] = "rbxassetid://10734886496",
+	["lucide-medal"] = "rbxassetid://10734887072",
+	["lucide-megaphone"] = "rbxassetid://10734887454",
+	["lucide-megaphone-off"] = "rbxassetid://10734887311",
+	["lucide-meh"] = "rbxassetid://10734887603",
+	["lucide-menu"] = "rbxassetid://10734887784",
+	["lucide-message-circle"] = "rbxassetid://10734888000",
+	["lucide-message-square"] = "rbxassetid://10734888228",
+	["lucide-mic"] = "rbxassetid://10734888864",
+	["lucide-mic-2"] = "rbxassetid://10734888430",
+	["lucide-mic-off"] = "rbxassetid://10734888646",
+	["lucide-microscope"] = "rbxassetid://10734889106",
+	["lucide-microwave"] = "rbxassetid://10734895076",
+	["lucide-milestone"] = "rbxassetid://10734895310",
+	["lucide-minimize"] = "rbxassetid://10734895698",
+	["lucide-minimize-2"] = "rbxassetid://10734895530",
+	["lucide-minus"] = "rbxassetid://10734896206",
+	["lucide-minus-circle"] = "rbxassetid://10734895856",
+	["lucide-minus-square"] = "rbxassetid://10734896029",
+	["lucide-monitor"] = "rbxassetid://10734896881",
+	["lucide-monitor-off"] = "rbxassetid://10734896360",
+	["lucide-monitor-speaker"] = "rbxassetid://10734896512",
+	["lucide-moon"] = "rbxassetid://10734897102",
+	["lucide-more-horizontal"] = "rbxassetid://10734897250",
+	["lucide-more-vertical"] = "rbxassetid://10734897387",
+	["lucide-mountain"] = "rbxassetid://10734897956",
+	["lucide-mountain-snow"] = "rbxassetid://10734897665",
+	["lucide-mouse"] = "rbxassetid://10734898592",
+	["lucide-mouse-pointer"] = "rbxassetid://10734898476",
+	["lucide-mouse-pointer-2"] = "rbxassetid://10734898194",
+	["lucide-mouse-pointer-click"] = "rbxassetid://10734898355",
+	["lucide-move"] = "rbxassetid://10734900011",
+	["lucide-move-3d"] = "rbxassetid://10734898756",
+	["lucide-move-diagonal"] = "rbxassetid://10734899164",
+	["lucide-move-diagonal-2"] = "rbxassetid://10734898934",
+	["lucide-move-horizontal"] = "rbxassetid://10734899414",
+	["lucide-move-vertical"] = "rbxassetid://10734899821",
+	["lucide-music"] = "rbxassetid://10734905958",
+	["lucide-music-2"] = "rbxassetid://10734900215",
+	["lucide-music-3"] = "rbxassetid://10734905665",
+	["lucide-music-4"] = "rbxassetid://10734905823",
+	["lucide-navigation"] = "rbxassetid://10734906744",
+	["lucide-navigation-2"] = "rbxassetid://10734906332",
+	["lucide-navigation-2-off"] = "rbxassetid://10734906144",
+	["lucide-navigation-off"] = "rbxassetid://10734906580",
+	["lucide-network"] = "rbxassetid://10734906975",
+	["lucide-newspaper"] = "rbxassetid://10734907168",
+	["lucide-octagon"] = "rbxassetid://10734907361",
+	["lucide-option"] = "rbxassetid://10734907649",
+	["lucide-outdent"] = "rbxassetid://10734907933",
+	["lucide-package"] = "rbxassetid://10734909540",
+	["lucide-package-2"] = "rbxassetid://10734908151",
+	["lucide-package-check"] = "rbxassetid://10734908384",
+	["lucide-package-minus"] = "rbxassetid://10734908626",
+	["lucide-package-open"] = "rbxassetid://10734908793",
+	["lucide-package-plus"] = "rbxassetid://10734909016",
+	["lucide-package-search"] = "rbxassetid://10734909196",
+	["lucide-package-x"] = "rbxassetid://10734909375",
+	["lucide-paint-bucket"] = "rbxassetid://10734909847",
+	["lucide-paintbrush"] = "rbxassetid://10734910187",
+	["lucide-paintbrush-2"] = "rbxassetid://10734910030",
+	["lucide-palette"] = "rbxassetid://10734910430",
+	["lucide-palmtree"] = "rbxassetid://10734910680",
+	["lucide-paperclip"] = "rbxassetid://10734910927",
+	["lucide-party-popper"] = "rbxassetid://10734918735",
+	["lucide-pause"] = "rbxassetid://10734919336",
+	["lucide-pause-circle"] = "rbxassetid://10735024209",
+	["lucide-pause-octagon"] = "rbxassetid://10734919143",
+	["lucide-pen-tool"] = "rbxassetid://10734919503",
+	["lucide-pencil"] = "rbxassetid://10734919691",
+	["lucide-percent"] = "rbxassetid://10734919919",
+	["lucide-person-standing"] = "rbxassetid://10734920149",
+	["lucide-phone"] = "rbxassetid://10734921524",
+	["lucide-phone-call"] = "rbxassetid://10734920305",
+	["lucide-phone-forwarded"] = "rbxassetid://10734920508",
+	["lucide-phone-incoming"] = "rbxassetid://10734920694",
+	["lucide-phone-missed"] = "rbxassetid://10734920845",
+	["lucide-phone-off"] = "rbxassetid://10734921077",
+	["lucide-phone-outgoing"] = "rbxassetid://10734921288",
+	["lucide-pie-chart"] = "rbxassetid://10734921727",
+	["lucide-piggy-bank"] = "rbxassetid://10734921935",
+	["lucide-pin"] = "rbxassetid://10734922324",
+	["lucide-pin-off"] = "rbxassetid://10734922180",
+	["lucide-pipette"] = "rbxassetid://10734922497",
+	["lucide-pizza"] = "rbxassetid://10734922774",
+	["lucide-plane"] = "rbxassetid://10734922971",
+	["lucide-play"] = "rbxassetid://10734923549",
+	["lucide-play-circle"] = "rbxassetid://10734923214",
+	["lucide-plus"] = "rbxassetid://10734924532",
+	["lucide-plus-circle"] = "rbxassetid://10734923868",
+	["lucide-plus-square"] = "rbxassetid://10734924219",
+	["lucide-podcast"] = "rbxassetid://10734929553",
+	["lucide-pointer"] = "rbxassetid://10734929723",
+	["lucide-pound-sterling"] = "rbxassetid://10734929981",
+	["lucide-power"] = "rbxassetid://10734930466",
+	["lucide-power-off"] = "rbxassetid://10734930257",
+	["lucide-printer"] = "rbxassetid://10734930632",
+	["lucide-puzzle"] = "rbxassetid://10734930886",
+	["lucide-quote"] = "rbxassetid://10734931234",
+	["lucide-radio"] = "rbxassetid://10734931596",
+	["lucide-radio-receiver"] = "rbxassetid://10734931402",
+	["lucide-rectangle-horizontal"] = "rbxassetid://10734931777",
+	["lucide-rectangle-vertical"] = "rbxassetid://10734932081",
+	["lucide-recycle"] = "rbxassetid://10734932295",
+	["lucide-redo"] = "rbxassetid://10734932822",
+	["lucide-redo-2"] = "rbxassetid://10734932586",
+	["lucide-refresh-ccw"] = "rbxassetid://10734933056",
+	["lucide-refresh-cw"] = "rbxassetid://10734933222",
+	["lucide-refrigerator"] = "rbxassetid://10734933465",
+	["lucide-regex"] = "rbxassetid://10734933655",
+	["lucide-repeat"] = "rbxassetid://10734933966",
+	["lucide-repeat-1"] = "rbxassetid://10734933826",
+	["lucide-reply"] = "rbxassetid://10734934252",
+	["lucide-reply-all"] = "rbxassetid://10734934132",
+	["lucide-rewind"] = "rbxassetid://10734934347",
+	["lucide-rocket"] = "rbxassetid://10734934585",
+	["lucide-rocking-chair"] = "rbxassetid://10734939942",
+	["lucide-rotate-3d"] = "rbxassetid://10734940107",
+	["lucide-rotate-ccw"] = "rbxassetid://10734940376",
+	["lucide-rotate-cw"] = "rbxassetid://10734940654",
+	["lucide-rss"] = "rbxassetid://10734940825",
+	["lucide-ruler"] = "rbxassetid://10734941018",
+	["lucide-russian-ruble"] = "rbxassetid://10734941199",
+	["lucide-sailboat"] = "rbxassetid://10734941354",
+	["lucide-save"] = "rbxassetid://10734941499",
+	["lucide-scale"] = "rbxassetid://10734941912",
+	["lucide-scale-3d"] = "rbxassetid://10734941739",
+	["lucide-scaling"] = "rbxassetid://10734942072",
+	["lucide-scan"] = "rbxassetid://10734942565",
+	["lucide-scan-face"] = "rbxassetid://10734942198",
+	["lucide-scan-line"] = "rbxassetid://10734942351",
+	["lucide-scissors"] = "rbxassetid://10734942778",
+	["lucide-screen-share"] = "rbxassetid://10734943193",
+	["lucide-screen-share-off"] = "rbxassetid://10734942967",
+	["lucide-scroll"] = "rbxassetid://10734943448",
+	["lucide-search"] = "rbxassetid://10734943674",
+	["lucide-send"] = "rbxassetid://10734943902",
+	["lucide-separator-horizontal"] = "rbxassetid://10734944115",
+	["lucide-separator-vertical"] = "rbxassetid://10734944326",
+	["lucide-server"] = "rbxassetid://10734949856",
+	["lucide-server-cog"] = "rbxassetid://10734944444",
+	["lucide-server-crash"] = "rbxassetid://10734944554",
+	["lucide-server-off"] = "rbxassetid://10734944668",
+	["lucide-settings"] = "rbxassetid://10734950309",
+	["lucide-settings-2"] = "rbxassetid://10734950020",
+	["lucide-share"] = "rbxassetid://10734950813",
+	["lucide-share-2"] = "rbxassetid://10734950553",
+	["lucide-sheet"] = "rbxassetid://10734951038",
+	["lucide-shield"] = "rbxassetid://10734951847",
+	["lucide-shield-alert"] = "rbxassetid://10734951173",
+	["lucide-shield-check"] = "rbxassetid://10734951367",
+	["lucide-shield-close"] = "rbxassetid://10734951535",
+	["lucide-shield-off"] = "rbxassetid://10734951684",
+	["lucide-shirt"] = "rbxassetid://10734952036",
+	["lucide-shopping-bag"] = "rbxassetid://10734952273",
+	["lucide-shopping-cart"] = "rbxassetid://10734952479",
+	["lucide-shovel"] = "rbxassetid://10734952773",
+	["lucide-shower-head"] = "rbxassetid://10734952942",
+	["lucide-shrink"] = "rbxassetid://10734953073",
+	["lucide-shrub"] = "rbxassetid://10734953241",
+	["lucide-shuffle"] = "rbxassetid://10734953451",
+	["lucide-sidebar"] = "rbxassetid://10734954301",
+	["lucide-sidebar-close"] = "rbxassetid://10734953715",
+	["lucide-sidebar-open"] = "rbxassetid://10734954000",
+	["lucide-sigma"] = "rbxassetid://10734954538",
+	["lucide-signal"] = "rbxassetid://10734961133",
+	["lucide-signal-high"] = "rbxassetid://10734954807",
+	["lucide-signal-low"] = "rbxassetid://10734955080",
+	["lucide-signal-medium"] = "rbxassetid://10734955336",
+	["lucide-signal-zero"] = "rbxassetid://10734960878",
+	["lucide-siren"] = "rbxassetid://10734961284",
+	["lucide-skip-back"] = "rbxassetid://10734961526",
+	["lucide-skip-forward"] = "rbxassetid://10734961809",
+	["lucide-skull"] = "rbxassetid://10734962068",
+	["lucide-slack"] = "rbxassetid://10734962339",
+	["lucide-slash"] = "rbxassetid://10734962600",
+	["lucide-slice"] = "rbxassetid://10734963024",
+	["lucide-sliders"] = "rbxassetid://10734963400",
+	["lucide-sliders-horizontal"] = "rbxassetid://10734963191",
+	["lucide-smartphone"] = "rbxassetid://10734963940",
+	["lucide-smartphone-charging"] = "rbxassetid://10734963671",
+	["lucide-smile"] = "rbxassetid://10734964441",
+	["lucide-smile-plus"] = "rbxassetid://10734964188",
+	["lucide-snowflake"] = "rbxassetid://10734964600",
+	["lucide-sofa"] = "rbxassetid://10734964852",
+	["lucide-sort-asc"] = "rbxassetid://10734965115",
+	["lucide-sort-desc"] = "rbxassetid://10734965287",
+	["lucide-speaker"] = "rbxassetid://10734965419",
+	["lucide-sprout"] = "rbxassetid://10734965572",
+	["lucide-square"] = "rbxassetid://10734965702",
+	["lucide-star"] = "rbxassetid://10734966248",
+	["lucide-star-half"] = "rbxassetid://10734965897",
+	["lucide-star-off"] = "rbxassetid://10734966097",
+	["lucide-stethoscope"] = "rbxassetid://10734966384",
+	["lucide-sticker"] = "rbxassetid://10734972234",
+	["lucide-sticky-note"] = "rbxassetid://10734972463",
+	["lucide-stop-circle"] = "rbxassetid://10734972621",
+	["lucide-stretch-horizontal"] = "rbxassetid://10734972862",
+	["lucide-stretch-vertical"] = "rbxassetid://10734973130",
+	["lucide-strikethrough"] = "rbxassetid://10734973290",
+	["lucide-subscript"] = "rbxassetid://10734973457",
+	["lucide-sun"] = "rbxassetid://10734974297",
+	["lucide-sun-dim"] = "rbxassetid://10734973645",
+	["lucide-sun-medium"] = "rbxassetid://10734973778",
+	["lucide-sun-moon"] = "rbxassetid://10734973999",
+	["lucide-sun-snow"] = "rbxassetid://10734974130",
+	["lucide-sunrise"] = "rbxassetid://10734974522",
+	["lucide-sunset"] = "rbxassetid://10734974689",
+	["lucide-superscript"] = "rbxassetid://10734974850",
+	["lucide-swiss-franc"] = "rbxassetid://10734975024",
+	["lucide-switch-camera"] = "rbxassetid://10734975214",
+	["lucide-sword"] = "rbxassetid://10734975486",
+	["lucide-swords"] = "rbxassetid://10734975692",
+	["lucide-syringe"] = "rbxassetid://10734975932",
+	["lucide-table"] = "rbxassetid://10734976230",
+	["lucide-table-2"] = "rbxassetid://10734976097",
+	["lucide-tablet"] = "rbxassetid://10734976394",
+	["lucide-tag"] = "rbxassetid://10734976528",
+	["lucide-tags"] = "rbxassetid://10734976739",
+	["lucide-target"] = "rbxassetid://10734977012",
+	["lucide-tent"] = "rbxassetid://10734981750",
+	["lucide-terminal"] = "rbxassetid://10734982144",
+	["lucide-terminal-square"] = "rbxassetid://10734981995",
+	["lucide-text-cursor"] = "rbxassetid://10734982395",
+	["lucide-text-cursor-input"] = "rbxassetid://10734982297",
+	["lucide-thermometer"] = "rbxassetid://10734983134",
+	["lucide-thermometer-snowflake"] = "rbxassetid://10734982571",
+	["lucide-thermometer-sun"] = "rbxassetid://10734982771",
+	["lucide-thumbs-down"] = "rbxassetid://10734983359",
+	["lucide-thumbs-up"] = "rbxassetid://10734983629",
+	["lucide-ticket"] = "rbxassetid://10734983868",
+	["lucide-timer"] = "rbxassetid://10734984606",
+	["lucide-timer-off"] = "rbxassetid://10734984138",
+	["lucide-timer-reset"] = "rbxassetid://10734984355",
+	["lucide-toggle-left"] = "rbxassetid://10734984834",
+	["lucide-toggle-right"] = "rbxassetid://10734985040",
+	["lucide-tornado"] = "rbxassetid://10734985247",
+	["lucide-toy-brick"] = "rbxassetid://10747361919",
+	["lucide-train"] = "rbxassetid://10747362105",
+	["lucide-trash"] = "rbxassetid://10747362393",
+	["lucide-trash-2"] = "rbxassetid://10747362241",
+	["lucide-tree-deciduous"] = "rbxassetid://10747362534",
+	["lucide-tree-pine"] = "rbxassetid://10747362748",
+	["lucide-trees"] = "rbxassetid://10747363016",
+	["lucide-trending-down"] = "rbxassetid://10747363205",
+	["lucide-trending-up"] = "rbxassetid://10747363465",
+	["lucide-triangle"] = "rbxassetid://10747363621",
+	["lucide-trophy"] = "rbxassetid://10747363809",
+	["lucide-truck"] = "rbxassetid://10747364031",
+	["lucide-tv"] = "rbxassetid://10747364593",
+	["lucide-tv-2"] = "rbxassetid://10747364302",
+	["lucide-type"] = "rbxassetid://10747364761",
+	["lucide-umbrella"] = "rbxassetid://10747364971",
+	["lucide-underline"] = "rbxassetid://10747365191",
+	["lucide-undo"] = "rbxassetid://10747365484",
+	["lucide-undo-2"] = "rbxassetid://10747365359",
+	["lucide-unlink"] = "rbxassetid://10747365771",
+	["lucide-unlink-2"] = "rbxassetid://10747397871",
+	["lucide-unlock"] = "rbxassetid://10747366027",
+	["lucide-upload"] = "rbxassetid://10747366434",
+	["lucide-upload-cloud"] = "rbxassetid://10747366266",
+	["lucide-usb"] = "rbxassetid://10747366606",
+	["lucide-user"] = "rbxassetid://10747373176",
+	["lucide-user-check"] = "rbxassetid://10747371901",
+	["lucide-user-cog"] = "rbxassetid://10747372167",
+	["lucide-user-minus"] = "rbxassetid://10747372346",
+	["lucide-user-plus"] = "rbxassetid://10747372702",
+	["lucide-user-x"] = "rbxassetid://10747372992",
+	["lucide-users"] = "rbxassetid://10747373426",
+	["lucide-utensils"] = "rbxassetid://10747373821",
+	["lucide-utensils-crossed"] = "rbxassetid://10747373629",
+	["lucide-venetian-mask"] = "rbxassetid://10747374003",
+	["lucide-verified"] = "rbxassetid://10747374131",
+	["lucide-vibrate"] = "rbxassetid://10747374489",
+	["lucide-vibrate-off"] = "rbxassetid://10747374269",
+	["lucide-video"] = "rbxassetid://10747374938",
+	["lucide-video-off"] = "rbxassetid://10747374721",
+	["lucide-view"] = "rbxassetid://10747375132",
+	["lucide-voicemail"] = "rbxassetid://10747375281",
+	["lucide-volume"] = "rbxassetid://10747376008",
+	["lucide-volume-1"] = "rbxassetid://10747375450",
+	["lucide-volume-2"] = "rbxassetid://10747375679",
+	["lucide-volume-x"] = "rbxassetid://10747375880",
+	["lucide-wallet"] = "rbxassetid://10747376205",
+	["lucide-wand"] = "rbxassetid://10747376565",
+	["lucide-wand-2"] = "rbxassetid://10747376349",
+	["lucide-watch"] = "rbxassetid://10747376722",
+	["lucide-waves"] = "rbxassetid://10747376931",
+	["lucide-webcam"] = "rbxassetid://10747381992",
+	["lucide-wifi"] = "rbxassetid://10747382504",
+	["lucide-wifi-off"] = "rbxassetid://10747382268",
+	["lucide-wind"] = "rbxassetid://10747382750",
+	["lucide-wrap-text"] = "rbxassetid://10747383065",
+	["lucide-wrench"] = "rbxassetid://10747383470",
+	["lucide-x"] = "rbxassetid://10747384394",
+	["lucide-x-circle"] = "rbxassetid://10747383819",
+	["lucide-x-octagon"] = "rbxassetid://10747384037",
+	["lucide-x-square"] = "rbxassetid://10747384217",
+	["lucide-zoom-in"] = "rbxassetid://10747384552",
+	["lucide-zoom-out"] = "rbxassetid://10747384679",
+};
 
-local FarmRow = MainTab:Row({Title = "Auto Farm"})
-FarmRow:SubTextbox({Title = "Speed", Placeholder = "33", Default = tostring(_G.TweenSpeed or 33), Callback = function(val)
-	_G.TweenSpeed = tonumber(val) or 33
-end})
-FarmRow:SubToggle({Title = "Auto Farm", Default = false, Callback = function(val)
-	stateAutoFarm = val
-	if val then startAutoFarm() else stopAutoFarm() end
-end})
+Compkiller.FontAwesome = {
+	a = "rbxassetid://74244459944328",
+	['accessible-icon'] = "rbxassetid://135242143909610",
+	accusoft = "rbxassetid://94057545767519",
+	['address-book'] = "rbxassetid://129578640498728",
+	['address-card'] = 'rbxassetid://102106715141928',
+	['align-center'] = "rbxassetid://84408132800466",
+	['align-justify'] = "rbxassetid://125569339749500",
+	['align-left'] = "rbxassetid://110008004178539",
+	['align-right'] = "rbxassetid://79774893981710",
+	alipay = "rbxassetid://134274199490629",
+	anchor = "rbxassetid://94979524088900",
+	['anchor-circle-check'] = "rbxassetid://91871463373335",
+	['anchor-circle-exclamation'] = "rbxassetid://72303311082053",
+	['anchor-circle-xmark'] = "rbxassetid://106917001300524",
+	['anchor-lock'] = "rbxassetid://109198662645391",
+	android = "rbxassetid://93605821179752",
+	['angle-down'] = "rbxassetid://122395101934469",
+	['angle-left'] = "rbxassetid://132632410309959",
+	['angle-right'] = "rbxassetid://105971664068240",
+	['angles-down'] = "rbxassetid://96703500127872",
+	['angles-left'] = "rbxassetid://70595546989447",
+	['angles-right'] = "rbxassetid://131176182882747",
+	['angles-up'] = "rbxassetid://96847020381396",
+	['angle-up'] = "rbxassetid://136517226470297",
+	['arrow-down'] = "rbxassetid://100174052036797",
+	['arrow-left'] = "rbxassetid://133922718486450",
+	['arrow-pointer'] = "rbxassetid://128639550333559",
+	['arrow-right'] = 'rbxassetid://105166519175969',
+	['arrow-right-arrow-left'] = "rbxassetid://87405428139040",
+	['arrow-right-from-bracket'] = "rbxassetid://111722018253482",
+	['arrow-right-to-bracket'] = "rbxassetid://79400903745367",
+	['arrow-rotate-left'] = "rbxassetid://127876635051023",
+	['arrow-rotate-right'] = "rbxassetid://82773599534347",
+	['arrows-left-right'] = "rbxassetid://85625938291926",
+	['arrows-rotate'] = "rbxassetid://109882153776270",
+	['arrows-up-down'] = "rbxassetid://88240470530518",
+	['arrows-up-down-left-right'] = "rbxassetid://136830364721572",
+	['arrow-trend-down'] = "rbxassetid://138593805214121",
+	['arrow-trend-up'] = "rbxassetid://121301107868410",
+	['arrow-up'] = "rbxassetid://116473498857626",
+	['arrow-up-from-bracket'] = "rbxassetid://77716847027695",
+	['arrow-up-right-from-square'] = "rbxassetid://101883941536459",
+	at = "rbxassetid://116468402170315",
+	atom = "rbxassetid://136905279132440",
+	['audio-description'] = 'rbxassetid://137490376195308',
+	award = "rbxassetid://134322732056464",
+	backward = "rbxassetid://115437448962693",
+	['backward-fast'] = "rbxassetid://133478473989228",
+	['backward-step'] = "rbxassetid://118301206125870",
+	ban = "rbxassetid://89004310664420",
+	bandage = "rbxassetid://109104902535966",
+	bars = "rbxassetid://127661324755454",
+	['bars-progress'] = "rbxassetid://77774174241071",
+	['bars-staggered'] = "rbxassetid://97337529919486",
+	baseball = "rbxassetid://87677782809968",
+	basketball = "rbxassetid://71403045563776",
+	['basket-shopping'] = "rbxassetid://129578273645224",
+	['battery-empty'] = "rbxassetid://99777750808099",
+	['battery-full'] = "rbxassetid://93999278270214",
+	['battery-half'] = "rbxassetid://87762099115036",
+	['battery-quarter'] = "rbxassetid://96680551535938",
+	['battery-three-quarters'] = "rbxassetid://130840615974067",
+	bell = "rbxassetid://109971903438934",
+	['bell-slash'] = "rbxassetid://101758939103378",
+	bilibili = "rbxassetid://85834752961243",
+	biohazard = "rbxassetid://102610067899783",
+	bitcoin = "rbxassetid://131632152157382",
+	['bitcoin-sign'] = "rbxassetid://127809070259506",
+	['bluetooth-b'] = "rbxassetid://96522278309021",
+	bluetooth = "rbxassetid://113081372628241",
+	bolt = "rbxassetid://89858717966393",
+	bomb = "rbxassetid://113184250292244",
+	book = "rbxassetid://134006112957521",
+	['book-open'] = "rbxassetid://109774137257967",
+	bug = "rbxassetid://105314179657552",
+	['bug-slash'] = "rbxassetid://133973969610093",
+	broom = "rbxassetid://95267009545395",
+	bullhorn = "rbxassetid://87251830910561",
+	['bullseye'] = "rbxassetid://83080500555400",
+	bus = "rbxassetid://126579638968493",
+	calculator = "rbxassetid://119527046782470",
+	camera = "rbxassetid://133029797251962",
+	['cc-amazon-pay'] = "rbxassetid://108859760370504",
+	['cc-amex'] = "rbxassetid://138233598058785",
+	['cc-apple-pay'] = "rbxassetid://133747941882534",
+	['cc-diners-club'] = "rbxassetid://99626539664553",
+	['cc-mastercard'] = "rbxassetid://118541621561504",
+	['cc-visa'] = "rbxassetid://120055576031063",
+	['cc-paypal'] = "rbxassetid://87250418163030",
+	check = "rbxassetid://129443092324752",
+	['chevron-down'] = "rbxassetid://109535175596957",
+	['chevron-left'] = "rbxassetid://129113930144228",
+	['chevron-right'] = "rbxassetid://105723602996553",
+	['chevron-up'] = "rbxassetid://117264500851637",
+	chromecast = "rbxassetid://71543589030583",
+	circle = "rbxassetid://131274957777266",
+	['circle-check'] = "rbxassetid://98678528147000",
+	['circle-info'] = "rbxassetid://97519285421665",
+	clipboard = 'rbxassetid://111512950362265',
+	['clipboard-check'] = "rbxassetid://118535733506457",
+	clock = "rbxassetid://98767608471295",
+	code = "rbxassetid://91882036126433",
+	['computer-mouse'] = "rbxassetid://114752565381440",
+	cookie = "rbxassetid://101854685117513",
+	copy = "rbxassetid://76996819137437",
+	copyright = "rbxassetid://131736117717053",
+	['credit-card'] = "rbxassetid://85213342061383",
+	['crosshairs'] = "rbxassetid://133441774847498",
+	database = "rbxassetid://109882554524389",
+	discord = "rbxassetid://75871011309830",
+	display = "rbxassetid://101851152220134",
+	download = "rbxassetid://122321311031549",
+	['earth-africa'] = "rbxassetid://107029199584204",
+	['earth-americas'] = "rbxassetid://105574352653407",
+	['earth-asia'] = "rbxassetid://138155660327900",
+	['earth-europe'] = "rbxassetid://134638370907021",
+	['earth-oceania'] = "rbxassetid://121780690380624",
+	envelope = "rbxassetid://136184483524922",
+	['envelope-open'] = "rbxassetid://132492127839357",
+	envira = "rbxassetid://75781570526788",
+	equals = "rbxassetid://134271902308970",
+	eraser = "rbxassetid://128970640154301",
+	ethereum = "rbxassetid://103421769879532",
+	exclamation = "rbxassetid://125718656366676",
+	eye = "rbxassetid://95235861336970",
+	feather = "rbxassetid://135995843954302",
+	fingerprint = "rbxassetid://125379360015007",
+	fire = "rbxassetid://122498238725085",
+	['floppy-disk'] = "rbxassetid://101374426361499",
+	folder = "rbxassetid://131374292202389",
+	['folder-open'] = "rbxassetid://78238714442180",
+	forward = "rbxassetid://107937467448020",
+	['forward-fast'] = "rbxassetid://83735840669276",
+	['forward-step'] = "rbxassetid://104040171143566",
+	gear = "rbxassetid://137945854328407",
+	gift = "rbxassetid://129718366414314",
+	git = "rbxassetid://117711060446092",
+	github = "rbxassetid://123783733365919",
+	globe = "rbxassetid://102861769355196",
+	['hand-holding-hand'] = "rbxassetid://120797412134954",
+	headphones = "rbxassetid://86076153665072",
+	headset = "rbxassetid://108070801288944",
+	['headphones-simple'] = "rbxassetid://97516570978183",
+	house = "rbxassetid://86540166012974",
+	['house-chimney'] = "rbxassetid://90066192203346",
+	image = "rbxassetid://107205506080751",
+	infinity = "rbxassetid://129024756905166",
+	info = "rbxassetid://113157514619684",
+	keyboard = "rbxassetid://97417417526948",
+	list = "rbxassetid://87155993544457",
+	['location-arrow'] = "rbxassetid://72621673664457",
+	['location-crosshairs'] = "rbxassetid://93887450723164",
+	lock = 'rbxassetid://80031239225283',
+	palette = "rbxassetid://81372281623830",
+	paste = "rbxassetid://88846256867074",
+	paw = "rbxassetid://80005916079930",
+	pen = "rbxassetid://97404859124912",
+	pencil = "rbxassetid://76590960968733",
+	['pen-nib'] = "rbxassetid://91232219924341",
+	['pen-ruler'] = "rbxassetid://138407458813207",
+	phone = "rbxassetid://72814141651992",
+	plane = "rbxassetid://136248807279679",
+	plus = "rbxassetid://133137619535544",
+	['right-left'] = "rbxassetid://91273051324368",
+	['right-to-bracket'] = "rbxassetid://137132451900886",
+	rotate = "rbxassetid://95883878890200",
+	['rotate-right'] = "rbxassetid://93357988077552",
+	['rotate-left'] = "rbxassetid://96753646113822",
+	shield = "rbxassetid://73441026473893",
+	['shield-halved'] = "rbxassetid://114554606211174",
+	user = "rbxassetid://98376828270066",
+	unlock = "rbxassetid://99060354229117",
+	trash = "rbxassetid://82859108629080",
+	['trash-can'] = "rbxassetid://81463703129214",
+	skull = "rbxassetid://99276754296574",
+	robot = "rbxassetid://134497060038109",
+	tag = "rbxassetid://129024358125754",
+	thumbtack = "rbxassetid://119847869089109",
+	['thumbs-up'] = "rbxassetid://74340984021785",
+	['thumbs-down'] = "rbxassetid://86090492737223",
+	['user-gear'] = "rbxassetid://137604201056497",
+	video = "rbxassetid://112274059143251",
+	virus = "rbxassetid://91843339206686",
+	volleyball = "rbxassetid://73870192536894",
+	['magnifying-glass'] = "rbxassetid://74387839235930",
+};
 
-MainTab:Toggle({Title = "Reduce / Hide Ability VFX", Default = stateAutoHideAbility, Callback = function(val)
-	stateAutoHideAbility = val; cfg.autoHideAbility = val; saveCfg()
-	if val then task.spawn(startAutoHideAbility) else stopAutoHideAbility() end
-end})
+local TweenFast = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local TweenSmooth = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 
-MainTab:Toggle({Title = "ESP", Default = stateESP, Callback = function(val)
-	stateESP = val; cfg.esp = val; saveCfg()
-	updateESP()
-end})
+local function Create(Class, Properties)
+    local Inst = Instance.new(Class)
+    for Key, Value in Properties do
+        Inst[Key] = Value
+    end
+    return Inst
+end
 
--- MISC TAB
-MiscTab:Toggle({Title = "Disable Rendering", Default = stateRenderingDisabled, Callback = function(val)
-	stateRenderingDisabled = val; cfg.renderingDisabled = val; saveCfg()
-	game:GetService("RunService"):Set3dRenderingEnabled(not val)
-end})
-if stateRenderingDisabled then game:GetService("RunService"):Set3dRenderingEnabled(false) end
+local function FormatKeyName(KeyEnum)
+    if not KeyEnum then return "" end
+    local KeyName = KeyEnum.Name
+    if KeyName == "MouseButton1" then return "MB1" end
+    if KeyName == "MouseButton2" then return "MB2" end
+    if KeyName == "MouseButton3" then return "MB3" end
+    return KeyName
+end
 
-MiscTab:Toggle({Title = "Invisible Char (Client)", Default = stateInvisibleChar, Callback = function(val)
-	stateInvisibleChar = val; cfg.invisibleChar = val; saveCfg()
-	if LP.Character then applyInvisibleChar(LP.Character) end
-end})
+local ThemeConnections = {}
+local function ThemeUpdate(func)
+    table.insert(ThemeConnections, func)
+    pcall(func)
+end
+local function ApplyTheme()
+    for _, f in ipairs(ThemeConnections) do pcall(f) end
+end
 
-local QuestRow = MiscTab:Row({Title = "Auto Claim Quest"})
-QuestRow:SubButton({Title = "Pin", Action = "Pin", Callback = function()
-	task.spawn(function()
-		pcall(function()
-			local RS = game:GetService("ReplicatedStorage")
-			local dataEv = RS:FindFirstChild("dataRemoteEvent")
-			if not dataEv then return end
-			local seen = {}
-			local pg = LP:WaitForChild("PlayerGui")
-			for _, gui in ipairs(pg:GetDescendants()) do
-				local uid = gui:GetAttribute("uniqueId")
-				if uid and not seen[uid] and (uid:find("Daily") or uid:find("Weekly") or uid:find("Event")) then
-					seen[uid] = true
-					dataEv:FireServer({
-						{
-							[utf8.char(3)] = "SetPinnedState",
-							state = true,
-							uniqueId = uid
-						},
-						"F"
-					})
-					task.wait(0.15)
-				end
-			end
-		end)
-	end)
-end})
+local Library = {
+    ToggleKey = nil,
+    Flags = {}
+}
 
-QuestRow:SubToggle({Title = "Auto Claim", Default = stateAutoClaimQuest, Callback = function(val)
-	stateAutoClaimQuest = val
-end})
+function Library:SetWindowKeybind(KeyEnum)
+    self.ToggleKey = KeyEnum
+end
 
-MiscTab:Line()
+function Library:GetTheme()
+    return Theme
+end
 
-local EquipRow = MiscTab:Row({Title = "Auto-Equip Best"})
-EquipRow:SubDropdown({Title = "Priority Stat", Options = {"Physical", "Spell", "Health"}, Default = valPriorityStat, Callback = function(val)
-	valPriorityStat = val; cfg.priorityStat = val; saveCfg()
-end})
-EquipRow:SubButton({Title = "Now!", Callback = function()
-	task.spawn(doEquipBest)
-end})
-EquipRow:SubToggle({Title = "Auto", Default = stateAutoEquipBest, Callback = function(val)
-	stateAutoEquipBest = val; cfg.autoEquipBest = val; saveCfg()
-end})
+function Library:SetTheme(NewTheme)
+    if not NewTheme then return end
+    for Key, Value in NewTheme do
+        Theme[Key] = Value
+    end
+    ApplyTheme()
+end
 
-local SellRow = MiscTab:Row({Title = "Auto Sell"})
-SellRow:SubDropdown({Title = "Sell Types", Options = {"Weapons", "Armors", "Rings"}, Multi = true, Default = (function()
-	local t = {}
-	for k, v in pairs(sellTypes) do if v then table.insert(t, k) end end
-	return t
-end)(), Callback = function(val)
-	for k in pairs(sellTypes) do sellTypes[k] = false end
-	for _, v in ipairs(val) do sellTypes[v] = true end
-	cfg.sellTypes = sellTypes; saveCfg()
-end})
-SellRow:SubDropdown({Title = "Sell Level", Options = {"All","<50","<100","<150","<200","<250"}, Default = sellLevel, Callback = function(val)
-	sellLevel = val; cfg.sellLevel = val; saveCfg()
-end})
-SellRow:SubDropdown({Title = "Sell Rarity", Options = {"All","<Uncommon", "<Rare", "<Epic", "<Legendary","<Ultimate"}, Default = sellRarity, Callback = function(val)
-	sellRarity = val; cfg.sellRarity = val; saveCfg()
-end})
-SellRow:SubButton({Title = "Open Shop", Action = "Open", Callback = function()
-	pcall(function()
-		local remote = game:GetService("ReplicatedStorage"):FindFirstChild("remotes") and game:GetService("ReplicatedStorage").remotes:FindFirstChild("openSellShop")
-		if remote then firesignal(remote.OnClientEvent) end
-	end)
-end})
-SellRow:SubToggle({Title = "Auto Sell", Default = stateAutoSell, Callback = function(val)
-	stateAutoSell = val; cfg.autoSell = val; saveCfg()
-end})
+function Library:Window(Options)
+    local SubTitle = Options.SubTitle or "v1.0.0"
+    local ScreenGui = Create("ScreenGui", {ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling})
+    
+    local Success = pcall(function() ScreenGui.Parent = CoreGui end)
+    if not Success then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
-MiscTab:Line()
+    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 850, 0, 550), Position = UDim2.new(0.5, -425, 0.5, -275), BackgroundColor3 = Theme.Main, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
+    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MainFrame})
+    Create("UIDragDetector", {Parent = MainFrame})
 
-MiscTab:Toggle({Title = "Auto Start Dungeon", Default = stateAutoStartDungeon, Callback = function(val)
-	stateAutoStartDungeon = val; cfg.autoStartDungeon = val; saveCfg()
-end})
-MiscTab:Toggle({Title = "Auto Retry Dungeon", Default = stateAutoRetry, Callback = function(val)
-	stateAutoRetry = val; cfg.autoRetryDungeon = val; saveCfg()
-end})
+    local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 64), Position = UDim2.new(0, 0, 1, -64), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
+    
+    local ProfileFrame = Create("Frame", {Size = UDim2.new(0, 200, 1, 0), Position = UDim2.new(0, 20, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
+    local AvatarImage = Create("ImageLabel", {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0, 0, 0.5, -20), BackgroundColor3 = Theme.Search, Parent = ProfileFrame})
+    Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = AvatarImage})
+    
+    task.spawn(function()
+        local success, thumb = pcall(function() return Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48) end)
+        if success then AvatarImage.Image = thumb end
+    end)
+    
+    local ProfileName = Create("TextLabel", {Size = UDim2.new(1, -52, 0, 20), Position = UDim2.new(0, 52, 0.5, -18), BackgroundTransparency = 1, Text = LocalPlayer.DisplayName or "User", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, Parent = ProfileFrame})
+    local ProfileSub = Create("TextLabel", {Size = UDim2.new(1, -52, 0, 16), Position = UDim2.new(0, 52, 0.5, 2), BackgroundTransparency = 1, Text = SubTitle, TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = ProfileFrame})
 
-MiscTab:Line()
+    local TabContainerNav = Create("Frame", {Size = UDim2.new(0, 300, 1, 0), Position = UDim2.new(0.5, -150, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
+    Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = TabContainerNav})
 
-local SpeedRow = MiscTab:Row({Title = "Movement"})
-SpeedRow:SubTextbox({Title = "WalkSpeed", Placeholder = "16", Default = tostring(valWalkSpeed), Callback = function(val)
-	valWalkSpeed = tonumber(val) or 16; cfg.valWalkSpeed = valWalkSpeed; saveCfg()
-end})
-SpeedRow:SubTextbox({Title = "JumpPower", Placeholder = "10", Default = tostring(valJumpPower), Callback = function(val)
-	valJumpPower = tonumber(val) or 10; cfg.valJumpPower = valJumpPower; saveCfg()
-end})
+    local ActionContainer = Create("Frame", {Size = UDim2.new(0, 290, 1, 0), Position = UDim2.new(1, -310, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
+    Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = ActionContainer})
 
-MiscTab:Toggle({Title = "Airwalk", Default = stateAirwalk, Callback = function(val)
-	stateAirwalk = val; cfg.airwalk = val; saveCfg()
-	if val then task.spawn(startAirwalk) else stopAirwalk() end
-end})
+    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Theme.Search, Text = "−", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
+    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MinimizeBtn})
+    MinimizeBtn.MouseEnter:Connect(function()
+        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Border}):Play()
+    end)
+    MinimizeBtn.MouseLeave:Connect(function()
+        TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Search}):Play()
+    end)
 
-local HeightRow = MiscTab:Row({Title = "Height Control"})
-HeightRow:SubTextbox({Title = "Step (studs)", Placeholder = "3", Default = tostring(heightStep), Callback = function(val)
-	heightStep = tonumber(val) or 3; cfg.heightStep = heightStep; saveCfg()
-end})
-HeightRow:SubKeybind({Title = "Up Key", Default = Enum.KeyCode[heightKeyUp], Callback = function(key)
-	heightKeyUp = key.Name; cfg.heightKeyUp = heightKeyUp; saveCfg()
-	if stateAdjustHeight then stopAdjustHeight(); startAdjustHeight() end
-end})
-HeightRow:SubKeybind({Title = "Down Key", Default = Enum.KeyCode[heightKeyDown], Callback = function(key)
-	heightKeyDown = key.Name; cfg.heightKeyDown = heightKeyDown; saveCfg()
-	if stateAdjustHeight then stopAdjustHeight(); startAdjustHeight() end
-end})
-HeightRow:SubToggle({Title = "Height Control", Default = stateAdjustHeight, Callback = function(val)
-	stateAdjustHeight = val; cfg.adjustHeight = val; saveCfg()
-	if val then task.spawn(startAdjustHeight) else stopAdjustHeight(); stateAirwalk = false; cfg.airwalk = false; saveCfg(); stopAirwalk() end
-end})
+    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Theme.Search, Text = "X", TextColor3 = Color3.fromRGB(243, 139, 168), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
+    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = DestroyBtn})
+    
+    DestroyBtn.MouseEnter:Connect(function()
+        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Border}):Play()
+    end)
+    DestroyBtn.MouseLeave:Connect(function()
+        TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Search}):Play()
+    end)
+    DestroyBtn.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
 
-MiscTab:Toggle({Title = "Noclip", Default = stateNoclip, Callback = function(val)
-	stateNoclip = val; cfg.noclip = val; saveCfg()
-	if val then task.spawn(startNoclip) else stopNoclip() end
-end})
+    local SearchBar = Create("Frame", {Size = UDim2.new(0, 140, 0, 40), BackgroundColor3 = Theme.Search, LayoutOrder = 1, Parent = ActionContainer})
+    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = SearchBar})
+    local SearchIcon = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 12, 0.5, -8), BackgroundTransparency = 1, Image = Icons.Search, ImageColor3 = Theme.TextSecondary, Parent = SearchBar})
+    local SearchBox = Create("TextBox", {Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 36, 0, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Search...", TextColor3 = Theme.TextPrimary, PlaceholderColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = SearchBar})
 
-MiscTab:Toggle({Title = "Infinite Jump", Default = stateInfJump, Callback = function(val)
-	stateInfJump = val; cfg.stateInfJump = val; saveCfg()
-end})
+    local ContentArea = Create("Frame", {Size = UDim2.new(1, 0, 1, -64), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Parent = MainFrame})
+    local TabContainer = Create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Parent = ContentArea})
+    
+    local SearchContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Theme.Accent, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = TabContainer})
+    Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = SearchContent})
 
-MiscTab:Line()
+    local NoResultsLabel = Create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "No results found", TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 16, Visible = false, Parent = TabContainer})
 
-MiscTab:Toggle({Title = "Invisicam", Default = stateInviscam, Callback = function(val)
-	stateInviscam = val; cfg.inviscam = val; saveCfg(); applyInvisicam()
-end})
-MiscTab:Toggle({Title = "Infinite Zoom", Default = stateZoom, Callback = function(val)
-	stateZoom = val; cfg.zoom = val; saveCfg(); applyZoom()
-end})
-MiscTab:Toggle({Title = "Disable Camera Shake", Default = stateNoCameraShake, Callback = function(val)
-	stateNoCameraShake = val; cfg.noCameraShake = val; saveCfg()
-	applyCameraShakeFix()
-end})
+    local WindowObj = {
+        ScreenGui = ScreenGui,
+        Tabs = {},
+        AllRows = {},
+        CurrentTab = nil,
+        Watermarks = {},
+        Popups = {},
+        Visible = true,
+        MinimizeButton = MinimizeBtn,
+        DestroyButton = DestroyBtn
+    }
 
-MiscTab:Line()
+    ThemeUpdate(function()
+        MainFrame.BackgroundColor3 = Theme.Main
+        BottomBar.BackgroundColor3 = Theme.Sidebar
+        ProfileName.TextColor3 = Theme.TextPrimary
+        ProfileSub.TextColor3 = Theme.TextSecondary
+        SearchBar.BackgroundColor3 = Theme.Search
+        SearchIcon.ImageColor3 = Theme.TextSecondary
+        SearchBox.TextColor3 = Theme.TextPrimary
+        SearchBox.PlaceholderColor3 = Theme.TextSecondary
+        SearchContent.ScrollBarImageColor3 = Theme.Accent
+        NoResultsLabel.TextColor3 = Theme.TextSecondary
+        MinimizeBtn.BackgroundColor3 = Theme.Search
+        MinimizeBtn.TextColor3 = Theme.TextPrimary
+        DestroyBtn.BackgroundColor3 = Theme.Search
+        DestroyBtn.TextColor3 = Color3.fromRGB(243, 139, 168)
+    end)
 
-local AutoStatRow = MiscTab:Row({Title = "Auto Stats"})
-AutoStatRow:SubDropdown({Title = "Target", Options = {"physical", "spell", "stamina"}, Default = autoStatTarget, Callback = function(val)
-	autoStatTarget = val; cfg.autoStatTarget = val; saveCfg()
-end})
-AutoStatRow:SubToggle({Title = "Enable", Default = stateAutoStats, Callback = function(val)
-	stateAutoStats = val; cfg.autoStats = val; saveCfg()
-end})
+    local MiniFloatBtn = Create("TextButton", {
+        Size = UDim2.fromOffset(44, 44),
+        Position = UDim2.new(0, 20, 0.5, -22),
+        BackgroundColor3 = Theme.Main,
+        Text = "B",
+        TextColor3 = Theme.Accent,
+        Font = Enum.Font.FredokaOne,
+        TextSize = 20,
+        AutoButtonColor = false,
+        Visible = false,
+        Active = true,
+        Draggable = true,
+        ZIndex = 9999,
+        Parent = ScreenGui
+    })
+    Create("UICorner", {CornerRadius = UDim.new(0, 10), Parent = MiniFloatBtn})
+    Create("UIStroke", {Color = Theme.Border, Thickness = 1.5, Parent = MiniFloatBtn})
 
-MiscTab:Button({Title = "Reset Skill Points", Action = "Reset", Callback = function()
-	pcall(function()
-		local remotes = game:GetService("ReplicatedStorage"):WaitForChild("remotes", 1)
-		if not remotes then return end
-		local r1 = remotes:FindFirstChild("resetSkillPoints")
-		if r1 then r1:FireServer() end
-	end)
-end})
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        for _, popup in WindowObj.Popups do
+            if type(popup.Close) == "function" then popup.Close() end
+        end
+        local tw = TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 1})
+        tw:Play()
+        tw.Completed:Once(function()
+            MainFrame.Visible = false
+            MiniFloatBtn.Visible = true
+        end)
+        WindowObj.Visible = false
+        for _, wm in WindowObj.Watermarks do wm:UpdatePosition() end
+    end)
 
-MiscTab:Button({Title = "Force Close", Action = "ForceClose", Callback = function()
-	pcall(function()
-		local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("remotes")
-		local leaveRemote = remotes and remotes:FindFirstChild("leaveGame")
-		if leaveRemote then leaveRemote:FireServer() end
-	end)
-	pcall(function() game:GetService("TeleportService"):Teleport(game.PlaceId) end)
-	pcall(function() game:Shutdown() end)
-end})
+    MiniFloatBtn.MouseButton1Click:Connect(function()
+        MiniFloatBtn.Visible = false
+        MainFrame.Visible = true
+        TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 0}):Play()
+        WindowObj.Visible = true
+        for _, wm in WindowObj.Watermarks do wm:UpdatePosition() end
+    end)
 
-MiscTab:Line()
+    function WindowObj:ToggleVisibility()
+        self.Visible = not self.Visible
+        if self.Visible then
+            MiniFloatBtn.Visible = false
+            MainFrame.Visible = true
+            TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 0}):Play()
+        else
+            for _, popup in self.Popups do
+                if type(popup.Close) == "function" then popup.Close() end
+            end
+            local tw = TweenService:Create(MainFrame, TweenSmooth, {GroupTransparency = 1})
+            tw:Play()
+            tw.Completed:Once(function()
+                if not self.Visible then
+                    MainFrame.Visible = false
+                    MiniFloatBtn.Visible = true
+                end
+            end)
+        end
+        for _, wm in self.Watermarks do wm:UpdatePosition() end
+    end
 
-local CBRow = MiscTab:Row({Title = "Counter Bar"})
-CBRow:SubButton({Title = "Reset Position", Action = "Reset", Callback = function()
-	counterFrame.Position = UDim2.new(1, -122, 0, 12)
-	cfg.counterBarX = -122; cfg.counterBarY = 2; saveCfg()
-end})
-CBRow:SubToggle({Title = "Show", Default = not barHidden, Callback = function(val)
-	barHidden = not val; counterFrame.Visible = val; cfg.counterBarHidden = barHidden; saveCfg()
-end})
+    UserInputService.InputBegan:Connect(function(Input, Processed)
+        if Processed then return end
+        if Library.ToggleKey and Input.KeyCode == Library.ToggleKey then WindowObj:ToggleVisibility() end
+    end)
 
-local lastAutoEquip = 0
-local lastAutoSellTime = 0
-local lastAutoStatTime = 0
-local lastAutoClaimTime = 0
+    MainFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(function() for _, wm in WindowObj.Watermarks do wm:UpdatePosition() end end)
+    MainFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function() for _, wm in WindowObj.Watermarks do wm:UpdatePosition() end end)
 
-connect(RunService.Heartbeat, function()
-	if not _alive then return end
-	local now = tick()
-	if stateAutoStats and now - lastAutoStatTime >= 1 then
-		lastAutoStatTime = now
-		task.spawn(function() spendSkillPoint(autoStatTarget, 1000) end)
-	end
-	if stateAutoEquipBest and now - lastAutoEquip > 1 then
-		lastAutoEquip = now
-		task.spawn(triggerAutoEquip)
-	end
-	if stateAutoSell and now - lastAutoSellTime > 1 then
-		lastAutoSellTime = now
-		task.spawn(triggerAutoSell)
-	end
-	if stateAutoClaimQuest and now - lastAutoClaimTime > 1 then
-		lastAutoClaimTime = now
-		task.spawn(doAutoClaimQuest)
-	end
-	if stateAutoStartDungeon then task.spawn(triggerAutoStart) end
-	if stateAutoRetry then task.spawn(triggerAutoRetry) end
-end)
+    function WindowObj:Watermark(InitialText)
+        local wmFrame = Create("Frame", {
+            Parent = ScreenGui,
+            BackgroundColor3 = Theme.Sidebar,
+            Size = UDim2.fromOffset(0, 26),
+            ClipsDescendants = true,
+            ZIndex = 5000
+        })
+        Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = wmFrame})
+        local wmStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = wmFrame})
+        
+        local topAccent = Create("Frame", {
+            Parent = wmFrame,
+            BackgroundColor3 = Theme.Accent,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 1),
+            Position = UDim2.new(0, 0, 0, 0),
+            ZIndex = 5001
+        })
+        
+        Create("UIGradient", {
+            Parent = topAccent,
+            Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 1),
+                NumberSequenceKeypoint.new(0.15, 0),
+                NumberSequenceKeypoint.new(0.85, 0),
+                NumberSequenceKeypoint.new(1, 1)
+            })
+        })
 
-if stateSpam then task.spawn(startSpam) end
-if stateAimbot then task.spawn(startAimbot) end
-if stateAirwalk then task.spawn(startAirwalk) end
-if stateNoclip then task.spawn(startNoclip) end
-if stateAdjustHeight then task.spawn(startAdjustHeight) end
+        local wmText = Create("TextLabel", {
+            Parent = wmFrame,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0), 
+            Text = InitialText or "",
+            RichText = true,
+            TextColor3 = Theme.TextPrimary,
+            Font = Enum.Font.FredokaOne,
+            TextSize = 13,
+            ZIndex = 5001
+        })
+        Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = wmText})
 
-task.delay(1, function()
-	if stateAutoEquipBest then task.spawn(triggerAutoEquip) end
-end)
+        ThemeUpdate(function()
+            wmFrame.BackgroundColor3 = Theme.Sidebar
+            wmStroke.Color = Theme.Border
+            topAccent.BackgroundColor3 = Theme.Accent
+            wmText.TextColor3 = Theme.TextPrimary
+        end)
+
+        local wmObj = {Frame = wmFrame, PosString = "TopLeft", CurrentText = InitialText or ""}
+        
+        function wmObj:UpdateSize()
+            local cleanText = string.gsub(self.CurrentText, "<[^>]->", "")
+            local textWidth = TextService:GetTextSize(cleanText, 13, Enum.Font.FredokaOne, Vector2.new(10000, 26)).X
+            wmFrame.Size = UDim2.fromOffset(textWidth + 24, 26)
+        end
+        function wmObj:SetText(newText)
+            self.CurrentText = newText; wmText.Text = newText
+            self:UpdateSize(); self:UpdatePosition()
+        end
+        function wmObj:SetVisible(state) wmFrame.Visible = state end
+        
+        function wmObj:UpdatePosition()
+            local pos = self.PosString
+            if WindowObj.Visible then
+                local mfPos = MainFrame.AbsolutePosition
+                local mfSize = MainFrame.AbsoluteSize
+                local wmSize = wmFrame.AbsoluteSize
+                local padding = 8
+                
+                if pos == "TopLeft" then wmFrame.Position = UDim2.fromOffset(mfPos.X, mfPos.Y - wmSize.Y - padding); wmFrame.AnchorPoint = Vector2.new(0, 0)
+                elseif pos == "TopRight" then wmFrame.Position = UDim2.fromOffset(mfPos.X + mfSize.X, mfPos.Y - wmSize.Y - padding); wmFrame.AnchorPoint = Vector2.new(1, 0)
+                elseif pos == "BottomLeft" then wmFrame.Position = UDim2.fromOffset(mfPos.X, mfPos.Y + mfSize.Y + padding); wmFrame.AnchorPoint = Vector2.new(0, 0)
+                elseif pos == "BottomRight" then wmFrame.Position = UDim2.fromOffset(mfPos.X + mfSize.X, mfPos.Y + mfSize.Y + padding); wmFrame.AnchorPoint = Vector2.new(1, 0) end
+            else
+                if pos == "TopLeft" then wmFrame.Position = UDim2.new(0, 15, 0, 15); wmFrame.AnchorPoint = Vector2.new(0, 0)
+                elseif pos == "TopRight" then wmFrame.Position = UDim2.new(1, -15, 0, 15); wmFrame.AnchorPoint = Vector2.new(1, 0)
+                elseif pos == "BottomLeft" then wmFrame.Position = UDim2.new(0, 15, 1, -15); wmFrame.AnchorPoint = Vector2.new(0, 1)
+                elseif pos == "BottomRight" then wmFrame.Position = UDim2.new(1, -15, 1, -15); wmFrame.AnchorPoint = Vector2.new(1, 1) end
+            end
+        end
+
+        function wmObj:SetPosition(posString) self.PosString = posString; self:UpdatePosition() end
+        wmFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function() wmObj:UpdatePosition() end)
+        wmObj:UpdateSize()
+        wmObj:SetPosition("TopLeft")
+        task.defer(function() wmObj:UpdatePosition() end)
+        table.insert(WindowObj.Watermarks, wmObj)
+        return wmObj
+    end
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local Query = string.lower(SearchBox.Text)
+        for _, Comp in WindowObj.AllRows do Comp.Row.Parent = Comp.OriginalParent end
+
+        if Query == "" then
+            SearchContent.Visible = false
+            NoResultsLabel.Visible = false
+            if WindowObj.CurrentTab then WindowObj.CurrentTab.Canvas.Visible = true end
+        else
+            if WindowObj.CurrentTab then WindowObj.CurrentTab.Canvas.Visible = false end
+            SearchContent.Visible = true
+            
+            local FoundMatches = 0
+            for _, Comp in WindowObj.AllRows do
+                if string.find(string.lower(Comp.Title), Query) then
+                    Comp.Row.Parent = SearchContent
+                    FoundMatches = FoundMatches + 1
+                end
+            end
+            NoResultsLabel.Visible = (FoundMatches == 0)
+        end
+    end)
+
+    function WindowObj:Tab(Options)
+        local TabTitle = Options.Title or "Tab"
+        local TabIcon = GetIcon(Options.Icon)
+        local IsConfig = Options.IsConfig or false
+
+        local TabBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundTransparency = 1, BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false})
+        TabBtn.Parent = TabContainerNav
+        
+        Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = TabBtn})
+        local TabBtnStroke = Create("UIStroke", {Color = Theme.Accent, Thickness = 1.5, Transparency = 1, Parent = TabBtn})
+        local TabIconImage = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = TabIcon, ImageColor3 = Theme.TextSecondary, Parent = TabBtn})
+
+        local TabCanvas = Create("CanvasGroup", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, Parent = TabContainer})
+        local TabContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Theme.Accent, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = TabCanvas})
+        Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4), Parent = TabContent})
+
+        ThemeUpdate(function()
+            if WindowObj.CurrentTab and WindowObj.CurrentTab.TabButton == TabBtn then
+                TabBtn.BackgroundColor3 = Theme.Search
+                TabIconImage.ImageColor3 = Theme.Accent
+            else
+                TabBtn.BackgroundColor3 = Theme.Sidebar
+                TabIconImage.ImageColor3 = Theme.TextSecondary
+            end
+            TabContent.ScrollBarImageColor3 = Theme.Accent
+        end)
+
+        local TabObj = {Canvas = TabCanvas, Container = TabContent, TabButton = TabBtn, Title = TabTitle, Icon = TabIcon, IsConfig = IsConfig, LayoutOrder = 0}
+        table.insert(WindowObj.Tabs, TabObj)
+
+        local function ActivateTab()
+            if WindowObj.CurrentTab == TabObj then return end
+
+            for _, Tab in WindowObj.Tabs do
+                if Tab == TabObj then continue end
+                if Tab == WindowObj.CurrentTab then
+                    local Outgoing = Tab
+                    local tw = TweenService:Create(Outgoing.Canvas, TweenSmooth, {GroupTransparency = 1})
+                    tw:Play()
+                    task.delay(0.25, function() if WindowObj.CurrentTab ~= Outgoing then Outgoing.Canvas.Visible = false end end)
+                else
+                    Tab.Canvas.Visible = false; Tab.Canvas.GroupTransparency = 1
+                end
+
+                if Tab.IsConfig then
+                    TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(210, 49, 49)}):Play()
+                else
+                    TweenService:Create(Tab.TabButton, TweenFast, {BackgroundTransparency = 1}):Play()
+                    TweenService:Create(Tab.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Theme.TextSecondary}):Play()
+                    local tbStroke2 = Tab.TabButton:FindFirstChildOfClass("UIStroke")
+                    if tbStroke2 then TweenService:Create(tbStroke2, TweenFast, {Transparency = 1}):Play() end
+                end
+            end
+            
+            TabObj.Canvas.Visible = true
+            TabObj.Canvas.GroupTransparency = WindowObj.CurrentTab and 1 or 0
+            TweenService:Create(TabObj.Canvas, TweenSmooth, {GroupTransparency = 0}):Play()
+
+            if TabObj.IsConfig then
+                TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(239, 68, 68)}):Play()
+            else
+                TweenService:Create(TabObj.TabButton, TweenFast, {BackgroundTransparency = 0}):Play()
+                TweenService:Create(TabObj.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Theme.Accent}):Play()
+                local tbStroke = TabObj.TabButton:FindFirstChildOfClass("UIStroke")
+                if tbStroke then TweenService:Create(tbStroke, TweenFast, {Transparency = 0}):Play() end
+            end
+
+            WindowObj.CurrentTab = TabObj
+        end
+
+        function TabObj:Activate() ActivateTab() end
+
+        if not IsConfig then
+            TabBtn.MouseButton1Click:Connect(ActivateTab)
+            local ActiveTabsCount = 0
+            for _, t in WindowObj.Tabs do if not t.IsConfig then ActiveTabsCount += 1 end end
+            if ActiveTabsCount == 1 then ActivateTab() end
+        end
+
+        local function CreateRow(ComponentTitle, Height)
+            TabObj.LayoutOrder = TabObj.LayoutOrder + 1
+            local Row = Create("Frame", {Size = UDim2.new(1, 0, 0, Height or 40), BackgroundTransparency = 1, LayoutOrder = TabObj.LayoutOrder, Parent = TabContent})
+            
+            table.insert(WindowObj.AllRows, {Row = Row, OriginalParent = TabContent, Title = ComponentTitle or ""})
+            return Row
+        end
+
+        function TabObj:Line()
+            local Row = CreateRow("Separator", 3)
+            local RowSep = Create("Frame", {
+                Size = UDim2.new(1, -16, 0, 1),
+                Position = UDim2.new(0, 8, 0.5, 0),
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Theme.Border,
+                BackgroundTransparency = 0.5,
+                BorderSizePixel = 0,
+                Parent = Row
+            })
+            ThemeUpdate(function() RowSep.BackgroundColor3 = Theme.Border end)
+            return {Row = Row}
+        end
+
+        function TabObj:Label(LOpts)
+            LOpts = LOpts or {}
+            local Text = LOpts.Title or LOpts.Text or "Label"
+            local TextSize = LOpts.TextSize or 11
+            local Height = LOpts.Height or (TextSize + 10)
+            local Font = LOpts.Font or Enum.Font.FredokaOne
+            local Color = LOpts.Color or Theme.TextSecondary
+            local Row = CreateRow(Text, Height)
+            local Lbl = Create("TextLabel", {
+                Size = UDim2.new(1, -16, 1, 0),
+                Position = UDim2.new(0, 8, 0, 0),
+                BackgroundTransparency = 1,
+                Text = Text,
+                TextColor3 = Color,
+                Font = Font,
+                TextSize = TextSize,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = Row
+            })
+            ThemeUpdate(function() Lbl.TextColor3 = Color end)
+            local LabelObj = {Row = Row}
+            function LabelObj:SetText(t) Lbl.Text = t end
+            function LabelObj:SetColor(c) Lbl.TextColor3 = c; Color = c end
+            return LabelObj
+        end
+
+        function TabObj:Row(Options)
+            local Title = Options.Title or "Row"
+            local RowFrame = CreateRow(Title, Options.Height or 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = Options.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
+            ThemeUpdate(function() TitleLabel.TextColor3 = Theme.TextPrimary end)
+            
+            local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, ClipsDescendants = true, Parent = RowFrame})
+            local Layout = Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = Container})
+            Create("UIPadding", {PaddingRight = UDim.new(0, 8), Parent = Container})
+
+            local RowObj = {Row = RowFrame}
+            
+            function RowObj:SubToggle(TOpts)
+                local TTitle = TOpts.Title or "Toggle"
+                local Default = TOpts.Default or false
+                local Callback = TOpts.Callback or function() end
+                local FlagName = TOpts.Flag or string.format("%s/Row/%s/Toggle/%s", TabObj.Title, Title, TTitle)
+                
+                local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
+
+                local State = Default
+                local function SetState(newState, triggerCallback)
+                    State = newState
+                    TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Theme.Accent or Theme.Search}):Play()
+                    if triggerCallback then Callback(State) end
+                end
+                Checkbox.MouseButton1Click:Connect(function() SetState(not State, true) end)
+                
+                local ToggleObj = {Row = RowFrame}
+                function ToggleObj:GetValue() return State end
+                function ToggleObj:SetValue(val) SetState(val, true) end
+                Library.Flags[FlagName] = ToggleObj
+                return ToggleObj
+            end
+            
+            function RowObj:SubTextbox(TOpts)
+                local TTitle = TOpts.Title or "Textbox"
+                local Default = TOpts.Default or ""
+                local Placeholder = TOpts.Placeholder or "Value"
+                local Callback = TOpts.Callback or function() end
+                local FlagName = TOpts.Flag or string.format("%s/Row/%s/Textbox/%s", TabObj.Title, Title, TTitle)
+                
+                local InputBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = Default, PlaceholderText = Placeholder, TextColor3 = Theme.TextPrimary, PlaceholderColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = InputBox})
+                local Stroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
+                Create("UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = InputBox})
+                Create("UISizeConstraint", {MinSize = Vector2.new(60, 26), MaxSize = Vector2.new(150, 26), Parent = InputBox})
+
+                ThemeUpdate(function()
+                    InputBox.BackgroundColor3 = Theme.Search
+                    InputBox.TextColor3 = Theme.TextPrimary
+                    InputBox.PlaceholderColor3 = Theme.TextSecondary
+                    Stroke.Color = Theme.Border
+                end)
+
+                local CurrentValue = Default
+                InputBox.FocusLost:Connect(function() CurrentValue = InputBox.Text; Callback(CurrentValue) end)
+
+                local TextboxObj = {Row = RowFrame}
+                function TextboxObj:GetValue() return CurrentValue end
+                function TextboxObj:SetValue(val) CurrentValue = val; InputBox.Text = val; Callback(val) end
+                Library.Flags[FlagName] = TextboxObj
+                return TextboxObj
+            end
+
+            function RowObj:SubDropdown(DOpts)
+                local TTitle = DOpts.Title or "Dropdown"
+                local OptionsList = DOpts.Options or {}
+                local Multi = DOpts.Multi or false
+                local Default = DOpts.Default
+                local Callback = DOpts.Callback or function() end
+                
+                local FlagName = DOpts.Flag or string.format("%s/Row/%s/Dropdown/%s", TabObj.Title, Title, TTitle)
+                local SelectedItems = {}
+
+                if Multi then if type(Default) == "table" then for _, Item in Default do table.insert(SelectedItems, Item) end end
+                else if type(Default) == "string" and Default ~= "" then table.insert(SelectedItems, Default) end end
+                
+                local DropBtn = Create("TextButton", {Size = UDim2.new(0, 100, 0, 26), BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
+                local DropText = Create("TextLabel", {Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
+                local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, -16, 0.5, -6), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Theme.TextSecondary, Parent = DropBtn})
+
+                local function UpdateText()
+                    local str = table.concat(SelectedItems, ", ")
+                    if #str > 12 then str = str:sub(1, 9) .. "..." end
+                    DropText.Text = str == "" and "None" or str
+                end
+                UpdateText()
+
+                local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 120, 0, 0), BackgroundColor3 = Theme.Main, Visible = false, ClipsDescendants = true, ZIndex = 110, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Theme.Border, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ScreenGui})
+                Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = DropdownMenu})
+                local DropStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = DropdownMenu})
+                local MenuLayout = Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = DropdownMenu})
+
+                local OptionButtons = {}
+                local IsOpen = false
+
+                local function Close()
+                    IsOpen = false; TweenService:Create(Chevron, TweenSmooth, {Rotation = 0}):Play()
+                    local tw = TweenService:Create(DropdownMenu, TweenSmooth, {Size = UDim2.new(0, 120, 0, 0)})
+                    tw:Play(); tw.Completed:Connect(function() if not IsOpen then DropdownMenu.Visible = false end end)
+                end
+                table.insert(WindowObj.Popups, {Close = Close})
+
+                local function SetValue(val, trigger)
+                    SelectedItems = type(val) == "table" and val or {val}
+                    for opt, btn in OptionButtons do btn.TextColor3 = table.find(SelectedItems, opt) and Theme.Accent or Theme.Border end
+                    UpdateText(); if trigger then Callback(Multi and SelectedItems or SelectedItems[1]) end
+                end
+
+                local function Refresh()
+                    for _, b in OptionButtons do b:Destroy() end
+                    table.clear(OptionButtons)
+                    for _, opt in OptionsList do
+                        local btn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, Text = opt, TextColor3 = table.find(SelectedItems, opt) and Theme.Accent or Theme.Border, Font = Enum.Font.FredokaOne, TextSize = 11, ZIndex = 111, Parent = DropdownMenu})
+                        OptionButtons[opt] = btn
+                        btn.MouseButton1Click:Connect(function()
+                            if Multi then
+                                local i = table.find(SelectedItems, opt)
+                                if i then table.remove(SelectedItems, i) else table.insert(SelectedItems, opt) end
+                                SetValue(SelectedItems, true)
+                            else
+                                SetValue(opt, true); Close()
+                            end
+                        end)
+                    end
+                end
+                Refresh()
+
+                DropBtn.MouseButton1Click:Connect(function()
+                    IsOpen = not IsOpen
+                    if IsOpen then
+                        DropdownMenu.Visible = true; DropdownMenu.Position = UDim2.fromOffset(DropBtn.AbsolutePosition.X, DropBtn.AbsolutePosition.Y + 30)
+                        TweenService:Create(Chevron, TweenSmooth, {Rotation = 180}):Play()
+                        TweenService:Create(DropdownMenu, TweenSmooth, {Size = UDim2.new(0, 120, 0, math.min(MenuLayout.AbsoluteContentSize.Y + 8, 120))}):Play()
+                    else Close() end
+                end)
+
+                local DropObj = {Row = RowFrame}
+                function DropObj:SetOptions(opts) OptionsList = opts; Refresh() end
+                function DropObj:SetValue(val) SetValue(val, true) end
+                Library.Flags[FlagName] = DropObj
+                return DropObj
+            end
+            
+            function RowObj:SubButton(BOpts)
+                local BTitle = BOpts.Title or "Click"
+                local Callback = BOpts.Callback or function() end
+                local Btn = Create("TextButton", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = BTitle, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 11, AutoButtonColor = false, Parent = Container})
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Btn})
+                Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = Btn})
+                Btn.MouseButton1Click:Connect(Callback)
+                return {Row = RowFrame}
+            end
+
+            function RowObj:SubKeybind(KOpts)
+                local KTitle = KOpts.Title or "Keybind"
+                local Default = KOpts.Default
+                local Callback = KOpts.Callback or function() end
+                local CurrentKey = Default
+                local Waiting = false
+                local KeyBtn = Create("TextButton", {
+                    Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X,
+                    BackgroundColor3 = Theme.Search,
+                    Text = Default and Default.Name or "None",
+                    TextColor3 = Theme.TextPrimary,
+                    Font = Enum.Font.FredokaOne, TextSize = 11,
+                    AutoButtonColor = false, Parent = Container
+                })
+                Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = KeyBtn})
+                Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = KeyBtn})
+                KeyBtn.MouseButton1Click:Connect(function()
+                    if Waiting then return end
+                    Waiting = true
+                    KeyBtn.Text = "..."
+                    TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Theme.Accent}):Play()
+                    local conn
+                    conn = UserInputService.InputBegan:Connect(function(inp)
+                        if inp.UserInputType == Enum.UserInputType.Keyboard then
+                            conn:Disconnect()
+                            Waiting = false
+                            CurrentKey = inp.KeyCode
+                            KeyBtn.Text = inp.KeyCode.Name
+                            TweenService:Create(KeyBtn, TweenFast, {TextColor3 = Theme.TextPrimary}):Play()
+                            Callback(inp.KeyCode)
+                        end
+                    end)
+                end)
+                local KbObj = {Row = RowFrame}
+                function KbObj:GetValue() return CurrentKey end
+                function KbObj:SetValue(key) CurrentKey = key; KeyBtn.Text = key and key.Name or "None"; Callback(key) end
+                return KbObj
+            end
+
+            return RowObj
+        end
+
+        local function AttachColorPicker(TargetRow, CompTitle, ColorProps, RightOffset)
+            ColorProps = ColorProps or {}
+            RightOffset = RightOffset or 8
+            local DefaultColor = ColorProps.Default or Color3.fromRGB(255, 255, 255)
+            local CurrentColor = DefaultColor
+            local CurrentAlpha = (ColorProps.Transparency or 100) / 100
+            local HSV = {Color3.toHSV(CurrentColor)}
+            local CPCallback = ColorProps.Callback or function() end
+            
+            local FlagName = ColorProps.Flag or string.format("%s/Colorpicker/%s", TabObj.Title, CompTitle)
+
+            local CPContainer = Create("Frame", {Size = UDim2.new(0, 250, 1, 0), Position = UDim2.new(1, -RightOffset, 0, 0), AnchorPoint = Vector2.new(1, 0), BackgroundTransparency = 1, ZIndex = 10, Parent = TargetRow})
+            Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 12), Parent = CPContainer})
+
+            local PipetteBtn = Create("TextButton", {Size = UDim2.new(0, 16, 0, 16), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, LayoutOrder = 1, ZIndex = 10, Parent = CPContainer})
+            local PipetteIcon = Create("ImageLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = Icons.Pipette, ImageColor3 = Theme.TextSecondary, ZIndex = 10, Parent = PipetteBtn})
+
+            local ColorBtn = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = CurrentColor, Text = "", AutoButtonColor = false, LayoutOrder = 2, ZIndex = 10, Parent = CPContainer})
+            Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = ColorBtn})
+            
+            local HexBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, ClearTextOnFocus = false, LayoutOrder = 3, ZIndex = 10, Parent = CPContainer})
+
+            local TransparencyLabel = Create("TextLabel", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 4, ZIndex = 10, Parent = CPContainer})
+
+            local PickerFrame = Create("Frame", {Parent = ScreenGui, BackgroundColor3 = Theme.Main, BorderSizePixel = 0, Size = UDim2.new(0, 220, 0, 0), Visible = false, ClipsDescendants = true, ZIndex = 3000})
+            Create("UICorner", {Parent = PickerFrame, CornerRadius = UDim.new(0, 6)})
+            local PickerStroke = Create("UIStroke", {Parent = PickerFrame, Color = Theme.Border, Thickness = 1})
+            Create("UIPadding", {Parent = PickerFrame, PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10)})
+            Create("UIDragDetector", {Parent = PickerFrame})
+
+            local ColorMap = Create("TextButton", {Parent = PickerFrame, Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 0, 120), BackgroundColor3 = Color3.fromHSV(HSV[1], 1, 1), AutoButtonColor = false, Text = "", ZIndex = 3001})
+            local SatOverlay = Create("Frame", {Parent = ColorMap, Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 3002, BorderSizePixel = 0})
+            Create("UIGradient", {Parent = SatOverlay, Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)}})
+            local ValOverlay = Create("Frame", {Parent = ColorMap, Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(0, 0, 0), ZIndex = 3003, BorderSizePixel = 0})
+            Create("UIGradient", {Parent = ValOverlay, Rotation = 90, Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)}})
+            
+            local MapMarker = Create("Frame", {Parent = ColorMap, Size = UDim2.new(0, 12, 0, 12), BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(HSV[2], 0, 1 - HSV[3], 0), ZIndex = 3004})
+            Create("UICorner", {Parent = MapMarker, CornerRadius = UDim.new(1, 0)})
+            Create("UIStroke", {Parent = MapMarker, Color = Color3.new(1, 1, 1), Thickness = 2})
+            Create("UICorner", {Parent = ColorMap, CornerRadius = UDim.new(0, 4)})
+
+            local function CreatePickerSlider(SliderTitle)
+                local SliderFrame = Create("Frame", {Parent = PickerFrame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 35), ZIndex = 3001})
+                local Top = Create("Frame", {Parent = SliderFrame, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 15), ZIndex = 3001})
+                local TitleLab = Create("TextLabel", {Parent = Top, Text = SliderTitle, Size = UDim2.new(1, -30, 1, 0), BackgroundTransparency = 1, Font = Enum.Font.FredokaOne, TextSize = 12, TextColor3 = Theme.TextSecondary, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 3001})
+                local ValLabel = Create("TextLabel", {Parent = Top, Text = "0", Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(1, -30, 0, 0), BackgroundTransparency = 1, Font = Enum.Font.FredokaOne, TextSize = 12, TextColor3 = Theme.TextPrimary, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 3001})
+
+                local Track = Create("TextButton", {Parent = SliderFrame, BackgroundColor3 = Theme.Search, BorderSizePixel = 0, Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 4), Text = "", AutoButtonColor = false, ZIndex = 3001})
+                Create("UICorner", {Parent = Track, CornerRadius = UDim.new(0, 2)})
+
+                local Fill = Create("Frame", {Parent = Track, BorderSizePixel = 0, Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Accent, ZIndex = 3002})
+                Create("UICorner", {Parent = Fill, CornerRadius = UDim.new(0, 2)})
+
+                return {Frame = SliderFrame, Track = Track, Fill = Fill, Label = ValLabel, Title = TitleLab}
+            end
+
+            Create("UIListLayout", {Parent = PickerFrame, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5)})
+            ColorMap.LayoutOrder = 1
+
+            local HueSlider = CreatePickerSlider("Hue")
+            HueSlider.Frame.LayoutOrder = 2
+
+            local AlphaSlider = CreatePickerSlider("Transparency")
+            AlphaSlider.Frame.LayoutOrder = 3
+
+            ThemeUpdate(function()
+                PipetteIcon.ImageColor3 = Theme.TextSecondary
+                HexBox.TextColor3 = Theme.TextPrimary
+                TransparencyLabel.TextColor3 = Theme.TextSecondary
+                PickerFrame.BackgroundColor3 = Theme.Main
+                PickerStroke.Color = Theme.Border
+
+                HueSlider.Track.BackgroundColor3 = Theme.Search
+                HueSlider.Fill.BackgroundColor3 = Theme.Accent
+                HueSlider.Label.TextColor3 = Theme.TextPrimary
+                HueSlider.Title.TextColor3 = Theme.TextSecondary
+
+                AlphaSlider.Track.BackgroundColor3 = Theme.Search
+                AlphaSlider.Fill.BackgroundColor3 = Theme.Accent
+                AlphaSlider.Label.TextColor3 = Theme.TextPrimary
+                AlphaSlider.Title.TextColor3 = Theme.TextSecondary
+            end)
+
+            local function UpdateVisuals(TriggerCallback)
+                ColorBtn.BackgroundColor3 = CurrentColor
+                HexBox.Text = CurrentColor:ToHex():upper()
+                TransparencyLabel.Text = tostring(math.floor(CurrentAlpha * 100)) .. "%"
+                ColorMap.BackgroundColor3 = Color3.fromHSV(HSV[1], 1, 1)
+
+                TweenService:Create(MapMarker, TweenInfo.new(0.05), {Position = UDim2.new(HSV[2], 0, 1 - HSV[3], 0)}):Play()
+
+                local HuePct = HSV[1]
+                TweenService:Create(HueSlider.Fill, TweenInfo.new(0.05), {Size = UDim2.new(HuePct, 0, 1, 0)}):Play()
+                HueSlider.Label.Text = tostring(math.floor(HSV[1] * 360))
+
+                local AlphaPct = CurrentAlpha
+                TweenService:Create(AlphaSlider.Fill, TweenInfo.new(0.05), {Size = UDim2.new(AlphaPct, 0, 1, 0)}):Play()
+                AlphaSlider.Label.Text = tostring(math.floor(CurrentAlpha * 100)) .. "%"
+                
+                if TriggerCallback then CPCallback(CurrentColor, CurrentAlpha) end
+            end
+
+            HexBox.FocusLost:Connect(function()
+                local success, ParsedColor = pcall(function() return Color3.fromHex(HexBox.Text) end)
+                if success then
+                    CurrentColor = ParsedColor
+                    HSV = {Color3.toHSV(CurrentColor)}
+                    UpdateVisuals(true)
+                else
+                    HexBox.Text = CurrentColor:ToHex():upper()
+                end
+            end)
+
+            local function HandleInput(GuiObj, Type, Input)
+                local function Update(InputPos)
+                    local MaxX = GuiObj.AbsoluteSize.X
+                    local MaxY = GuiObj.AbsoluteSize.Y
+                    local Px = math.clamp(InputPos.X - GuiObj.AbsolutePosition.X, 0, MaxX)
+                    local Py = math.clamp(InputPos.Y - GuiObj.AbsolutePosition.Y, 0, MaxY)
+                    local X = Px / MaxX
+                    local Y = Py / MaxY
+
+                    if Type == "Map" then
+                        HSV[2] = X
+                        HSV[3] = 1 - Y
+                    elseif Type == "Hue" then
+                        HSV[1] = X
+                    elseif Type == "Alpha" then
+                        CurrentAlpha = X
+                    end
+                    CurrentColor = Color3.fromHSV(HSV[1], HSV[2], HSV[3])
+                    UpdateVisuals(true)
+                end
+
+                Update(Input.Position)
+                local MoveConn = UserInputService.InputChanged:Connect(function(Mv)
+                    if Mv.UserInputType == Enum.UserInputType.MouseMovement or Mv.UserInputType == Enum.UserInputType.Touch then Update(Mv.Position) end
+                end)
+                local EndConn
+                EndConn = UserInputService.InputEnded:Connect(function(End)
+                    if End.UserInputType == Enum.UserInputType.MouseButton1 or End.UserInputType == Enum.UserInputType.Touch then
+                        MoveConn:Disconnect()
+                        EndConn:Disconnect()
+                    end
+                end)
+            end
+
+            ColorMap.InputBegan:Connect(function(Input) if Input.UserInputType == Enum.UserInputType.MouseButton1 then HandleInput(ColorMap, "Map", Input) end end)
+            HueSlider.Track.InputBegan:Connect(function(Input) if Input.UserInputType == Enum.UserInputType.MouseButton1 then HandleInput(HueSlider.Track, "Hue", Input) end end)
+            AlphaSlider.Track.InputBegan:Connect(function(Input) if Input.UserInputType == Enum.UserInputType.MouseButton1 then HandleInput(AlphaSlider.Track, "Alpha", Input) end end)
+
+            local function ClosePicker()
+                local tw = TweenService:Create(PickerFrame, TweenSmooth, {Size = UDim2.new(0, 220, 0, 0)})
+                tw:Play()
+                tw.Completed:Connect(function()
+                    if PickerFrame.Size.Y.Offset == 0 then PickerFrame.Visible = false end
+                end)
+            end
+            table.insert(WindowObj.Popups, {Close = ClosePicker})
+
+            ColorBtn.MouseButton1Click:Connect(function()
+                if PickerFrame.Visible then
+                    ClosePicker()
+                else
+                    local BtnPos = ColorBtn.AbsolutePosition
+                    local ScreenSize = ScreenGui.AbsoluteSize
+                    local X = BtnPos.X - 230
+                    local Y = BtnPos.Y + 25
+
+                    if X < 0 then X = BtnPos.X + 35 end
+                    if Y + 225 > ScreenSize.Y then Y = ScreenSize.Y - 230 end
+
+                    PickerFrame.Position = UDim2.new(0, X, 0, Y)
+                    PickerFrame.Visible = true
+                    TweenService:Create(PickerFrame, TweenSmooth, {Size = UDim2.new(0, 220, 0, 225)}):Play()
+                end
+            end)
+
+            UserInputService.InputBegan:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    if PickerFrame.Visible then
+                        local MousePos = Vector2.new(Input.Position.X, Input.Position.Y)
+                        local PPos, PSize = PickerFrame.AbsolutePosition, PickerFrame.AbsoluteSize
+                        local BtnPos, BtnSize = ColorBtn.AbsolutePosition, ColorBtn.AbsoluteSize
+
+                        local InPicker = (MousePos.X >= PPos.X and MousePos.X <= PPos.X + PSize.X) and (MousePos.Y >= PPos.Y and MousePos.Y <= PPos.Y + PSize.Y)
+                        local InBtn = (MousePos.X >= BtnPos.X and MousePos.X <= BtnPos.X + BtnSize.X) and (MousePos.Y >= BtnPos.Y and MousePos.Y <= BtnPos.Y + BtnSize.Y)
+
+                        if not InPicker and not InBtn then ClosePicker() end
+                    end
+                end
+            end)
+
+            UpdateVisuals(false)
+            
+            local CPObj = {}
+            function CPObj:GetComponentType() return "Colorpicker" end
+            function CPObj:GetValue() return CurrentColor end
+            function CPObj:GetTransparency() return CurrentAlpha * 100 end
+            function CPObj:SetValue(color) CurrentColor = color; HSV = {Color3.toHSV(CurrentColor)}; UpdateVisuals(true) end
+            function CPObj:SetTransparency(trans) CurrentAlpha = math.clamp(trans, 0, 100) / 100; UpdateVisuals(true) end
+            Library.Flags[FlagName] = CPObj
+            return CPObj
+        end
+
+        function TabObj:Colorpicker(CPOpts)
+            local Title = CPOpts.Title or "Colorpicker"
+            local Row = CreateRow(Title, 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -250, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            ThemeUpdate(function() TitleLabel.TextColor3 = Theme.TextPrimary end)
+            
+            local CPObj = AttachColorPicker(Row, Title, CPOpts, 8)
+            CPObj.Row = Row
+            return CPObj
+        end
+
+        function TabObj:Button(BOpts)
+            local Title = BOpts.Title or "Button"
+            local Action = BOpts.Action or "Click"
+            local Callback = BOpts.Callback or function() end
+            
+            local FlagName = BOpts.Flag or string.format("%s/Button/%s", TabObj.Title, Title)
+            local Row = CreateRow(Title, BOpts.Height or 40)
+
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = BOpts.Font or Enum.Font.FredokaOne, TextSize = BOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+
+            local Btn = Create("TextButton", {
+                Size = UDim2.new(0, 0, 0, 26),
+                Position = UDim2.new(1, -8, 0.5, 0),
+                AnchorPoint = Vector2.new(1, 0.5),
+                AutomaticSize = Enum.AutomaticSize.X,
+                BackgroundColor3 = Theme.Search,
+                Text = Action,
+                TextColor3 = Theme.TextPrimary,
+                Font = Enum.Font.FredokaOne,
+                TextSize = 12,
+                AutoButtonColor = false,
+                Parent = Row
+            })
+            
+            Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Btn})
+            Create("UIPadding", {PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16), Parent = Btn})
+            
+            ThemeUpdate(function()
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                Btn.BackgroundColor3 = Theme.Search
+                Btn.TextColor3 = Theme.TextPrimary
+            end)
+
+            Btn.MouseButton1Click:Connect(function()
+                TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Theme.Border}):Play()
+                task.delay(0.15, function() TweenService:Create(Btn, TweenFast, {BackgroundColor3 = Theme.Search}):Play() end)
+                Callback()
+            end)
+
+            local ButtonObj = {Row = Row}
+            function ButtonObj:GetComponentType() return "Button" end
+            function ButtonObj:Fire() Callback() end
+            Library.Flags[FlagName] = ButtonObj
+            return ButtonObj
+        end
+
+        function TabObj:Textbox(TOpts)
+            local Title = TOpts.Title or "Textbox"
+            local Default = TOpts.Default or ""
+            local Placeholder = TOpts.Placeholder or "Type here"
+            local Callback = TOpts.Callback or function() end
+            
+            local FlagName = TOpts.Flag or string.format("%s/Textbox/%s", TabObj.Title, Title)
+            local Row = CreateRow(Title, 40)
+
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+
+            local InputBox = Create("TextBox", {
+                Size = UDim2.new(0, 100, 0, 26),
+                Position = UDim2.new(1, -8, 0.5, 0),
+                AnchorPoint = Vector2.new(1, 0.5),
+                BackgroundColor3 = Theme.Search,
+                Text = Default,
+                PlaceholderText = Placeholder,
+                TextColor3 = Theme.TextPrimary,
+                PlaceholderColor3 = Theme.TextSecondary,
+                Font = Enum.Font.FredokaOne,
+                TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                AutomaticSize = Enum.AutomaticSize.X,
+                ClearTextOnFocus = false,
+                ClipsDescendants = true,
+                Parent = Row
+            })
+            
+            Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = InputBox})
+            local Stroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
+            Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = InputBox})
+            Create("UISizeConstraint", {MinSize = Vector2.new(100, 26), MaxSize = Vector2.new(300, 26), Parent = InputBox})
+
+            ThemeUpdate(function()
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                InputBox.BackgroundColor3 = Theme.Search
+                InputBox.TextColor3 = Theme.TextPrimary
+                InputBox.PlaceholderColor3 = Theme.TextSecondary
+                Stroke.Color = Theme.Border
+            end)
+
+            local CurrentValue = Default
+            local function SetValue(val, triggerCallback)
+                CurrentValue = tostring(val)
+                InputBox.Text = CurrentValue
+                if triggerCallback then Callback(CurrentValue) end
+            end
+
+            InputBox.FocusLost:Connect(function() SetValue(InputBox.Text, true) end)
+            InputBox.Focused:Connect(function() TweenService:Create(Stroke, TweenFast, {Color = Theme.Accent}):Play() end)
+            InputBox.FocusLost:Connect(function() TweenService:Create(Stroke, TweenFast, {Color = Theme.Border}):Play() end)
+
+            local TextboxObj = {}
+            function TextboxObj:GetComponentType() return "Textbox" end
+            function TextboxObj:GetValue() return CurrentValue end
+            function TextboxObj:SetValue(val) SetValue(val, true) end
+            Library.Flags[FlagName] = TextboxObj
+            return TextboxObj
+        end
+
+        function TabObj:Keybind(KOpts)
+            local Title = KOpts.Title or "Keybind"
+            local Default = KOpts.Default
+            local Callback = KOpts.Callback or function() end
+            
+            local FlagName = KOpts.Flag or string.format("%s/Keybind/%s", TabObj.Title, Title)
+            local CurrentKey = Default
+
+            local Row = CreateRow(Title, 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+
+            local KeyContainer = Create("TextButton", {Size = UDim2.new(0, 150, 1, 0), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, Parent = Row})
+            Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = KeyContainer})
+
+            local KeyText = Create("TextLabel", {Size = UDim2.new(0, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = FormatKeyName(Default), TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, LayoutOrder = 2, Parent = KeyContainer})
+            local KeyIconContainer = Create("Frame", {Size = UDim2.new(0, 24, 0, 18), BackgroundTransparency = 1, LayoutOrder = 1, Parent = KeyContainer})
+            local KeyboardIcon = Create("ImageLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Image = Icons.Keyboard, ImageColor3 = Theme.TextPrimary, Parent = KeyIconContainer})
+
+            local BindConnection
+            
+            ThemeUpdate(function()
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                if BindConnection then
+                    KeyText.TextColor3 = Theme.Accent
+                    KeyboardIcon.ImageColor3 = Theme.Accent
+                else
+                    KeyText.TextColor3 = Theme.TextPrimary
+                    KeyboardIcon.ImageColor3 = Theme.TextPrimary
+                end
+            end)
+            
+            local function SetValue(keyEnum, triggerCallback)
+                CurrentKey = keyEnum
+                KeyText.Text = FormatKeyName(keyEnum)
+                TweenService:Create(KeyText, TweenFast, {TextColor3 = Theme.TextPrimary}):Play()
+                TweenService:Create(KeyboardIcon, TweenFast, {ImageColor3 = Theme.TextPrimary}):Play()
+                if triggerCallback then Callback(CurrentKey) end
+            end
+
+            KeyContainer.MouseButton1Click:Connect(function()
+                KeyText.Text = "..."
+                TweenService:Create(KeyText, TweenFast, {TextColor3 = Theme.Accent}):Play()
+                TweenService:Create(KeyboardIcon, TweenFast, {ImageColor3 = Theme.Accent}):Play()
+
+                if BindConnection then BindConnection:Disconnect() end
+                
+                BindConnection = UserInputService.InputBegan:Connect(function(Input)
+                    if Input.UserInputType == Enum.UserInputType.Keyboard or string.find(Input.UserInputType.Name, "MouseButton") then
+                        local ValidKey = (Input.KeyCode.Name ~= "Unknown") and Input.KeyCode or Input.UserInputType
+                        BindConnection:Disconnect(); BindConnection = nil
+                        SetValue(ValidKey, true)
+                    end
+                end)
+            end)
+            
+            UserInputService.InputBegan:Connect(function(Input, Processed)
+                if Processed then return end
+                if CurrentKey and CurrentKey.Name ~= "Unknown" then
+                    if Input.KeyCode == CurrentKey or Input.UserInputType == CurrentKey then Callback(CurrentKey) end
+                end
+            end)
+            
+            local KeybindObj = {}
+            function KeybindObj:GetComponentType() return "Keybind" end
+            function KeybindObj:GetValue() return CurrentKey end
+            function KeybindObj:SetValue(val) SetValue(val, true) end
+            Library.Flags[FlagName] = KeybindObj
+            return KeybindObj
+        end
+
+        function TabObj:Slider(SOpts)
+            local Title = SOpts.Title or "Slider"
+            local Min = SOpts.Min or 0
+            local Max = SOpts.Max or 100
+            local Decimal = SOpts.Decimal or 0
+            local Prefix = SOpts.Prefix or ""
+            local Suffix = SOpts.Suffix or ""
+            local Dual = SOpts.Dual or false
+            local ZeroNumber = SOpts.ZeroNumber or Min
+            local Callback = SOpts.Callback or function() end
+            
+            local FlagName = SOpts.Flag or string.format("%s/Slider/%s", TabObj.Title, Title)
+
+            local CurrentValue
+            if Dual then
+                CurrentValue = type(SOpts.Default) == "table" and {math.clamp(SOpts.Default[1] or Min, Min, Max), math.clamp(SOpts.Default[2] or Max, Min, Max)} or {Min, Max}
+            else
+                CurrentValue = math.clamp(SOpts.Default or Min, Min, Max)
+            end
+
+            local Row = CreateRow(Title, 52)
+
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(0, 200, 0, 20), Position = UDim2.new(0, 8, 0, 8), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            local ValueLabel = Create("TextLabel", {Size = UDim2.new(0, 150, 0, 20), Position = UDim2.new(1, -158, 0, 8), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Right, Parent = Row})
+
+            local TrackBtn = Create("TextButton", {Size = UDim2.new(1, -16, 0, 20), Position = UDim2.new(0, 8, 0, 28), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, Parent = Row})
+            local Track = Create("Frame", {Size = UDim2.new(1, 0, 0, 4), Position = UDim2.new(0, 0, 0.5, -2), BackgroundColor3 = Theme.Search, Parent = TrackBtn})
+            Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Track})
+
+            local Fill = Create("Frame", {Size = UDim2.new(0, 0, 1, 0), Position = UDim2.new(0, 0, 0, 0), BackgroundColor3 = Theme.Accent, Parent = Track})
+            Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Fill})
+
+            local Handle1 = Create("Frame", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Theme.TextPrimary, Parent = Fill})
+            Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Handle1})
+            
+            local Handle2
+            if Dual then
+                Handle1.Position = UDim2.new(0, 0, 0.5, 0)
+                Handle2 = Create("Frame", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Theme.TextPrimary, Parent = Fill})
+                Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = Handle2})
+            end
+
+            ThemeUpdate(function()
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                ValueLabel.TextColor3 = Theme.TextPrimary
+                Track.BackgroundColor3 = Theme.Search
+                Fill.BackgroundColor3 = Theme.Accent
+                Handle1.BackgroundColor3 = Theme.TextPrimary
+                if Handle2 then Handle2.BackgroundColor3 = Theme.TextPrimary end
+            end)
+
+            local function FormatValue(val)
+                local str = string.format("%." .. tostring(Decimal) .. "f", val)
+                return string.format("%s%s%s", Prefix, str, Suffix)
+            end
+
+            local ZeroAlpha = math.clamp((ZeroNumber - Min) / (Max - Min), 0, 1)
+            local Val1, Val2
+            
+            if Dual then
+                Val1 = Create("NumberValue", {Value = CurrentValue[1], Parent = Row})
+                Val2 = Create("NumberValue", {Value = CurrentValue[2], Parent = Row})
+                local function updateText() ValueLabel.Text = string.format("( %s, %s )", FormatValue(Val1.Value), FormatValue(Val2.Value)) end
+                Val1.Changed:Connect(updateText); Val2.Changed:Connect(updateText); updateText() 
+            else
+                Val1 = Create("NumberValue", {Value = CurrentValue, Parent = Row})
+                Val1.Changed:Connect(function() ValueLabel.Text = string.format("( %s )", FormatValue(Val1.Value)) end)
+                ValueLabel.Text = string.format("( %s )", FormatValue(Val1.Value))
+            end
+
+            local function UpdateVisuals(val)
+                if Dual then
+                    local a1 = (val[1] - Min) / (Max - Min)
+                    local a2 = (val[2] - Min) / (Max - Min)
+                    TweenService:Create(Fill, TweenSmooth, {Position = UDim2.new(a1, 0, 0, 0), Size = UDim2.new(a2 - a1, 0, 1, 0)}):Play()
+                    TweenService:Create(Val1, TweenSmooth, {Value = val[1]}):Play()
+                    TweenService:Create(Val2, TweenSmooth, {Value = val[2]}):Play()
+                else
+                    local a = (val - Min) / (Max - Min)
+                    local startA = math.min(a, ZeroAlpha)
+                    local sizeA = math.abs(a - ZeroAlpha)
+                    TweenService:Create(Fill, TweenSmooth, {Position = UDim2.new(startA, 0, 0, 0), Size = UDim2.new(sizeA, 0, 1, 0)}):Play()
+                    
+                    if a < ZeroAlpha then
+                        Handle1.Position = UDim2.new(0, 0, 0.5, 0)
+                    else
+                        Handle1.Position = UDim2.new(1, 0, 0.5, 0)
+                    end
+                    TweenService:Create(Val1, TweenSmooth, {Value = val}):Play()
+                end
+            end
+
+            local function SetValue(Value, triggerCallback)
+                if Dual then
+                    CurrentValue = type(Value) == "table" and {math.clamp(Value[1], Min, Max), math.clamp(Value[2], Min, Max)} or {Min, Max}
+                else
+                    CurrentValue = math.clamp(Value, Min, Max)
+                end
+                UpdateVisuals(CurrentValue)
+                if triggerCallback then Callback(CurrentValue) end
+            end
+
+            local IsDragging, ActiveHandle = false, 1
+
+            local function HandleDrag(Input)
+                local Alpha = math.clamp((Input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+                local RawValue = Min + ((Max - Min) * Alpha)
+                local Mult = 10 ^ Decimal
+                local Value = math.round(RawValue * Mult) / Mult
+                Value = math.clamp(Value, Min, Max)
+
+                if Dual then
+                    local newValue = {CurrentValue[1], CurrentValue[2]}
+                    newValue[ActiveHandle] = Value
+                    if ActiveHandle == 1 and newValue[1] > newValue[2] then newValue[1] = newValue[2]
+                    elseif ActiveHandle == 2 and newValue[2] < newValue[1] then newValue[2] = newValue[1] end
+                    SetValue(newValue, true)
+                else
+                    SetValue(Value, true)
+                end
+            end
+
+            TrackBtn.InputBegan:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                    IsDragging = true
+                    if Dual then
+                        local Alpha = math.clamp((Input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+                        local a1 = (CurrentValue[1] - Min) / (Max - Min)
+                        local a2 = (CurrentValue[2] - Min) / (Max - Min)
+                        local dist1, dist2 = math.abs(Alpha - a1), math.abs(Alpha - a2)
+                        ActiveHandle = dist1 == dist2 and (Alpha > a1 and 2 or 1) or (dist1 < dist2 and 1 or 2)
+                    end
+                    HandleDrag(Input)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then IsDragging = false end
+            end)
+
+            UserInputService.InputChanged:Connect(function(Input)
+                if IsDragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then HandleDrag(Input) end
+            end)
+            
+            UpdateVisuals(CurrentValue)
+            local SliderObj = {}
+            function SliderObj:GetComponentType() return "Slider" end
+            function SliderObj:GetValue() return CurrentValue end
+            function SliderObj:SetValue(val) SetValue(val, true) end
+            Library.Flags[FlagName] = SliderObj
+            return SliderObj
+        end
+
+        function TabObj:Toggle(TOpts)
+            local Title = TOpts.Title or "Toggle"
+            local Default = TOpts.Default or false
+            local Callback = TOpts.Callback or function() end
+            
+            local FlagName = TOpts.Flag or string.format("%s/Toggle/%s", TabObj.Title, Title)
+
+            local Row = CreateRow(Title, TOpts.Height or 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = TOpts.Font or Enum.Font.FredokaOne, TextSize = TOpts.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+
+            local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Row})
+            Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
+
+            local State = Default
+            
+            ThemeUpdate(function()
+                Checkbox.BackgroundColor3 = State and Theme.Accent or Theme.Search
+                TitleLabel.TextColor3 = Theme.TextPrimary
+            end)
+            
+            local function SetState(newState, triggerCallback)
+                State = newState
+                TweenService:Create(Checkbox, TweenFast, {BackgroundColor3 = State and Theme.Accent or Theme.Search}):Play()
+                if triggerCallback then Callback(State) end
+            end
+
+            Checkbox.MouseButton1Click:Connect(function() SetState(not State, true) end)
+            
+            local ClickLayer = Create("TextButton", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 5, Parent = Row})
+            ClickLayer.MouseButton1Click:Connect(function() SetState(not State, true) end)
+
+            local ToggleObj = {Row = Row}
+            function ToggleObj:GetComponentType() return "Toggle" end
+            function ToggleObj:GetValue() return State end
+            function ToggleObj:SetValue(val) SetState(val, true) end
+            
+            function ToggleObj:Colorpicker(ColorProps)
+                AttachColorPicker(Row, Title, ColorProps, 36)
+                return self
+            end
+            
+            Library.Flags[FlagName] = ToggleObj
+            return ToggleObj
+        end
+
+        function TabObj:Dropdown(DOpts)
+            local Title = DOpts.Title or "Dropdown"
+            local OptionsList = DOpts.Options or {}
+            local Multi = DOpts.Multi or false
+            local Default = DOpts.Default
+            local Callback = DOpts.Callback or function() end
+            
+            local FlagName = DOpts.Flag or string.format("%s/Dropdown/%s", TabObj.Title, Title)
+            local SelectedItems = {}
+
+            if Multi then
+                if type(Default) == "table" then for _, Item in Default do table.insert(SelectedItems, Item) end end
+            else
+                if type(Default) == "string" and Default ~= "" then table.insert(SelectedItems, Default)
+                elseif type(Default) == "table" and #Default > 0 then table.insert(SelectedItems, Default[1]) end
+            end
+            
+            local Row = CreateRow(Title, 40)
+            local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+
+            local DropBtn = Create("TextButton", {Size = UDim2.new(0, 160, 0, 26), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false, Parent = Row})
+            Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
+            
+            local DropdownText = Create("TextLabel", {Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
+            local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(1, -20, 0.5, -8), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Theme.TextSecondary, Parent = DropBtn})
+
+            local function UpdateDropdownText()
+                local Str = ""
+                for I, V in SelectedItems do Str = Str .. V .. (I < #SelectedItems and ", " or "") end
+                if string.len(Str) > 18 then Str = string.sub(Str, 1, 15) .. "..." end
+                if Str == "" then Str = "None" end
+                DropdownText.Text = Str
+            end
+
+            local DropdownMenu = Create("ScrollingFrame", {Size = UDim2.new(0, 160, 0, 0), BackgroundColor3 = Theme.Main, Visible = false, ClipsDescendants = true, ZIndex = 10, BorderSizePixel = 0, ScrollBarThickness = 2, ScrollBarImageColor3 = Theme.Border, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ScreenGui})
+            Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = DropdownMenu})
+            local DropStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = DropdownMenu})
+            Create("UIPadding", {PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4), Parent = DropdownMenu})
+            local MenuLayout = Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Parent = DropdownMenu})
+
+            local OptionButtons, Separators, IsOpen, RenderConnection = {}, {}, false, nil
+            
+            local function CloseDropdown()
+                IsOpen = false
+                TweenService:Create(Chevron, TweenSmooth, {Rotation = 0}):Play()
+                local tw = TweenService:Create(DropdownMenu, TweenSmooth, {Size = UDim2.new(0, 160, 0, 0)})
+                tw:Play()
+                tw.Completed:Connect(function()
+                    if not IsOpen then DropdownMenu.Visible = false; if RenderConnection then RenderConnection:Disconnect(); RenderConnection = nil end end
+                end)
+            end
+            table.insert(WindowObj.Popups, {Close = CloseDropdown})
+
+            local function SetValue(val, triggerCallback)
+                SelectedItems = {}
+                if Multi then
+                    if type(val) == "table" then for _, v in val do table.insert(SelectedItems, v) end end
+                else
+                    if type(val) == "string" and val ~= "" then table.insert(SelectedItems, val)
+                    elseif type(val) == "table" and #val > 0 then table.insert(SelectedItems, val[1]) end
+                end
+                for Option, OptBtn in OptionButtons do
+                    TweenService:Create(OptBtn, TweenFast, {TextColor3 = table.find(SelectedItems, Option) and Theme.Accent or Theme.Border}):Play()
+                end
+                UpdateDropdownText()
+                if triggerCallback then Callback(Multi and SelectedItems or SelectedItems[1]) end
+            end
+
+            local function SetOptionsList(newOptions)
+                OptionsList = type(newOptions) == "table" and newOptions or {}
+                for _, btn in OptionButtons do btn:Destroy() end
+                for _, sep in Separators do sep:Destroy() end
+                table.clear(OptionButtons); table.clear(Separators)
+
+                local newSelected = {}
+                for _, item in SelectedItems do if table.find(OptionsList, item) then table.insert(newSelected, item) end end
+                SelectedItems = newSelected
+
+                for Index, Option in OptionsList do
+                    local OptBtn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, Text = Option, TextColor3 = table.find(SelectedItems, Option) and Theme.Accent or Theme.Border, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11, Parent = DropdownMenu})
+                    Create("UIPadding", {PaddingLeft = UDim.new(0, 10), Parent = OptBtn})
+                    OptionButtons[Option] = OptBtn
+
+                    OptBtn.MouseButton1Click:Connect(function()
+                        if Multi then
+                            local Idx = table.find(SelectedItems, Option)
+                            local newItems = {}
+                            for _, v in SelectedItems do table.insert(newItems, v) end
+                            if Idx then table.remove(newItems, Idx) else table.insert(newItems, Option) end
+                            SetValue(newItems, true)
+                        else
+                            SetValue(Option, true); CloseDropdown()
+                        end
+                    end)
+                end
+                UpdateDropdownText()
+                if IsOpen then
+                    TweenService:Create(DropdownMenu, TweenSmooth, {Size = UDim2.new(0, 160, 0, math.min(MenuLayout.AbsoluteContentSize.Y + 8, 160))}):Play()
+                end
+            end
+            
+            SetOptionsList(OptionsList)
+            
+            ThemeUpdate(function()
+                TitleLabel.TextColor3 = Theme.TextPrimary
+                DropdownText.TextColor3 = Theme.TextPrimary
+                Chevron.ImageColor3 = Theme.TextSecondary
+                DropBtn.BackgroundColor3 = Theme.Search
+                DropdownMenu.BackgroundColor3 = Theme.Main
+                DropStroke.Color = Theme.Border
+                for Option, OptBtn in OptionButtons do OptBtn.TextColor3 = table.find(SelectedItems, Option) and Theme.Accent or Theme.Border end
+            end)
+
+            DropBtn.MouseButton1Click:Connect(function()
+                IsOpen = not IsOpen
+                if IsOpen then
+                    DropdownMenu.Visible = true
+                    TweenService:Create(Chevron, TweenSmooth, {Rotation = 180}):Play()
+                    TweenService:Create(DropdownMenu, TweenSmooth, {Size = UDim2.new(0, 160, 0, math.min(MenuLayout.AbsoluteContentSize.Y + 8, 160))}):Play()
+                    RenderConnection = RunService.RenderStepped:Connect(function()
+                        if not DropdownMenu.Visible then return end
+                        DropdownMenu.Position = UDim2.fromOffset(DropBtn.AbsolutePosition.X, DropBtn.AbsolutePosition.Y + DropBtn.AbsoluteSize.Y + 6)
+                    end)
+                else
+                    CloseDropdown()
+                end
+            end)
+
+            UserInputService.InputBegan:Connect(function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 and DropdownMenu.Visible then
+                    local MousePos = Vector2.new(Input.Position.X, Input.Position.Y)
+                    local MPos, MSize = DropdownMenu.AbsolutePosition, DropdownMenu.AbsoluteSize
+                    local BPos, BSize = DropBtn.AbsolutePosition, DropBtn.AbsoluteSize
+                    if not ((MousePos.X >= MPos.X and MousePos.X <= MPos.X + MSize.X) and (MousePos.Y >= MPos.Y and MousePos.Y <= MPos.Y + MSize.Y)) and 
+                       not ((MousePos.X >= BPos.X and MousePos.X <= BPos.X + BSize.X) and (MousePos.Y >= BPos.Y and MousePos.Y <= BPos.Y + BSize.Y)) then
+                        CloseDropdown()
+                    end
+                end
+            end)
+            
+            local DropdownObj = {}
+            function DropdownObj:GetComponentType() return "Dropdown" end
+            function DropdownObj:GetValue() return Multi and SelectedItems or SelectedItems[1] end
+            function DropdownObj:SetValue(val) SetValue(val, true) end
+            function DropdownObj:SetOptions(newOptions) SetOptionsList(newOptions) end
+            function DropdownObj:GetOptions() return OptionsList end
+            Library.Flags[FlagName] = DropdownObj
+            return DropdownObj
+        end
+
+        return TabObj
+    end
+
+    return WindowObj
+end
+
+return Library
