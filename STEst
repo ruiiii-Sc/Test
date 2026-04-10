@@ -1134,8 +1134,8 @@ function Library:Window(Options)
     local Success = pcall(function() ScreenGui.Parent = CoreGui end)
     if not Success then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
-    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 850, 0, 550), Position = UDim2.new(0.5, -425, 0.5, -275), BackgroundColor3 = Theme.Main, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
-    Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MainFrame})
+    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 760, 0, 520), Position = UDim2.new(0.5, -380, 0.5, -260), BackgroundColor3 = Theme.Main, BackgroundTransparency = 0.08, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
+    Create("UICorner", {CornerRadius = UDim.new(0, 20), Parent = MainFrame})
     Create("UIDragDetector", {Parent = MainFrame})
 
     local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 64), Position = UDim2.new(0, 0, 1, -64), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
