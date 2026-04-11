@@ -1121,8 +1121,10 @@ end
 
 function Library:SetTheme(NewTheme)
     if not NewTheme then return end
-    for Key, Value in NewTheme do
-        Theme[Key] = Value
+    for Key, Value in pairs(NewTheme) do
+        if Theme[Key] ~= nil then
+            Theme[Key] = Value
+        end
     end
     ApplyTheme()
 end
@@ -1134,14 +1136,14 @@ function Library:Window(Options)
     local Success = pcall(function() ScreenGui.Parent = CoreGui end)
     if not Success then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
-    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 760, 0, 520), Position = UDim2.new(0.5, -380, 0.5, -260), BackgroundColor3 = Theme.Main, BackgroundTransparency = 0.08, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
+    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 754, 0, 514), Position = UDim2.new(0.5, -377, 0.5, -257), BackgroundColor3 = Theme.Main, BackgroundTransparency = 0.08, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
     Create("UICorner", {CornerRadius = UDim.new(0, 20), Parent = MainFrame})
     Create("UIDragDetector", {Parent = MainFrame})
 
-    local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 64), Position = UDim2.new(0, 0, 1, -64), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
+    local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 58), Position = UDim2.new(0, 0, 1, -58), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
     
     local ProfileFrame = Create("Frame", {Size = UDim2.new(0, 200, 1, 0), Position = UDim2.new(0, 20, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
-    local AvatarImage = Create("ImageLabel", {Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(0, 0, 0.5, -20), BackgroundColor3 = Theme.Search, Parent = ProfileFrame})
+    local AvatarImage = Create("ImageLabel", {Size = UDim2.new(0, 36, 0, 36), Position = UDim2.new(0, 0, 0.5, -18), BackgroundColor3 = Theme.Search, Parent = ProfileFrame})
     Create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = AvatarImage})
     
     task.spawn(function()
@@ -1158,7 +1160,7 @@ function Library:Window(Options)
     local ActionContainer = Create("Frame", {Size = UDim2.new(0, 290, 1, 0), Position = UDim2.new(1, -310, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
     Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = ActionContainer})
 
-    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Theme.Search, Text = "−", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
+    local MinimizeBtn = Create("TextButton", {Size = UDim2.new(0, 36, 0, 36), BackgroundColor3 = Theme.Search, Text = "−", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 22, AutoButtonColor = false, LayoutOrder = 2, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MinimizeBtn})
     MinimizeBtn.MouseEnter:Connect(function()
         TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Border}):Play()
@@ -1167,7 +1169,7 @@ function Library:Window(Options)
         TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Search}):Play()
     end)
 
-    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundColor3 = Theme.Search, Text = "X", TextColor3 = Color3.fromRGB(243, 139, 168), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
+    local DestroyBtn = Create("TextButton", {Size = UDim2.new(0, 36, 0, 36), BackgroundColor3 = Theme.Search, Text = "X", TextColor3 = Color3.fromRGB(243, 139, 168), Font = Enum.Font.FredokaOne, TextSize = 18, AutoButtonColor = false, LayoutOrder = 3, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = DestroyBtn})
     
     DestroyBtn.MouseEnter:Connect(function()
@@ -1180,12 +1182,12 @@ function Library:Window(Options)
         ScreenGui:Destroy()
     end)
 
-    local SearchBar = Create("Frame", {Size = UDim2.new(0, 140, 0, 40), BackgroundColor3 = Theme.Search, LayoutOrder = 1, Parent = ActionContainer})
+    local SearchBar = Create("Frame", {Size = UDim2.new(0, 140, 0, 36), BackgroundColor3 = Theme.Search, LayoutOrder = 1, Parent = ActionContainer})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = SearchBar})
     local SearchIcon = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 12, 0.5, -8), BackgroundTransparency = 1, Image = Icons.Search, ImageColor3 = Theme.TextSecondary, Parent = SearchBar})
     local SearchBox = Create("TextBox", {Size = UDim2.new(1, -40, 1, 0), Position = UDim2.new(0, 36, 0, 0), BackgroundTransparency = 1, Text = "", PlaceholderText = "Search...", TextColor3 = Theme.TextPrimary, PlaceholderColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = SearchBar})
 
-    local ContentArea = Create("Frame", {Size = UDim2.new(1, 0, 1, -64), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Parent = MainFrame})
+    local ContentArea = Create("Frame", {Size = UDim2.new(1, 0, 1, -58), Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1, Parent = MainFrame})
     local TabContainer = Create("Frame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Parent = ContentArea})
     
     local SearchContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Theme.Accent, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = TabContainer})
@@ -1223,7 +1225,7 @@ function Library:Window(Options)
     end)
 
     local MiniFloatBtn = Create("TextButton", {
-        Size = UDim2.fromOffset(44, 44),
+        Size = UDim2.fromOffset(40, 40),
         Position = UDim2.new(0, 20, 0.5, -22),
         BackgroundColor3 = Theme.Main,
         Text = "B",
@@ -1407,12 +1409,38 @@ function Library:Window(Options)
         end
     end)
 
+    function WindowObj:Title(TOpts)
+        TOpts = TOpts or {}
+        local Text = TOpts.Title or TOpts.Text or ""
+        local TextSize = TOpts.TextSize or 15
+        local Font = TOpts.Font or Enum.Font.FredokaOne
+        local Color = TOpts.Color or Theme.TextPrimary
+        local Height = TOpts.Height or (TextSize + 12)
+        local Row = Create("Frame", {Size = UDim2.new(1, 0, 0, Height), BackgroundTransparency = 1, Parent = nil})
+        local Lbl = Create("TextLabel", {
+            Size = UDim2.new(1, -16, 1, 0),
+            Position = UDim2.new(0, 8, 0, 0),
+            BackgroundTransparency = 1,
+            Text = Text,
+            TextColor3 = Color,
+            Font = Font,
+            TextSize = TextSize,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = Row
+        })
+        ThemeUpdate(function() Lbl.TextColor3 = Color end)
+        local TitleObj = {Row = Row}
+        function TitleObj:SetText(t) Lbl.Text = t end
+        function TitleObj:SetColor(c) Lbl.TextColor3 = c; Color = c end
+        return TitleObj
+    end
+
     function WindowObj:Tab(Options)
         local TabTitle = Options.Title or "Tab"
         local TabIcon = GetIcon(Options.Icon)
         local IsConfig = Options.IsConfig or false
 
-        local TabBtn = Create("TextButton", {Size = UDim2.new(0, 40, 0, 40), BackgroundTransparency = 1, BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false})
+        local TabBtn = Create("TextButton", {Size = UDim2.new(0, 36, 0, 36), BackgroundTransparency = 1, BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false})
         TabBtn.Parent = TabContainerNav
         
         Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = TabBtn})
@@ -1427,9 +1455,11 @@ function Library:Window(Options)
             if WindowObj.CurrentTab and WindowObj.CurrentTab.TabButton == TabBtn then
                 TabBtn.BackgroundColor3 = Theme.Search
                 TabIconImage.ImageColor3 = Theme.Accent
+                TabBtnStroke.Transparency = 0
             else
                 TabBtn.BackgroundColor3 = Theme.Sidebar
                 TabIconImage.ImageColor3 = Theme.TextSecondary
+                TabBtnStroke.Transparency = 1
             end
             TabContent.ScrollBarImageColor3 = Theme.Accent
         end)
