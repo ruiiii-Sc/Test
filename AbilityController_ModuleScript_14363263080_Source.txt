@@ -1,0 +1,904 @@
+-- https://lua.expert/
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
+local LocalPlayer = Players.LocalPlayer
+local Sounds = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Sounds")
+local Utility = ReplicatedStorage:WaitForChild("Utility")
+local AudioService = require(Utility:WaitForChild("AudioService"))
+
+require(Utility:WaitForChild("AssetRequester"))
+
+local SharedFunctions = require(Utility:WaitForChild("SharedFunctions"))
+local PlaceManager = require(Utility:WaitForChild("PlaceManager"))
+local PlayerValues = require(Utility:WaitForChild("PlayerValues"))
+
+require(Utility:WaitForChild("Trove"))
+
+local Modules = ReplicatedStorage:WaitForChild("Modules")
+local TutorialManager = require(Modules:WaitForChild("TutorialManager"))
+local TutorialActions = require(Modules:WaitForChild("TutorialManager"):WaitForChild("TutorialActions"))
+local AbilityScripts = require(Modules:WaitForChild("AbilityScripts"))
+local BridgeNet2 = require(Utility:WaitForChild("BridgeNet2"))
+
+BridgeNet2.ClientBridge("Analytics")
+
+local v1 = BridgeNet2.ClientBridge("Abilities")
+local v2 = BridgeNet2.ReferenceIdentifier("tool")
+local v3 = BridgeNet2.ReferenceIdentifier("action")
+local v4 = BridgeNet2.ReferenceIdentifier("status")
+local Ui = LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("Ui")
+local v5 = nil
+local v6 = nil
+local v7 = nil
+local t = {
+	low = Color3.fromRGB(255, 61, 64),
+	min = Color3.fromRGB(74, 255, 101),
+	max = Color3.fromRGB(33, 251, 255)
+}
+local t2 = {
+	q = 1,
+	e = 2,
+	ability_q = 1,
+	ability_e = 2
+}
+local t3 = { "q", "e" }
+
+local function getButton(p1) --[[ getButton | Line: 57 | Upvalues: v6 (ref) ]]
+	if v6.IsMobile and p1.mobileFrame.AbilityButton then
+		return
+	end
+
+	local AbilityButton = p1.abilityFrame.AbilityButton
+end
+
+local function useAbility(p1) --[[ useAbility | Line: 62 | Upvalues: LocalPlayer (copy), AbilityScripts (copy), SharedFunctions (copy), TutorialManager (copy), TutorialActions (copy), HttpService (copy) ]]
+	local v1 = nil
+
+	for v2, v3 in LocalPlayer.Backpack:GetChildren() do
+		if v3.abilitySlot.Value == p1.key then
+			v1 = v3
+
+			break
+		end
+	end
+
+	if not v1 then
+		return
+	end
+
+	if not AbilityScripts.Modules[v1.Name] then
+		local v4 = SharedFunctions.GetAbilitySlotNumberFromIndex(v1.abilitySlot.Value)
+
+		if LocalPlayer:GetAttribute((("AbilitySlot%*Cooldown"):format(v4))) > 0 then
+			return
+		end
+
+		LocalPlayer:SetAttribute(("AbilitySlot%*Cooldown"):format(v4), v1.cooldownLength.Value)
+	end
+
+	TutorialManager.Notify(TutorialActions.USE_ABILITY, p1.key)
+	v1.localEvent:Fire(HttpService:GenerateGUID(false))
+end
+
+local function getTool(p1) --[[ getTool | Line: 86 | Upvalues: LocalPlayer (copy) ]]
+	for v1, v2 in LocalPlayer.Backpack:GetChildren() do
+		if v2.abilitySlot.Value == p1.key then
+			return v2
+		end
+	end
+end
+
+local function getAbilityData(p1) --[[ getAbilityData | Line: 95 | Upvalues: v7 (ref) ]]
+	local t = {}
+
+	for v1, v2 in v7.Abilities[p1] do
+		t[v1] = v2
+	end
+
+	return t
+end
+
+local function getUIElements(p1) --[[ getUIElements | Line: 107 | Upvalues: v6 (ref) ]]
+	local v1 = v6.IsMobile and p1.mobileFrame or p1.abilityFrame
+	local Charge = v1:FindFirstChild("Charge")
+	local AbilityButton = v1.AbilityButton
+
+	return {
+		charge = Charge,
+		leftCharge = Charge.LHalf,
+		rightCharge = Charge.RHalf,
+		leftGradient = Charge.LHalf.Circle.UIGradient,
+		rightGradient = Charge.RHalf.Circle.UIGradient,
+		pulse = AbilityButton.Pulse,
+		ready = AbilityButton.Ready,
+		uiScale = v1.UIScale
+	}
+end
+
+local function setGradientColor(p1, p2) --[[ setGradientColor | Line: 125 ]]
+	p1.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, p2), ColorSequenceKeypoint.new(1, p2) })
+end
+
+local function resetUIElements(p1) --[[ resetUIElements | Line: 133 | Upvalues: setGradientColor (copy) ]]
+	p1.charge.Visible = false
+	p1.rightCharge.Visible = false
+	p1.leftGradient.Rotation = 180
+	p1.rightGradient.Rotation = 0
+	p1.pulse.Visible = false
+	p1.pulse.ImageRectOffset = Vector2.new(0, 0)
+	p1.ready.Visible = false
+	p1.ready.ImageRectOffset = Vector2.new(0, 0)
+	p1.uiScale.Scale = 1
+	setGradientColor(p1.leftGradient, Color3.fromRGB(255, 255, 255))
+	setGradientColor(p1.rightGradient, Color3.fromRGB(255, 255, 255))
+end
+
+local function scaleUI(p1, p2, p3) --[[ scaleUI | Line: 162 ]]
+	local v1 = p3 or 0.01
+	local v2 = math.pow(10, 2 or 0)
+	local v3 = p1.Scale * v2
+	local v7 = (if v3 >= 0 then math.floor(v3 + 0.5) else math.ceil(v3 - 0.5)) / v2
+
+	while v7 ~= p2 do
+		local v8, v9
+
+		if v7 < p2 then
+			local v10 = math.clamp(v7 + v1, 0, p2)
+			local v11 = math.pow(10, 2 or 0)
+			local v12 = v10 * v11
+
+			v8 = if v12 >= 0 then math.floor(v12 + 0.5) else math.ceil(v12 - 0.5)
+			v7 = v8 / v11
+		else
+			local v15 = math.clamp(v7 - v1, p2, v7)
+			local v16 = math.pow(10, 2 or 0)
+			local v17 = v15 * v16
+
+			v9 = if v17 >= 0 then math.floor(v17 + 0.5) else math.ceil(v17 - 0.5)
+			v7 = v9 / v16
+		end
+
+		p1.Scale = v7
+		task.wait()
+	end
+end
+
+local function updateChargePercent(p1, p2, p3) --[[ updateChargePercent | Line: 179 | Upvalues: t (copy), setGradientColor (copy) ]]
+	if p1 == 1 then
+		p3.charge.Visible = false
+
+		return
+	end
+
+	p3.rightCharge.Visible = if p1 > 0.5 then true else false
+	p3.leftGradient.Rotation = math.clamp(180 - p1 * 360, 0, 180)
+
+	local v2 = if p1 < p2 then t.low else Color3.fromRGB(255, 255, 255)
+
+	setGradientColor(p3.leftGradient, v2)
+	p3.rightGradient.Rotation = math.clamp(360 - (p1 * 360 - 180), 180, 360)
+	setGradientColor(p3.rightGradient, v2)
+end
+
+local v8 = false
+local t4 = {
+	ActiveDoubleTap = {},
+	ActiveCharge = nil,
+	ChargeAbilityData = nil,
+	CurrentCharge = 0,
+	ChargeId = nil,
+	ChargeSpeed = 1,
+	EquippedAbilities = {},
+	CurrentAbilitySet = 1,
+	ActiveThreads = {},
+	TapData = {}
+}
+
+local function resetDoubleTap(p1) --[[ resetDoubleTap | Line: 210 | Upvalues: getUIElements (copy), v7 (ref), t4 (copy), resetUIElements (copy) ]]
+	local t = {}
+
+	for v2, v3 in v7.Abilities[p1] do
+		t[v2] = v3
+	end
+
+	local v4 = getUIElements(t)
+
+	if t4.ActiveDoubleTap[p1] then
+		for v5, v6 in t4.ActiveDoubleTap[p1].threads do
+			task.cancel(v6)
+		end
+	end
+
+	resetUIElements(v4)
+	t4.ActiveDoubleTap[p1] = false
+end
+
+local function updateEquippedAbilities() --[[ updateEquippedAbilities | Line: 223 | Upvalues: PlayerValues (copy), LocalPlayer (copy), t4 (copy), t3 (copy), resetDoubleTap (copy) ]]
+	PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+		t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+		for v3, v4 in p13 do
+			if v3 == t4.CurrentAbilitySet then
+				for v5, v6 in v4 do
+					local v7 = t3[v5]
+
+					if t4.ActiveCharge and v5 == t4.ActiveCharge then
+						t4.ReleaseAbility(true, false, v7)
+					elseif t4.ActiveDoubleTap[v5] then
+						resetDoubleTap(v5)
+					end
+
+					t4.EquippedAbilities[v5] = v6
+				end
+			end
+		end
+	end)
+end
+
+local function canDoubleTap(p1, p2, p3, p4) --[[ canDoubleTap | Line: 245 | Upvalues: SharedFunctions (copy), LocalPlayer (copy), resetDoubleTap (copy), t2 (copy) ]]
+	p1.charge.Visible = true
+	p1.rightGradient.Rotation = 180
+	p1.rightCharge.Visible = true
+	p1.leftGradient.Rotation = 0
+	p1.leftCharge.Visible = true
+
+	local v1 = nil
+
+	v1 = task.spawn(function() --[[ Line: 255 | Upvalues: p2 (copy), SharedFunctions (ref), p4 (copy), LocalPlayer (ref), p3 (copy), v1 (ref), resetDoubleTap (ref), t2 (ref), p1 (copy) ]]
+		local v12 = tick()
+		local v2 = v12 + p2
+
+		task.wait()
+
+		local v3 = SharedFunctions.GetAbilitySlotNumberFromIndex(p4.abilitySlot.Value)
+
+		while tick() < v2 do
+			if LocalPlayer:GetAttribute((("AbilitySlot%*Cooldown"):format(v3))) > 0 then
+				for v4, v5 in p3 do
+					if v5 == v1 then
+						table.remove(p3, v4)
+
+						break
+					end
+				end
+
+				resetDoubleTap(t2[p4.abilitySlot.Value])
+
+				return
+			end
+
+			local v6 = (tick() - v12) / (v2 - v12)
+
+			task.wait()
+			p1.rightCharge.Visible = v6 < 0.5
+			p1.leftGradient.Rotation = math.clamp(v6 * 360 - 180, 0, 180)
+			p1.rightGradient.Rotation = math.clamp(180 + v6 * 360, 180, 360)
+		end
+
+		p1.charge.Visible = false
+	end)
+
+	local v2 = v1
+
+	table.insert(p3, v2)
+end
+
+local function characterAdded(p1, p2) --[[ characterAdded | Line: 290 | Upvalues: t4 (copy), resetDoubleTap (copy), PlayerValues (copy), LocalPlayer (copy), t3 (copy) ]]
+	p1.Humanoid.Died:Connect(function() --[[ Line: 291 | Upvalues: t4 (ref), resetDoubleTap (ref) ]]
+		if t4.ActiveCharge then
+			t4.ReleaseAbility(true)
+		end
+
+		for v1, v2 in t4.ActiveDoubleTap do
+			if v1 and v2 then
+				resetDoubleTap(v1)
+			end
+		end
+	end)
+	PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+		t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+		for v3, v4 in p13 do
+			if v3 == t4.CurrentAbilitySet then
+				for v5, v6 in v4 do
+					local v7 = t3[v5]
+
+					if t4.ActiveCharge and v5 == t4.ActiveCharge then
+						t4.ReleaseAbility(true, false, v7)
+					elseif t4.ActiveDoubleTap[v5] then
+						resetDoubleTap(v5)
+					end
+
+					t4.EquippedAbilities[v5] = v6
+				end
+			end
+		end
+	end)
+end
+
+function t4.ReleaseAbility(p1, p2, p3) --[[ ReleaseAbility | Line: 308 | Upvalues: t4 (copy), t3 (copy), v1 (copy), v3 (copy), LocalPlayer (copy), AbilityScripts (copy), v2 (copy), getUIElements (copy), resetUIElements (copy) ]]
+	if not t4.ActiveCharge then
+		return
+	end
+
+	local ChargeAbilityData = t4.ChargeAbilityData
+	local v12 = if p3 then p3 else t3[t4.ActiveCharge]
+
+	if not p2 and p1 then
+		v1:Fire({
+			[v3] = "cancelCharge",
+			toolSlot = v12
+		})
+	elseif not p2 then
+		local v22 = v12
+		local v32 = nil
+
+		for v4, v5 in LocalPlayer.Backpack:GetChildren() do
+			if v5.abilitySlot.Value == ChargeAbilityData.key then
+				v32 = v5
+
+				break
+			end
+		end
+
+		local v6 = AbilityScripts.Modules[v32.Name]
+		local v7 = if v6 and v6.Configs then v6.Configs else {}
+
+		if v32 and v32.Name == t4.EquippedAbilities[t4.ActiveCharge].name then
+			local t = {
+				[v3] = "releaseCharge",
+				[v2] = v32
+			}
+
+			t.chargePercent = if v7.ChargeTime == 0 then 1 else t4.CurrentCharge / v7.ChargeTime
+			t.toolSlot = v22
+			v1:Fire(t)
+		end
+	end
+
+	t4.ActiveCharge = nil
+	t4.ChargeId = nil
+	t4.ChargeAbilityData = nil
+	t4.CurrentCharge = 0
+
+	for v10, v11 in t4.ActiveThreads do
+		task.cancel(v11)
+	end
+
+	t4.ActiveThreads = {}
+	resetUIElements((getUIElements(ChargeAbilityData)))
+end
+function t4.AbilityInputBegan(p1) --[[ AbilityInputBegan | Line: 354 | Upvalues: LocalPlayer (copy), PlaceManager (copy), t2 (copy), t4 (copy), SharedFunctions (copy), AbilityScripts (copy), v8 (ref), v1 (copy), v3 (copy), v2 (copy), v4 (copy), resetDoubleTap (copy), HttpService (copy), getUIElements (copy), scaleUI (copy), v7 (ref), updateChargePercent (copy), v5 (ref), useAbility (copy) ]]
+	local Character = LocalPlayer.Character
+
+	if not Character then
+		return false, "No Character"
+	end
+
+	if not (Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("Humanoid")) then
+		return false, "No Root Part or Humanoid"
+	end
+
+	local busyCasting = Character:FindFirstChild("busyCasting")
+
+	if not busyCasting or busyCasting.Value == true then
+		return false, "Busy Casting"
+	end
+
+	local transformed = Character:FindFirstChild("transformed")
+
+	if not transformed or transformed.Value == true then
+		return false, "Transformed"
+	end
+
+	if PlaceManager.IsAFKMode() then
+		return false, "AFK Mode"
+	end
+
+	local v12 = t2[p1.key]
+	local v22 = t4.EquippedAbilities[v12]
+
+	if not v22 then
+		return false, "No Ability"
+	end
+
+	local v32 = nil
+
+	for v42, v52 in LocalPlayer.Backpack:GetChildren() do
+		if v52.abilitySlot.Value == p1.key then
+			v32 = v52
+
+			break
+		end
+	end
+
+	if not v32 then
+		return false, "No Tool"
+	end
+
+	if LocalPlayer:GetAttribute((("AbilitySlot%*Cooldown"):format((SharedFunctions.GetAbilitySlotNumberFromIndex(v32.abilitySlot.Value))))) > 0 then
+		return false, "On Cooldown"
+	end
+
+	if t4.ActiveCharge and v12 == t4.ActiveCharge then
+		return false, "Already Charging"
+	end
+
+	if t4.ActiveCharge then
+		t4.ReleaseAbility()
+	end
+
+	local v6 = AbilityScripts.Modules[v32.Name]
+	local v72 = if v6 and v6.Configs then v6.Configs else {}
+
+	if v72 and v72.DoubleTap then
+		if v8 then
+			return false, "Double Tap Debounce"
+		end
+
+		v8 = true
+		task.spawn(function() --[[ Line: 394 | Upvalues: v1 (ref), v3 (ref), v2 (ref), v32 (copy), v12 (copy), v8 (ref), v4 (ref), resetDoubleTap (ref) ]]
+			v8 = false
+
+			if v1:InvokeServerAsync({
+				[v3] = "useAbility",
+				[v2] = v32,
+				abilitySlot = v12
+			})[v4] then
+				return
+			end
+
+			resetDoubleTap(v12)
+		end)
+
+		local MaxDoubleTapDelay = v72.MaxDoubleTapDelay
+
+		if not MaxDoubleTapDelay then
+			return false, "No Max Double Tap Delay"
+		end
+
+		if t4.ActiveDoubleTap[v12] then
+			resetDoubleTap(v12)
+		else
+			local v82 = HttpService:GenerateGUID(false)
+			local v9 = tick()
+
+			t4.ActiveDoubleTap[v12] = {
+				start = v9,
+				tool = v32,
+				threads = {},
+				id = v82
+			}
+
+			local v10 = t4.ActiveDoubleTap[v12]
+			local v11 = getUIElements(p1)
+			local v122 = v9 + MaxDoubleTapDelay - tick()
+			local threads = t4.ActiveDoubleTap[v12].threads
+
+			v11.charge.Visible = true
+			v11.rightGradient.Rotation = 180
+			v11.rightCharge.Visible = true
+			v11.leftGradient.Rotation = 0
+			v11.leftCharge.Visible = true
+
+			local v13 = nil
+
+			v13 = task.spawn(function() --[[ Line: 255 | Upvalues: v122 (copy), SharedFunctions (ref), v32 (copy), LocalPlayer (ref), threads (copy), v13 (ref), resetDoubleTap (ref), t2 (ref), v11 (copy) ]]
+				local v12 = tick()
+				local v2 = v12 + v122
+
+				task.wait()
+
+				local v3 = SharedFunctions.GetAbilitySlotNumberFromIndex(v32.abilitySlot.Value)
+
+				while tick() < v2 do
+					if LocalPlayer:GetAttribute((("AbilitySlot%*Cooldown"):format(v3))) > 0 then
+						for v4, v5 in threads do
+							if v5 == v13 then
+								table.remove(threads, v4)
+
+								break
+							end
+						end
+
+						resetDoubleTap(t2[v32.abilitySlot.Value])
+
+						return
+					end
+
+					local v6 = (tick() - v12) / (v2 - v12)
+
+					task.wait()
+					v11.rightCharge.Visible = v6 < 0.5
+					v11.leftGradient.Rotation = math.clamp(v6 * 360 - 180, 0, 180)
+					v11.rightGradient.Rotation = math.clamp(180 + v6 * 360, 180, 360)
+				end
+
+				v11.charge.Visible = false
+			end)
+
+			local v14 = v13
+
+			table.insert(threads, v14)
+
+			local threads2 = t4.ActiveDoubleTap[v12].threads
+
+			table.insert(threads2, task.spawn(scaleUI, v11.uiScale, 1.11, 0.01))
+			task.delay(v122, function() --[[ Line: 428 | Upvalues: t4 (ref), v12 (copy), v82 (copy), v10 (copy), v32 (copy), resetDoubleTap (ref) ]]
+				if not t4.ActiveDoubleTap[v12] then
+					return
+				end
+
+				if v82 ~= v10.id then
+					return
+				end
+
+				if v32 == v10.tool then
+					resetDoubleTap(v12)
+				end
+			end)
+		end
+	elseif v72 and (v72.ChargeTime and v72.ChargeTime > 0) then
+		t4.ActiveCharge = v12
+
+		local v17 = HttpService:GenerateGUID(false)
+
+		t4.ChargeId = v17
+
+		local v18 = t4
+		local t = {}
+
+		for v19, v20 in v7.Abilities[v12] do
+			t[v19] = v20
+		end
+
+		v18.ChargeAbilityData = t
+		t4.CurrentCharge = 0
+		task.spawn(function() --[[ Line: 445 | Upvalues: v1 (ref), v3 (ref), v2 (ref), v32 (copy), v4 (ref), t4 (ref) ]]
+			if not v1:InvokeServerAsync({
+				[v3] = "startCharge",
+				[v2] = v32
+			})[v4] then
+				t4.ReleaseAbility(true, true)
+			end
+		end)
+
+		local ChargeTime = v72.ChargeTime
+		local v21 = v72.MinChargePercent or 0
+		local v222 = getUIElements(p1)
+
+		v222.charge.Visible = true
+
+		local ActiveThreads = t4.ActiveThreads
+
+		table.insert(ActiveThreads, task.spawn(scaleUI, v222.uiScale, 1.21, 0.01))
+
+		local ActiveThreads2 = t4.ActiveThreads
+
+		local function f26() --[[ Line: 463 | Upvalues: ChargeTime (copy), t4 (ref), updateChargePercent (ref), v21 (copy), v222 (copy), v5 (ref) ]]
+			if ChargeTime > 0 then
+				while t4.CurrentCharge < ChargeTime do
+					t4.CurrentCharge = math.clamp(t4.CurrentCharge + task.wait() * (t4.ChargeSpeed or 1), 0, ChargeTime)
+					updateChargePercent(math.clamp(t4.CurrentCharge / ChargeTime, 0, 1), math.clamp(v21, 0, 1), v222)
+				end
+			else
+				t4.CurrentCharge = 0
+				v222.charge.Visible = false
+			end
+
+			table.insert(t4.ActiveThreads, task.spawn(v5.PlaySprite, {
+				guiObject = v222.pulse,
+				dimensions = {
+					x = 4,
+					y = 4
+				},
+				fps = 24,
+				iterations = 0,
+				toggleVisible = true
+			}))
+			table.insert(t4.ActiveThreads, task.spawn(v5.PlaySprite, {
+				guiObject = v222.ready,
+				dimensions = {
+					x = 4,
+					y = 4
+				},
+				fps = 24,
+				iterations = 0,
+				toggleVisible = true
+			}))
+		end
+
+		table.insert(ActiveThreads2, task.spawn(f26))
+		task.spawn(function() --[[ Line: 493 | Upvalues: v72 (copy), t4 (ref), v17 (copy), v12 (copy), v22 (copy) ]]
+			if not v72.MaxChargeDuration then
+				return
+			end
+
+			local v1 = tick() + v72.MaxChargeDuration
+
+			task.wait(v1 - tick())
+
+			if not t4.ActiveCharge then
+				return
+			end
+
+			if v17 ~= t4.ChargeId then
+				return
+			end
+
+			if t4.ActiveCharge ~= v12 then
+				return
+			end
+
+			if v22 ~= t4.EquippedAbilities[v12] then
+				return
+			end
+
+			t4.ReleaseAbility()
+		end)
+	else
+		useAbility(p1)
+	end
+
+	return true
+end
+function t4.AbilityInputEnded(p1) --[[ AbilityInputEnded | Line: 514 | Upvalues: PlaceManager (copy), t2 (copy), t4 (copy), AbilityScripts (copy) ]]
+	local v1 = false
+
+	if PlaceManager.IsAFKMode() then
+		return false, "AFK Mode"
+	end
+
+	local v2 = t2[p1.key]
+
+	if not t4.ActiveCharge or v2 ~= t4.ActiveCharge then
+		return false, "Not charging"
+	end
+
+	local name = t4.EquippedAbilities[v2].name
+
+	if not name then
+		v1 = true
+	end
+
+	local v3 = AbilityScripts.Modules[name]
+	local v4 = if v3 and v3.Configs then v3.Configs else {}
+
+	if not v4 or (not v4.ChargeTime or v4.ChargeTime == 0) then
+		v1 = true
+	end
+
+	if v4.MinChargePercent and math.clamp(t4.CurrentCharge / v4.ChargeTime, 0, 1) < v4.MinChargePercent then
+		v1 = true
+	end
+
+	t4.ReleaseAbility(v1)
+end
+function t4.AbilityHover(p1) --[[ AbilityHover | Line: 543 | Upvalues: v6 (ref) ]]
+	if v6.IsMobile and (nil).mobileFrame.AbilityButton then
+		return
+	end
+
+	local AbilityButton = (nil).abilityFrame.AbilityButton
+end
+function t4.AbilityLeave(p1) --[[ AbilityLeave | Line: 548 | Upvalues: v6 (ref) ]]
+	if v6.IsMobile and (nil).mobileFrame.AbilityButton then
+		return
+	end
+
+	local AbilityButton = (nil).abilityFrame.AbilityButton
+end
+function t4.SwapAbilitySet() --[[ SwapAbilitySet | Line: 552 | Upvalues: LocalPlayer (copy), PlaceManager (copy), t4 (copy), AudioService (copy), Sounds (copy), SoundService (copy), v1 (copy), v3 (copy) ]]
+	local Character = LocalPlayer.Character
+
+	if not Character then
+		return
+	end
+
+	if not (Character:FindFirstChild("HumanoidRootPart") and Character:FindFirstChild("Humanoid")) then
+		return
+	end
+
+	local busyCasting = Character:FindFirstChild("busyCasting")
+
+	if not busyCasting or busyCasting.Value == true then
+		return
+	end
+
+	local transformed = Character:FindFirstChild("transformed")
+
+	if not transformed or transformed.Value == true then
+		return
+	end
+
+	if not PlaceManager.IsAFKMode() then
+		t4.ReleaseAbility(true)
+		AudioService.Play(Sounds.UI.QuickSwap, SoundService.SFX)
+		v1:Fire({
+			[v3] = "swapAbilitySet"
+		})
+	end
+end
+function t4.Init() --[[ Init | Line: 578 | Upvalues: v1 (copy), v3 (copy), t4 (copy) ]]
+	v1:Connect(function(p1) --[[ Line: 579 | Upvalues: v3 (ref), t4 (ref) ]]
+		if p1[v3] == "changeChargeSpeed" then
+			t4.ChargeSpeed = p1.chargeSpeed
+
+			return
+		end
+
+		if p1[v3] ~= "swapAbilitySet" then
+			return
+		end
+
+		t4.CurrentAbilitySet = p1.abilitySet
+	end)
+end
+function t4.FrameworkStart() --[[ FrameworkStart | Line: 588 | Upvalues: PlayerValues (copy), LocalPlayer (copy), t4 (copy), t3 (copy), resetDoubleTap (copy), v5 (ref), Ui (copy), v6 (ref), v7 (ref) ]]
+	PlayerValues.SetCallback("currentAbilitySet", function(p1, p2) --[[ Line: 589 | Upvalues: LocalPlayer (ref), PlayerValues (ref), t4 (ref), t3 (ref), resetDoubleTap (ref) ]]
+		if p1 == LocalPlayer then
+			PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+				t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+				for v3, v4 in p13 do
+					if v3 == t4.CurrentAbilitySet then
+						for v5, v6 in v4 do
+							local v7 = t3[v5]
+
+							if t4.ActiveCharge and v5 == t4.ActiveCharge then
+								t4.ReleaseAbility(true, false, v7)
+							elseif t4.ActiveDoubleTap[v5] then
+								resetDoubleTap(v5)
+							end
+
+							t4.EquippedAbilities[v5] = v6
+						end
+					end
+				end
+			end)
+		end
+	end)
+	PlayerValues.SetCallback("equippedAbilitiesData", function(p1, p2) --[[ Line: 597 | Upvalues: LocalPlayer (ref), PlayerValues (ref), t4 (ref), t3 (ref), resetDoubleTap (ref) ]]
+		if p1 == LocalPlayer then
+			PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+				t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+				for v3, v4 in p13 do
+					if v3 == t4.CurrentAbilitySet then
+						for v5, v6 in v4 do
+							local v7 = t3[v5]
+
+							if t4.ActiveCharge and v5 == t4.ActiveCharge then
+								t4.ReleaseAbility(true, false, v7)
+							elseif t4.ActiveDoubleTap[v5] then
+								resetDoubleTap(v5)
+							end
+
+							t4.EquippedAbilities[v5] = v6
+						end
+					end
+				end
+			end)
+		end
+	end)
+	PlayerValues.GetValueAsync(LocalPlayer, "currentAbilitySet"):andThen(function(p1) --[[ Line: 605 | Upvalues: PlayerValues (ref), LocalPlayer (ref), t4 (ref), t3 (ref), resetDoubleTap (ref) ]]
+		PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+			t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+			for v3, v4 in p13 do
+				if v3 == t4.CurrentAbilitySet then
+					for v5, v6 in v4 do
+						local v7 = t3[v5]
+
+						if t4.ActiveCharge and v5 == t4.ActiveCharge then
+							t4.ReleaseAbility(true, false, v7)
+						elseif t4.ActiveDoubleTap[v5] then
+							resetDoubleTap(v5)
+						end
+
+						t4.EquippedAbilities[v5] = v6
+					end
+				end
+			end
+		end)
+	end)
+	PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p1) --[[ Line: 609 | Upvalues: PlayerValues (ref), LocalPlayer (ref), t4 (ref), t3 (ref), resetDoubleTap (ref) ]]
+		PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+			t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+			for v3, v4 in p13 do
+				if v3 == t4.CurrentAbilitySet then
+					for v5, v6 in v4 do
+						local v7 = t3[v5]
+
+						if t4.ActiveCharge and v5 == t4.ActiveCharge then
+							t4.ReleaseAbility(true, false, v7)
+						elseif t4.ActiveDoubleTap[v5] then
+							resetDoubleTap(v5)
+						end
+
+						t4.EquippedAbilities[v5] = v6
+					end
+				end
+			end
+		end)
+	end)
+	v5 = require(Ui:WaitForChild("uiEffects"))
+	v6 = require(Ui:WaitForChild("hud"))
+	v7 = require(Ui:WaitForChild("hud"):WaitForChild("ActionButtons"))
+
+	if LocalPlayer.Character then
+		local Character = LocalPlayer.Character
+		local Backpack = LocalPlayer.Backpack
+
+		Character.Humanoid.Died:Connect(function() --[[ Line: 291 | Upvalues: t4 (ref), resetDoubleTap (ref) ]]
+			if t4.ActiveCharge then
+				t4.ReleaseAbility(true)
+			end
+
+			for v1, v2 in t4.ActiveDoubleTap do
+				if v1 and v2 then
+					resetDoubleTap(v1)
+				end
+			end
+		end)
+		PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+			t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+			for v3, v4 in p13 do
+				if v3 == t4.CurrentAbilitySet then
+					for v5, v6 in v4 do
+						local v7 = t3[v5]
+
+						if t4.ActiveCharge and v5 == t4.ActiveCharge then
+							t4.ReleaseAbility(true, false, v7)
+						elseif t4.ActiveDoubleTap[v5] then
+							resetDoubleTap(v5)
+						end
+
+						t4.EquippedAbilities[v5] = v6
+					end
+				end
+			end
+		end)
+	end
+
+	LocalPlayer.CharacterAdded:Connect(function(p1) --[[ Line: 621 | Upvalues: LocalPlayer (ref), t4 (ref), resetDoubleTap (ref), PlayerValues (ref), t3 (ref) ]]
+		local Backpack = LocalPlayer.Backpack
+
+		p1.Humanoid.Died:Connect(function() --[[ Line: 291 | Upvalues: t4 (ref), resetDoubleTap (ref) ]]
+			if t4.ActiveCharge then
+				t4.ReleaseAbility(true)
+			end
+
+			for v1, v2 in t4.ActiveDoubleTap do
+				if v1 and v2 then
+					resetDoubleTap(v1)
+				end
+			end
+		end)
+		PlayerValues.GetValueAsync(LocalPlayer, "equippedAbilitiesData"):andThen(function(p13) --[[ Line: 224 | Upvalues: t4 (ref), PlayerValues (ref), LocalPlayer (ref), t3 (ref), resetDoubleTap (ref) ]]
+			t4.CurrentAbilitySet = PlayerValues.GetValue(LocalPlayer, "currentAbilitySet") or t4.CurrentAbilitySet
+
+			for v3, v4 in p13 do
+				if v3 == t4.CurrentAbilitySet then
+					for v5, v6 in v4 do
+						local v7 = t3[v5]
+
+						if t4.ActiveCharge and v5 == t4.ActiveCharge then
+							t4.ReleaseAbility(true, false, v7)
+						elseif t4.ActiveDoubleTap[v5] then
+							resetDoubleTap(v5)
+						end
+
+						t4.EquippedAbilities[v5] = v6
+					end
+				end
+			end
+		end)
+	end)
+end
+
+return t4

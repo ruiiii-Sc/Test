@@ -1,0 +1,429 @@
+-- https://lua.expert/
+local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local v1 = RunService:IsServer()
+
+RunService:IsClient()
+
+local Utility = ReplicatedStorage:WaitForChild("Utility")
+local PlayerValues = require(Utility:WaitForChild("PlayerValues"))
+local Trove = require(Utility:WaitForChild("Trove"))
+local PlaceManager = require(Utility:WaitForChild("PlaceManager"))
+local BridgeNet2 = require(Utility:WaitForChild("BridgeNet2"))
+local v2, v3
+
+if v1 then
+	local Modules = game.ServerScriptService:WaitForChild("Modules")
+
+	v2 = require(Modules.dealDamageModule)
+	v3 = require(Modules.EnemyScripts.EnemyBase)
+else
+	v2 = nil
+	v3 = nil
+end
+
+local t = {
+	CooldownTimerBindable = Instance.new("BindableEvent")
+}
+
+local function addDamageDealtToStats(p1, p2) --[[ addDamageDealtToStats | Line: 29 | Upvalues: PlaceManager (copy) ]]
+	if PlaceManager.GetPlaceName() ~= "Level" then
+		return
+	end
+
+	local v1 = workspace:WaitForChild("stats")
+
+	if v1.dealt:FindFirstChild(p1) then
+		local v2 = v1.dealt[p1]
+
+		v2.Value = v2.Value + p2
+	else
+		local v3 = Instance.new("IntValue")
+
+		v3.Name = p1
+		v3.Value = p2
+		v3.Parent = v1.dealt
+	end
+end
+
+local function addHealDealtToStats(p1, p2) --[[ addHealDealtToStats | Line: 44 | Upvalues: PlaceManager (copy) ]]
+	if PlaceManager.GetPlaceName() ~= "Level" then
+		return
+	end
+
+	local v1 = workspace:WaitForChild("stats")
+
+	if v1.healed:FindFirstChild(p1) then
+		local v2 = v1.healed[p1]
+
+		v2.Value = v2.Value + p2
+	else
+		local v3 = Instance.new("IntValue")
+
+		v3.Name = p1
+		v3.Value = p2
+		v3.Parent = v1.healed
+	end
+end
+
+function t.CheckCanShowAbilities(p1) --[[ CheckCanShowAbilities | Line: 59 | Upvalues: Players (copy), PlayerValues (copy) ]]
+	if p1 == Players.LocalPlayer then
+		return true
+	end
+
+	return PlayerValues.GetValue(Players.LocalPlayer, "showAbilities") ~= false
+end
+function t.FireToClients(p1, p2, p3) --[[ FireToClients | Line: 66 | Upvalues: BridgeNet2 (copy) ]]
+	local v1 = if p3 then p3 else {}
+
+	v1.playerFired = p1
+	p2:Fire(BridgeNet2.AllPlayers(), v1)
+end
+function t.AttachHandEmitters(p1, p2) --[[ AttachHandEmitters | Line: 74 | Upvalues: Trove (copy) ]]
+	local v1 = Trove.new()
+	local v2 = p2.ParticleEmitter:Clone()
+
+	v2.Parent = p1.LeftHand
+	v1:Add(v2)
+
+	local v3 = p2.ParticleEmitter:Clone()
+
+	v3.Parent = p1.RightHand
+	v1:Add(v3)
+
+	return v1
+end
+function t.DealDamage(p1, p2, p3, p4) --[[ DealDamage | Line: 94 | Upvalues: v2 (ref) ]]
+	if p4 ~= "Physical" and p4 ~= "Spell" then
+		error("Invalid damage type: " .. p4)
+	end
+
+	local v1 = nil
+
+	for k, v in pairs(p1.Character:GetChildren()) do
+		if v:FindFirstChild("Weapon") then
+			v1 = if p4 == "Physical" then v.physicalDamage.Value else v.spellPower.Value
+		end
+	end
+
+	local v22 = if p4 == "Physical" then math.floor((v2.physicalHit(p1, v1, p3))) else math.floor((v2.spellHit(p1, p3, v1)))
+
+	if typeof(p2) ~= "table" then
+		p2 = { p2 }
+	end
+
+	for v7, v8 in p2 do
+		local Humanoid = v8.Humanoid
+		local v10 = math.clamp(v22, 0, (math.max(Humanoid.Health, 0)))
+
+		Humanoid:TakeDamage(v22)
+
+		if Humanoid:FindFirstChild(p1.Name) then
+			local v11 = Humanoid[p1.Name]
+
+			v11.Value = v11.Value + v10
+
+			continue
+		end
+
+		local v12 = Instance.new("IntValue")
+
+		v12.Name = p1.Name
+		v12.Value = v10
+		v12.Parent = Humanoid
+	end
+end
+function t.Heal(p1, p2, p3, p4) --[[ Heal | Line: 138 | Upvalues: v2 (ref), addHealDealtToStats (copy) ]]
+	local v1 = nil
+	local Character = p1.Character
+
+	if not Character then
+		return
+	end
+
+	for v22, v3 in Character:GetChildren() do
+		if v3:FindFirstChild("Weapon") then
+			v1 = v3.spellPower.Value
+		end
+	end
+
+	local v4 = v2.heal(p1, p3, v1, true) * p4
+
+	if typeof(p2) ~= "table" then
+		p2 = { p2 }
+	end
+
+	local sum = 0
+
+	for v5, v6 in p2 do
+		local Humanoid = v6:FindFirstChild("Humanoid")
+
+		if Humanoid and Humanoid.Health > 0 then
+			local Health = Humanoid.Health
+
+			Humanoid.Health = math.min(Humanoid.MaxHealth, Humanoid.Health + v4)
+			sum = sum + (Humanoid.Health - Health)
+		end
+	end
+
+	addHealDealtToStats(p1.Name, sum)
+end
+function t.Taunt(p1, p2) --[[ Taunt | Line: 167 | Upvalues: v3 (ref) ]]
+	if typeof(p2) ~= "table" then
+		p2 = { p2 }
+	end
+
+	for v1, v2 in p2 do
+		local v32 = v3.GetEnemyByModel(v2)
+
+		if v32 then
+			v32:Taunt(p1)
+		end
+	end
+end
+function t.CheckPlayerOwns(p1, p2) --[[ CheckPlayerOwns | Line: 181 ]]
+	for k, v in pairs(p1.Backpack:GetChildren()) do
+		if p2 == v then
+			return true
+		end
+	end
+
+	for k, v in pairs(p1.Character:GetChildren()) do
+		if p2 == v then
+			return true
+		end
+	end
+end
+function t.CooldownTimer(p1, p2, p3) --[[ CooldownTimer | Line: 195 ]]
+	local v1 = p3 or p1:GetAttribute((("AbilitySlot%*CooldownLength"):format(p2)))
+
+	p1:SetAttribute(("AbilitySlot%*Cooldown"):format(p2), v1)
+
+	for i = 1, v1 * 10 + 1 do
+		local v2 = task.wait(0.1)
+		local v3 = p1:GetAttribute((("AbilitySlot%*Cooldown"):format(p2))) - v2
+
+		p1:SetAttribute(("AbilitySlot%*Cooldown"):format(p2), v3)
+
+		if v3 <= 0 then
+			break
+		end
+	end
+
+	return true
+end
+function t.IsSlotOnCooldown(p1, p2) --[[ IsSlotOnCooldown | Line: 216 ]]
+	return p1:GetAttribute((("AbilitySlot%*Cooldown"):format(p2))) > 0
+end
+function t.EqualizeHealth(p1) --[[ EqualizeHealth | Line: 221 ]]
+	local sum = 0
+	local sum2 = 0
+
+	for v1, v2 in p1 do
+		sum = sum + v2.Humanoid.Health
+		sum2 = sum2 + v2.Humanoid.MaxHealth
+	end
+
+	for v3, v4 in p1 do
+		v4.Humanoid.Health = math.round(sum * (v4.Humanoid.MaxHealth / sum2))
+	end
+end
+function t.GetClosestEnemyToOrigin(p1, p2, p3, p4, p5, p6) --[[ GetClosestEnemyToOrigin | Line: 245 | Upvalues: CollectionService (copy) ]]
+	local t = {}
+	local v1 = CollectionService:GetTagged("Enemy")
+	local v2 = OverlapParams.new()
+
+	v2.FilterType = Enum.RaycastFilterType.Include
+	v2.FilterDescendantsInstances = v1
+
+	local v3 = workspace:GetPartBoundsInRadius(p1, p3, v2)
+	local v4 = nil
+	local v5 = (1 / 0)
+
+	if not p2 then
+		p2 = p1
+	end
+
+	for k, v in pairs(v3) do
+		if v.Parent then
+			local v6 = v.Parent
+
+			if v6:FindFirstChild("Humanoid") and (CollectionService:HasTag(v6, "Enemy") and not (table.find(t, v6) or table.find(p4, v6))) then
+				table.insert(t, v6)
+
+				local Position = v6:GetPivot().Position
+				local v7 = (p1 - Position).Magnitude * p5
+				local v8 = (p2 - Position).Magnitude * p6
+
+				if v7 + v8 < v5 then
+					v5 = v7 + v8
+					v4 = v6
+				end
+			end
+		end
+	end
+
+	return v4
+end
+function t.GetClosestEnemy(p1, p2) --[[ GetClosestEnemy | Line: 281 | Upvalues: t (copy) ]]
+	local v1 = nil
+	local v2 = nil
+
+	for v3, v4 in t.GetEnemiesInRadius(p1, p2) do
+		local Magnitude = (p1 - v4.PrimaryPart.Position).Magnitude
+
+		if not v1 or Magnitude < v2 then
+			v1 = v4
+			v2 = Magnitude
+		end
+	end
+
+	return v1
+end
+function t.GetEnemiesInRadius(p1, p2, p3) --[[ GetEnemiesInRadius | Line: 300 | Upvalues: CollectionService (copy) ]]
+	local v1 = CollectionService:GetTagged("Enemy")
+	local v2 = OverlapParams.new()
+
+	v2.FilterType = Enum.RaycastFilterType.Include
+	v2.FilterDescendantsInstances = v1
+
+	local t = {}
+
+	for v3, v4 in workspace:GetPartBoundsInRadius(p1, p2, v2) do
+		if v4.Parent then
+			local v5 = v4.Parent
+
+			if v5:FindFirstChild("Humanoid") and (CollectionService:HasTag(v5, "Enemy") and not (table.find(t, v5) or p3 and table.find(p3, v5))) then
+				table.insert(t, v5)
+			end
+		end
+	end
+
+	return t
+end
+function t.FirstHitNotEnemy(p1, p2, p3) --[[ FirstHitNotEnemy | Line: 329 ]]
+	local v2 = RaycastParams.new()
+
+	v2.CollisionGroup = "ignoreNPC"
+	v2.FilterDescendantsInstances = { p1.Character }
+	v2.FilterType = Enum.RaycastFilterType.Exclude
+
+	local v3 = workspace:Raycast(p2.Position, p2.LookVector * p3, v2)
+
+	if v3 then
+		return (p2.Position - v3.Position).Magnitude
+	end
+
+	return p3
+end
+function t.SimpleBlockCast(p1, p2, p3) --[[ SimpleBlockCast | Line: 352 | Upvalues: CollectionService (copy) ]]
+	local v1 = CollectionService:GetTagged("Enemy")
+	local v2 = RaycastParams.new()
+
+	v2.FilterType = Enum.RaycastFilterType.Include
+	v2.FilterDescendantsInstances = v1
+
+	local v3 = workspace:Blockcast(p1, p3 or Vector3.new(1, 1, 1), p1.LookVector * (p2 or 100), v2)
+
+	if not v3 then
+		return nil
+	end
+
+	local v4 = v3.Instance
+
+	if not v4.Parent then
+		return nil
+	end
+
+	local v5 = v4.Parent
+
+	if v5:FindFirstChild("Humanoid") and CollectionService:HasTag(v5, "Enemy") then
+		return v5
+	end
+
+	return nil
+end
+function t.GetEnemiesInCube(p1, p2) --[[ GetEnemiesInCube | Line: 381 | Upvalues: CollectionService (copy) ]]
+	local v1 = CollectionService:GetTagged("Enemy")
+	local v2 = OverlapParams.new()
+
+	v2.FilterType = Enum.RaycastFilterType.Include
+	v2.FilterDescendantsInstances = v1
+
+	local t = {}
+
+	for v3, v4 in workspace:GetPartBoundsInBox(p1.CFrame, p1.Size, v2) do
+		local v5 = v4.Parent
+
+		if v5:FindFirstChild("Humanoid") and (CollectionService:HasTag(v5, "Enemy") and not (table.find(t, v5) or p2 and table.find(p2, v5))) then
+			table.insert(t, v5)
+		end
+	end
+
+	return t
+end
+function t.GetPlayersInRadius(p1, p2, p3) --[[ GetPlayersInRadius | Line: 406 | Upvalues: Players (copy) ]]
+	local t = {}
+
+	for v1, v2 in Players:GetPlayers() do
+		if not (p3 and table.find(p3, v2)) and v2.Character then
+			local Humanoid = v2.Character:FindFirstChild("Humanoid")
+
+			if Humanoid and (not (Humanoid.Health <= 0) and (p1 - v2.Character.PrimaryPart.Position).Magnitude <= p2) then
+				table.insert(t, v2.Character)
+			end
+		end
+	end
+
+	return t
+end
+function t.GetPlayersInCube(p1, p2) --[[ GetPlayersInCube | Line: 426 | Upvalues: Players (copy) ]]
+	local t = {}
+	local t2 = {}
+
+	for v1, v2 in Players:GetPlayers() do
+		table.insert(t, v2.Character)
+	end
+
+	local v3 = OverlapParams.new()
+
+	v3.FilterType = Enum.RaycastFilterType.Whitelist
+	v3.FilterDescendantsInstances = t
+
+	for v4, v5 in workspace:GetPartBoundsInBox(p1.CFrame, p1.Size, v3) do
+		local v6 = v5.Parent
+
+		if v6:FindFirstChild("Humanoid") and not (table.find(t2, v6) or p2 and table.find(p2, v6)) then
+			table.insert(t2, v6)
+		end
+	end
+
+	return t2
+end
+function t.GetPlayingAnimation(p1, p2) --[[ GetPlayingAnimation | Line: 454 ]]
+	for v1, v2 in p1:GetPlayingAnimationTracks() do
+		if v2.Animation.AnimationId == p2 then
+			return v2
+		end
+	end
+
+	return nil
+end
+function t.IsAlive(p1) --[[ IsAlive | Line: 466 ]]
+	if not p1:IsDescendantOf(workspace) then
+		return false
+	end
+
+	local Humanoid = p1:FindFirstChild("Humanoid")
+
+	if not Humanoid then
+		return false
+	end
+
+	return Humanoid.Health > 0
+end
+t.CooldownTimerBindable.Event:Connect(t.CooldownTimer)
+
+return t
