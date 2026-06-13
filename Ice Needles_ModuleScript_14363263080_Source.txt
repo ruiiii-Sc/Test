@@ -1,0 +1,523 @@
+-- https://lua.expert/
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+game:GetService("Debris")
+
+local Players = game:GetService("Players")
+local Utility = ReplicatedStorage:WaitForChild("Utility")
+local BridgeNet2 = require(Utility:WaitForChild("BridgeNet2"))
+local AssetRequester = require(Utility:WaitForChild("AssetRequester"))
+local AudioService = require(Utility:WaitForChild("AudioService"))
+local Trove = require(Utility:WaitForChild("Trove"))
+local Promise = require(Utility:WaitForChild("Promise"))
+local CameraShake = require(Utility.CameraShake)
+local TweenService = require(Utility.TweenService)
+local Helpers = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Helpers")
+local AnimationHelper = require(Helpers:WaitForChild("AnimationHelper"))
+local v1 = RunService:IsServer()
+local v2 = RunService:IsClient()
+local v3 = BridgeNet2.ReferenceIdentifier("tool")
+local v4 = ReplicatedStorage.Assets.Sounds.Abilities:WaitForChild(script.Name)
+local v5
+
+if not v2 then
+	v5 = {}
+	function v5.Setup(p13, p23) --[[ Setup | Line: 41 | Upvalues: v5 (copy), v1 (copy), BridgeNet2 (copy) ]]
+		local v12 = "Ability_" .. script.Name:gsub(" ", "")
+
+		v5.Functions = p23
+		v5.MainBridge = p13
+		v5.SelfBridge = if v1 then BridgeNet2.ServerBridge(v12) else BridgeNet2.ClientBridge(v12)
+	end
+	function v5.ClientFire(p13, p23) --[[ ClientFire | Line: 50 | Upvalues: v5 (copy), v3 (copy) ]]
+		v5.MainBridge:Fire({
+			[v3] = p23
+		})
+	end
+	function v5.ServerFire(p13, p23, p33, p43) --[[ ServerFire | Line: 54 | Upvalues: v5 (copy), AssetRequester (copy), Promise (copy), CameraShake (copy), AudioService (copy), v4 (copy) ]]
+		local Character = p13.Character
+
+		Character.busyCasting.Value = true
+
+		local v1, _ = v5.HandleVFX(p13, p23)
+
+		AssetRequester.GetAsset("ability", script.Name)
+
+		local v2 = tick()
+
+		Promise.new(function(p13) --[[ Line: 63 | Upvalues: v1 (copy) ]]
+			local v12 = tick() + 3
+
+			while v1.Length == 0 or v12 < tick() do
+				task.wait()
+			end
+
+			local v2
+
+			repeat
+				v2 = v1:GetTimeOfKeyframe("Attack")
+				task.wait()
+			until v2 > 0 or v12 < tick()
+
+			p13(v2)
+		end):andThen(function(p1) --[[ Line: 77 | Upvalues: v2 (copy), CameraShake (ref), p13 (copy), AudioService (ref), v4 (ref), Character (copy), v5 (ref), p43 (copy) ]]
+			local v1 = tick() - v2
+
+			CameraShake.ShakeOnce({ p13 }, p1 - v1, 5, 10, 0.1, 1, Vector3.new(0.25, 0.25, 0.25), Vector3.new(2, 1, 1))
+			task.wait(p1 - v1)
+			task.spawn(AudioService.Play, v4.Attack, Character:GetPivot().Position, {
+				audio = {
+					Volume = 1
+				}
+			})
+
+			if v5.Functions.IsAlive(Character) then
+				v5.DamageModule.DamageMobs(p13, v5.Functions.GetEnemiesInCube({
+					Size = Vector3.new(20, 10, 41),
+					CFrame = Character:GetPivot() + Character:GetPivot().LookVector * 20.5
+				}), {
+					damageType = "spell",
+					abilityMultiplier = 800,
+					abilityId = p43
+				})
+			end
+		end):finally(function() --[[ Line: 111 | Upvalues: Character (copy) ]]
+			Character.busyCasting.Value = false
+		end):timeout(60)
+	end
+	function v5.HandleVFX(p13, p23) --[[ HandleVFX | Line: 116 | Upvalues: Trove (copy), AssetRequester (copy), AnimationHelper (copy), AudioService (copy), v4 (copy), TweenService (copy) ]]
+		local v1 = Trove.new()
+		local Character = p13.Character
+		local v2 = Character:GetPivot()
+		local v3 = AssetRequester.GetAsset("ability", script.Name).vfx:Clone()
+
+		v3:PivotTo(Character:GetPivot())
+		v3.Parent = Character
+		v3.ground_area.B.WorldPosition = v2.Position + v2.LookVector * 41 + v2.RightVector * 10
+		v3.ground_area.C.WorldPosition = v2.Position + v2.LookVector * 41 + v2.RightVector * -10
+
+		local WeldConstraint = Instance.new("WeldConstraint")
+
+		WeldConstraint.Part0 = Character.HumanoidRootPart
+		WeldConstraint.Part1 = v3.RootPart
+		WeldConstraint.Parent = v3.RootPart
+		v1:Add(v3)
+
+		local v42 = AnimationHelper.PlayCharacterAnimation(Character, p23.spellAnim)
+		local v5 = v3.AnimationController:LoadAnimation(v3.Animation)
+
+		v1:Connect(v5:GetMarkerReachedSignal("lights"), function(p13) --[[ Line: 139 | Upvalues: v3 (copy) ]]
+			local v1 = p13 == "start"
+
+			v3["particles" .. 1].Attachment["ice_lights" .. 1].Enabled = v1
+			v3["particles" .. 2].Attachment["ice_lights" .. 2].Enabled = v1
+		end)
+		v1:Connect(v5:GetMarkerReachedSignal("snow_specs_vfx"), function(p13) --[[ Line: 147 | Upvalues: v3 (copy) ]]
+			local v1 = p13 == "start"
+
+			v3["particles" .. 1]["snow_specs" .. 1].Enabled = v1
+			v3["particles" .. 2]["snow_specs" .. 2].Enabled = v1
+		end)
+		v1:Connect(v5:GetMarkerReachedSignal("snow_vfx"), function(p13) --[[ Line: 155 | Upvalues: v3 (copy) ]]
+			local v1 = p13 == "start"
+
+			v3["particles" .. 1].Attachment["ice_lights" .. 1].Enabled = v1
+			v3["particles" .. 1]["snow_specs" .. 1].Enabled = v1
+			v3["particles" .. 2].Attachment["ice_lights" .. 2].Enabled = v1
+			v3["particles" .. 2]["snow_specs" .. 2].Enabled = v1
+		end)
+
+		for i = 1, 2 do
+			v1:Connect(v5:GetMarkerReachedSignal("impact_vfx" .. i), function() --[[ Line: 168 | Upvalues: v3 (copy), i (copy) ]]
+				local v1 = v3["particles" .. i]["snow_impact" .. i]
+
+				v1:Emit(v1:GetAttribute("EmitCount"))
+			end)
+		end
+
+		v1:Connect(v5:GetMarkerReachedSignal("ground_vfx"), function(p13) --[[ Line: 174 | Upvalues: v3 (copy) ]]
+			local v1 = p13 == "start"
+
+			v3.ground_area.BeamAB.Enabled = v1
+			v3.ground_area.BeamBC.Enabled = v1
+			v3.ground_area.BeamCA.Enabled = v1
+		end)
+		v1:Connect(v5:GetMarkerReachedSignal("ice_inv_0"), function() --[[ Line: 182 | Upvalues: v3 (copy), WeldConstraint (copy) ]]
+			for i = 1, 7 do
+				v3[("Ice_%*a"):format(i)].Transparency = 0
+			end
+
+			for v1, v2 in { "b", "c" } do
+				v3[("Ice_2%*"):format(v2)].Transparency = 0
+				v3[("Ice_3%*"):format(v2)].Transparency = 0
+				v3[("Ice_4%*"):format(v2)].Transparency = 0
+			end
+
+			WeldConstraint.Enabled = false
+			v3.RootPart.Anchored = true
+		end)
+
+		for j = 1, 6 do
+			v1:Connect(v5:GetMarkerReachedSignal((("spikes_%*_neon"):format(j))), function() --[[ Line: 198 | Upvalues: j (copy), v3 (copy) ]]
+				if j == 1 then
+					v3.Ice_1a.Material = "Neon"
+					v3.Ice_2a.Material = "Neon"
+					v3.Ice_2b.Material = "Neon"
+					v3.Ice_2c.Material = "Neon"
+
+					return
+				end
+
+				if j == 2 then
+					v3.Ice_3a.Material = "Neon"
+					v3.Ice_3b.Material = "Neon"
+					v3.Ice_3c.Material = "Neon"
+
+					return
+				end
+
+				if j == 3 then
+					v3.Ice_4a.Material = "Neon"
+					v3.Ice_4b.Material = "Neon"
+					v3.Ice_4c.Material = "Neon"
+				else
+					v3[("Ice_%*a"):format(j + 1)].Material = "Neon"
+				end
+			end)
+		end
+
+		for k = 1, 6 do
+			for n = 1, 2 do
+				v1:Connect(v5:GetMarkerReachedSignal((("spikes_%*_inv%*"):format(k, n))), function() --[[ Line: 220 | Upvalues: n (copy), k (copy), v3 (copy) ]]
+					local v1 = if n == 1 then 0.5 else 1
+
+					if k == 1 then
+						v3.Ice_1a.Transparency = v1
+						v3.Ice_2a.Transparency = v1
+						v3.Ice_2b.Transparency = v1
+						v3.Ice_2c.Transparency = v1
+
+						return
+					end
+
+					if k == 2 then
+						v3.Ice_3a.Transparency = v1
+						v3.Ice_3b.Transparency = v1
+						v3.Ice_3c.Transparency = v1
+
+						return
+					end
+
+					if k == 3 then
+						v3.Ice_4a.Transparency = v1
+						v3.Ice_4b.Transparency = v1
+						v3.Ice_4c.Transparency = v1
+					else
+						v3[("Ice_%*a"):format(k + 1)].Transparency = v1
+					end
+				end)
+			end
+		end
+
+		v1:Connect(v5:GetMarkerReachedSignal("spikes_smooth_plastic"), function() --[[ Line: 243 | Upvalues: v3 (copy), AudioService (ref), v4 (ref) ]]
+			for i = 1, 7 do
+				v3[("Ice_%*a"):format(i)].Material = "SmoothPlastic"
+			end
+
+			for v1, v2 in { "b", "c" } do
+				local v32 = v3[("Ice_2%*"):format(v2)]
+				local v42 = v3[("Ice_3%*"):format(v2)]
+				local v5 = v3[("Ice_4%*"):format(v2)]
+
+				v32.Material = "SmoothPlastic"
+				v42.Material = "SmoothPlastic"
+				v5.Material = "SmoothPlastic"
+			end
+
+			task.spawn(AudioService.Play, v4.Crumble, v3:GetPivot().Position, {
+				audio = {
+					Volume = 1
+				}
+			})
+		end)
+		v5.Stopped:Once(function() --[[ Line: 266 | Upvalues: v3 (copy), TweenService (ref), v1 (copy) ]]
+			for v12, v2 in v3:GetDescendants() do
+				if v2:IsA("BasePart") then
+					TweenService.tween(v2, {
+						Transparency = 1
+					}, {
+						Time = 0.15
+					})
+
+					continue
+				end
+
+				if v2:IsA("ParticleEmitter") or (v2:IsA("PointLight") or v2:IsA("Beam")) then
+					v2.Enabled = false
+				end
+			end
+
+			task.delay(1, function() --[[ Line: 275 | Upvalues: v1 (ref) ]]
+				v1:Clean()
+			end)
+		end)
+		v42:Play()
+		v5:Play()
+
+		return v42, v1
+	end
+
+	return v5
+end
+
+local LocalPlayer = Players.LocalPlayer
+local CurrentCamera = workspace.CurrentCamera
+
+v5 = {}
+function v5.Setup(p13, p23) --[[ Setup | Line: 41 | Upvalues: v5 (copy), v1 (copy), BridgeNet2 (copy) ]]
+	local v12 = "Ability_" .. script.Name:gsub(" ", "")
+
+	v5.Functions = p23
+	v5.MainBridge = p13
+	v5.SelfBridge = if v1 then BridgeNet2.ServerBridge(v12) else BridgeNet2.ClientBridge(v12)
+end
+function v5.ClientFire(p13, p23) --[[ ClientFire | Line: 50 | Upvalues: v5 (copy), v3 (copy) ]]
+	v5.MainBridge:Fire({
+		[v3] = p23
+	})
+end
+function v5.ServerFire(p13, p23, p33, p43) --[[ ServerFire | Line: 54 | Upvalues: v5 (copy), AssetRequester (copy), Promise (copy), CameraShake (copy), AudioService (copy), v4 (copy) ]]
+	local Character = p13.Character
+
+	Character.busyCasting.Value = true
+
+	local v1, _ = v5.HandleVFX(p13, p23)
+
+	AssetRequester.GetAsset("ability", script.Name)
+
+	local v2 = tick()
+
+	Promise.new(function(p13) --[[ Line: 63 | Upvalues: v1 (copy) ]]
+		local v12 = tick() + 3
+
+		while v1.Length == 0 or v12 < tick() do
+			task.wait()
+		end
+
+		local v2
+
+		repeat
+			v2 = v1:GetTimeOfKeyframe("Attack")
+			task.wait()
+		until v2 > 0 or v12 < tick()
+
+		p13(v2)
+	end):andThen(function(p1) --[[ Line: 77 | Upvalues: v2 (copy), CameraShake (ref), p13 (copy), AudioService (ref), v4 (ref), Character (copy), v5 (ref), p43 (copy) ]]
+		local v1 = tick() - v2
+
+		CameraShake.ShakeOnce({ p13 }, p1 - v1, 5, 10, 0.1, 1, Vector3.new(0.25, 0.25, 0.25), Vector3.new(2, 1, 1))
+		task.wait(p1 - v1)
+		task.spawn(AudioService.Play, v4.Attack, Character:GetPivot().Position, {
+			audio = {
+				Volume = 1
+			}
+		})
+
+		if v5.Functions.IsAlive(Character) then
+			v5.DamageModule.DamageMobs(p13, v5.Functions.GetEnemiesInCube({
+				Size = Vector3.new(20, 10, 41),
+				CFrame = Character:GetPivot() + Character:GetPivot().LookVector * 20.5
+			}), {
+				damageType = "spell",
+				abilityMultiplier = 800,
+				abilityId = p43
+			})
+		end
+	end):finally(function() --[[ Line: 111 | Upvalues: Character (copy) ]]
+		Character.busyCasting.Value = false
+	end):timeout(60)
+end
+function v5.HandleVFX(p13, p23) --[[ HandleVFX | Line: 116 | Upvalues: Trove (copy), AssetRequester (copy), AnimationHelper (copy), AudioService (copy), v4 (copy), TweenService (copy) ]]
+	local v1 = Trove.new()
+	local Character = p13.Character
+	local v2 = Character:GetPivot()
+	local v3 = AssetRequester.GetAsset("ability", script.Name).vfx:Clone()
+
+	v3:PivotTo(Character:GetPivot())
+	v3.Parent = Character
+	v3.ground_area.B.WorldPosition = v2.Position + v2.LookVector * 41 + v2.RightVector * 10
+	v3.ground_area.C.WorldPosition = v2.Position + v2.LookVector * 41 + v2.RightVector * -10
+
+	local WeldConstraint = Instance.new("WeldConstraint")
+
+	WeldConstraint.Part0 = Character.HumanoidRootPart
+	WeldConstraint.Part1 = v3.RootPart
+	WeldConstraint.Parent = v3.RootPart
+	v1:Add(v3)
+
+	local v42 = AnimationHelper.PlayCharacterAnimation(Character, p23.spellAnim)
+	local v5 = v3.AnimationController:LoadAnimation(v3.Animation)
+
+	v1:Connect(v5:GetMarkerReachedSignal("lights"), function(p13) --[[ Line: 139 | Upvalues: v3 (copy) ]]
+		local v1 = p13 == "start"
+
+		v3["particles" .. 1].Attachment["ice_lights" .. 1].Enabled = v1
+		v3["particles" .. 2].Attachment["ice_lights" .. 2].Enabled = v1
+	end)
+	v1:Connect(v5:GetMarkerReachedSignal("snow_specs_vfx"), function(p13) --[[ Line: 147 | Upvalues: v3 (copy) ]]
+		local v1 = p13 == "start"
+
+		v3["particles" .. 1]["snow_specs" .. 1].Enabled = v1
+		v3["particles" .. 2]["snow_specs" .. 2].Enabled = v1
+	end)
+	v1:Connect(v5:GetMarkerReachedSignal("snow_vfx"), function(p13) --[[ Line: 155 | Upvalues: v3 (copy) ]]
+		local v1 = p13 == "start"
+
+		v3["particles" .. 1].Attachment["ice_lights" .. 1].Enabled = v1
+		v3["particles" .. 1]["snow_specs" .. 1].Enabled = v1
+		v3["particles" .. 2].Attachment["ice_lights" .. 2].Enabled = v1
+		v3["particles" .. 2]["snow_specs" .. 2].Enabled = v1
+	end)
+
+	for i = 1, 2 do
+		v1:Connect(v5:GetMarkerReachedSignal("impact_vfx" .. i), function() --[[ Line: 168 | Upvalues: v3 (copy), i (copy) ]]
+			local v1 = v3["particles" .. i]["snow_impact" .. i]
+
+			v1:Emit(v1:GetAttribute("EmitCount"))
+		end)
+	end
+
+	v1:Connect(v5:GetMarkerReachedSignal("ground_vfx"), function(p13) --[[ Line: 174 | Upvalues: v3 (copy) ]]
+		local v1 = p13 == "start"
+
+		v3.ground_area.BeamAB.Enabled = v1
+		v3.ground_area.BeamBC.Enabled = v1
+		v3.ground_area.BeamCA.Enabled = v1
+	end)
+	v1:Connect(v5:GetMarkerReachedSignal("ice_inv_0"), function() --[[ Line: 182 | Upvalues: v3 (copy), WeldConstraint (copy) ]]
+		for i = 1, 7 do
+			v3[("Ice_%*a"):format(i)].Transparency = 0
+		end
+
+		for v1, v2 in { "b", "c" } do
+			v3[("Ice_2%*"):format(v2)].Transparency = 0
+			v3[("Ice_3%*"):format(v2)].Transparency = 0
+			v3[("Ice_4%*"):format(v2)].Transparency = 0
+		end
+
+		WeldConstraint.Enabled = false
+		v3.RootPart.Anchored = true
+	end)
+
+	for j = 1, 6 do
+		v1:Connect(v5:GetMarkerReachedSignal((("spikes_%*_neon"):format(j))), function() --[[ Line: 198 | Upvalues: j (copy), v3 (copy) ]]
+			if j == 1 then
+				v3.Ice_1a.Material = "Neon"
+				v3.Ice_2a.Material = "Neon"
+				v3.Ice_2b.Material = "Neon"
+				v3.Ice_2c.Material = "Neon"
+
+				return
+			end
+
+			if j == 2 then
+				v3.Ice_3a.Material = "Neon"
+				v3.Ice_3b.Material = "Neon"
+				v3.Ice_3c.Material = "Neon"
+
+				return
+			end
+
+			if j == 3 then
+				v3.Ice_4a.Material = "Neon"
+				v3.Ice_4b.Material = "Neon"
+				v3.Ice_4c.Material = "Neon"
+			else
+				v3[("Ice_%*a"):format(j + 1)].Material = "Neon"
+			end
+		end)
+	end
+
+	for k = 1, 6 do
+		for n = 1, 2 do
+			v1:Connect(v5:GetMarkerReachedSignal((("spikes_%*_inv%*"):format(k, n))), function() --[[ Line: 220 | Upvalues: n (copy), k (copy), v3 (copy) ]]
+				local v1 = if n == 1 then 0.5 else 1
+
+				if k == 1 then
+					v3.Ice_1a.Transparency = v1
+					v3.Ice_2a.Transparency = v1
+					v3.Ice_2b.Transparency = v1
+					v3.Ice_2c.Transparency = v1
+
+					return
+				end
+
+				if k == 2 then
+					v3.Ice_3a.Transparency = v1
+					v3.Ice_3b.Transparency = v1
+					v3.Ice_3c.Transparency = v1
+
+					return
+				end
+
+				if k == 3 then
+					v3.Ice_4a.Transparency = v1
+					v3.Ice_4b.Transparency = v1
+					v3.Ice_4c.Transparency = v1
+				else
+					v3[("Ice_%*a"):format(k + 1)].Transparency = v1
+				end
+			end)
+		end
+	end
+
+	v1:Connect(v5:GetMarkerReachedSignal("spikes_smooth_plastic"), function() --[[ Line: 243 | Upvalues: v3 (copy), AudioService (ref), v4 (ref) ]]
+		for i = 1, 7 do
+			v3[("Ice_%*a"):format(i)].Material = "SmoothPlastic"
+		end
+
+		for v1, v2 in { "b", "c" } do
+			local v32 = v3[("Ice_2%*"):format(v2)]
+			local v42 = v3[("Ice_3%*"):format(v2)]
+			local v5 = v3[("Ice_4%*"):format(v2)]
+
+			v32.Material = "SmoothPlastic"
+			v42.Material = "SmoothPlastic"
+			v5.Material = "SmoothPlastic"
+		end
+
+		task.spawn(AudioService.Play, v4.Crumble, v3:GetPivot().Position, {
+			audio = {
+				Volume = 1
+			}
+		})
+	end)
+	v5.Stopped:Once(function() --[[ Line: 266 | Upvalues: v3 (copy), TweenService (ref), v1 (copy) ]]
+		for v12, v2 in v3:GetDescendants() do
+			if v2:IsA("BasePart") then
+				TweenService.tween(v2, {
+					Transparency = 1
+				}, {
+					Time = 0.15
+				})
+
+				continue
+			end
+
+			if v2:IsA("ParticleEmitter") or (v2:IsA("PointLight") or v2:IsA("Beam")) then
+				v2.Enabled = false
+			end
+		end
+
+		task.delay(1, function() --[[ Line: 275 | Upvalues: v1 (ref) ]]
+			v1:Clean()
+		end)
+	end)
+	v42:Play()
+	v5:Play()
+
+	return v42, v1
+end
+
+return v5
