@@ -1211,7 +1211,9 @@ function Library:Window(Options)
 
     local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 754, 0, 514), Position = UDim2.new(0.5, -377, 0.5, -257), BackgroundColor3 = Theme.Main, BackgroundTransparency = 0.08, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
     Create("UICorner", {CornerRadius = UDim.new(0, 20), Parent = MainFrame})
-    -- Smooth TweenService-based drag (uses BottomBar as drag handle)
+    local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 58), Position = UDim2.new(0, 0, 1, -58), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
+
+    -- Smooth TweenService-based drag (BottomBar sebagai drag handle)
     do
         local DragInput, DragStart, StartPos
         local Dragging = false
@@ -1251,8 +1253,6 @@ function Library:Window(Options)
             end
         end)
     end
-
-    local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 58), Position = UDim2.new(0, 0, 1, -58), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
     
     local ProfileFrame = Create("Frame", {Size = UDim2.new(0, 200, 1, 0), Position = UDim2.new(0, 20, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
     local AvatarImage = Create("ImageLabel", {Size = UDim2.new(0, 36, 0, 36), Position = UDim2.new(0, 0, 0.5, -18), BackgroundColor3 = Theme.Search, Parent = ProfileFrame})
