@@ -52,6 +52,8 @@ local Compkiller = { Lucide = {} }
 
 local function GetIcon(Icon)
     if typeof(Icon) == "string" then
+        -- "--" means no icon
+        if Icon == "--" then return nil end
         local CleanName = Icon:gsub("[%[%]]", ""):lower()
         if Icons[CleanName] then return Icons[CleanName] end
         if CleanName:match("^lucide%-") then
@@ -1136,11 +1138,121 @@ function Library:Window(Options)
     local Success = pcall(function() ScreenGui.Parent = CoreGui end)
     if not Success then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
+    -- Shared Tooltip Frame (satu, di-reuse oleh semua elemen)
+    local TooltipFrame = Create("Frame", {
+        Size = UDim2.fromOffset(0, 0),
+        BackgroundColor3 = Theme.Sidebar,
+        Visible = false,
+        ZIndex = 9000,
+        BorderSizePixel = 0,
+        AutomaticSize = Enum.AutomaticSize.XY,
+        Parent = ScreenGui
+    })
+    Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = TooltipFrame})
+    local TooltipStroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, Parent = TooltipFrame})
+    Create("UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), PaddingTop = UDim.new(0, 5), PaddingBottom = UDim.new(0, 5), Parent = TooltipFrame})
+    local TooltipLayout = Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2), Parent = TooltipFrame})
+    local TooltipTitleLabel = Create("TextLabel", {
+        Size = UDim2.fromOffset(0, 0), AutomaticSize = Enum.AutomaticSize.XY,
+        BackgroundTransparency = 1, Text = "", RichText = false,
+        TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = 1, Visible = false,
+        ZIndex = 9001, Parent = TooltipFrame
+    })
+    local TooltipDescLabel = Create("TextLabel", {
+        Size = UDim2.fromOffset(0, 0), AutomaticSize = Enum.AutomaticSize.XY,
+        BackgroundTransparency = 1, Text = "", RichText = false,
+        TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left, LayoutOrder = 2, Visible = false,
+        ZIndex = 9001, Parent = TooltipFrame
+    })
+    ThemeUpdate(function()
+        TooltipFrame.BackgroundColor3 = Theme.Sidebar
+        TooltipStroke.Color = Theme.Border
+        TooltipTitleLabel.TextColor3 = Theme.TextPrimary
+        TooltipDescLabel.TextColor3 = Theme.TextSecondary
+    end)
+
+    local function ShowTooltip(titleText, descText)
+        local hasTitle = titleText and titleText ~= ""
+        local hasDesc  = descText  and descText  ~= ""
+        if not hasTitle and not hasDesc then return end
+        TooltipTitleLabel.Text    = titleText or ""
+        TooltipDescLabel.Text     = descText  or ""
+        TooltipTitleLabel.Visible = hasTitle
+        TooltipDescLabel.Visible  = hasDesc
+        TooltipFrame.Visible = true
+    end
+
+    local function HideTooltip()
+        TooltipFrame.Visible = false
+    end
+
+    -- Update tooltip position every frame while visible
+    RunService.RenderStepped:Connect(function()
+        if not TooltipFrame.Visible then return end
+        local mp = UserInputService:GetMouseLocation()
+        local ss = ScreenGui.AbsoluteSize
+        local ts = TooltipFrame.AbsoluteSize
+        local ox, oy = 14, 14
+        local tx = mp.X + ox
+        local ty = mp.Y + oy
+        if tx + ts.X > ss.X then tx = mp.X - ts.X - 4 end
+        if ty + ts.Y > ss.Y then ty = mp.Y - ts.Y - 4 end
+        TooltipFrame.Position = UDim2.fromOffset(tx, ty)
+    end)
+
+    -- Helper: attach tooltip to any GuiObject
+    local function AttachTooltip(guiObj, titleText, descText)
+        if (not titleText or titleText == "") and (not descText or descText == "") then return end
+        guiObj.MouseEnter:Connect(function() ShowTooltip(titleText, descText) end)
+        guiObj.MouseLeave:Connect(HideTooltip)
+    end
+
     local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 754, 0, 514), Position = UDim2.new(0.5, -377, 0.5, -257), BackgroundColor3 = Theme.Main, BackgroundTransparency = 0.08, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
     Create("UICorner", {CornerRadius = UDim.new(0, 20), Parent = MainFrame})
-    Create("UIDragDetector", {Parent = MainFrame})
-
     local BottomBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 58), Position = UDim2.new(0, 0, 1, -58), BackgroundColor3 = Theme.Sidebar, BorderSizePixel = 0, Parent = MainFrame})
+
+    -- Smooth TweenService-based drag (BottomBar sebagai drag handle)
+    do
+        local DragInput, DragStart, StartPos
+        local Dragging = false
+        local DragTween
+
+        local function SmoothMove(targetPos)
+            if DragTween then DragTween:Cancel() end
+            DragTween = TweenService:Create(MainFrame, TweenInfo.new(0.07, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPos})
+            DragTween:Play()
+        end
+
+        BottomBar.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                Dragging = true
+                DragStart = Input.Position
+                StartPos = MainFrame.Position
+                Input.Changed:Connect(function()
+                    if Input.UserInputState == Enum.UserInputState.End then Dragging = false end
+                end)
+            end
+        end)
+
+        BottomBar.InputChanged:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+                DragInput = Input
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(Input)
+            if Input == DragInput and Dragging then
+                local Delta = Input.Position - DragStart
+                local ScreenSize = ScreenGui.AbsoluteSize
+                local FrameSize = MainFrame.AbsoluteSize
+                local NewX = math.clamp(StartPos.X.Offset + Delta.X, 0, ScreenSize.X - FrameSize.X)
+                local NewY = math.clamp(StartPos.Y.Offset + Delta.Y, 0, ScreenSize.Y - FrameSize.Y)
+                SmoothMove(UDim2.fromOffset(NewX, NewY))
+            end
+        end)
+    end
     
     local ProfileFrame = Create("Frame", {Size = UDim2.new(0, 200, 1, 0), Position = UDim2.new(0, 20, 0, 0), BackgroundTransparency = 1, Parent = BottomBar})
     local AvatarImage = Create("ImageLabel", {Size = UDim2.new(0, 36, 0, 36), Position = UDim2.new(0, 0, 0.5, -18), BackgroundColor3 = Theme.Search, Parent = ProfileFrame})
@@ -1179,6 +1291,7 @@ function Library:Window(Options)
         TweenService:Create(DestroyBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Search}):Play()
     end)
     DestroyBtn.MouseButton1Click:Connect(function()
+        HideTooltip()
         ScreenGui:Destroy()
     end)
 
@@ -1243,6 +1356,7 @@ function Library:Window(Options)
     Create("UIStroke", {Color = Theme.Border, Thickness = 1.5, Parent = MiniFloatBtn})
 
     MinimizeBtn.MouseButton1Click:Connect(function()
+        HideTooltip()
         for _, popup in WindowObj.Popups do
             if type(popup.Close) == "function" then popup.Close() end
         end
@@ -1266,6 +1380,7 @@ function Library:Window(Options)
 
     function WindowObj:ToggleVisibility()
         self.Visible = not self.Visible
+        HideTooltip()
         if self.Visible then
             MiniFloatBtn.Visible = false
             MainFrame.Visible = true
@@ -1445,7 +1560,7 @@ function Library:Window(Options)
         
         Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = TabBtn})
         local TabBtnStroke = Create("UIStroke", {Color = Theme.Accent, Thickness = 1.5, Transparency = 1, Parent = TabBtn})
-        local TabIconImage = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = TabIcon, ImageColor3 = Theme.TextSecondary, Parent = TabBtn})
+        local TabIconImage = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = TabIcon or "", ImageColor3 = Theme.TextSecondary, Visible = TabIcon ~= nil, Parent = TabBtn})
 
         local TabCanvas = Create("CanvasGroup", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, Parent = TabContainer})
         local TabContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Theme.Accent, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = TabCanvas})
@@ -1567,9 +1682,11 @@ function Library:Window(Options)
 
         function TabObj:Row(Options)
             local Title = Options.Title or "Row"
+            local Desc = Options.Desc or nil
             local RowFrame = CreateRow(Title, Options.Height or 40)
             local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -300, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = Options.TextSize or 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = RowFrame})
             ThemeUpdate(function() TitleLabel.TextColor3 = Theme.TextPrimary end)
+            AttachTooltip(RowFrame, Title, Desc)
             
             local Container = Create("Frame", {Size = UDim2.new(1, -160, 1, 0), Position = UDim2.new(0, 160, 0, 0), BackgroundTransparency = 1, ClipsDescendants = true, Parent = RowFrame})
             local Layout = Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = Container})
@@ -1579,11 +1696,13 @@ function Library:Window(Options)
             
             function RowObj:SubToggle(TOpts)
                 local TTitle = TOpts.Title or "Toggle"
+                local TDesc = TOpts.Desc or nil
                 local Default = TOpts.Default or false
                 local Callback = TOpts.Callback or function() end
                 local FlagName = TOpts.Flag or string.format("%s/Row/%s/Toggle/%s", TabObj.Title, Title, TTitle)
                 
                 local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Container})
+                AttachTooltip(Checkbox, TTitle, TDesc)
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
 
                 local State = Default
@@ -1603,12 +1722,14 @@ function Library:Window(Options)
             
             function RowObj:SubTextbox(TOpts)
                 local TTitle = TOpts.Title or "Textbox"
+                local TDesc = TOpts.Desc or nil
                 local Default = TOpts.Default or ""
                 local Placeholder = TOpts.Placeholder or "Value"
                 local Callback = TOpts.Callback or function() end
                 local FlagName = TOpts.Flag or string.format("%s/Row/%s/Textbox/%s", TabObj.Title, Title, TTitle)
                 
                 local InputBox = Create("TextBox", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = Default, PlaceholderText = Placeholder, TextColor3 = Theme.TextPrimary, PlaceholderColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, Parent = Container})
+                AttachTooltip(InputBox, TTitle, TDesc)
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = InputBox})
                 local Stroke = Create("UIStroke", {Color = Theme.Border, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = InputBox})
                 Create("UIPadding", {PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = InputBox})
@@ -1633,6 +1754,7 @@ function Library:Window(Options)
 
             function RowObj:SubDropdown(DOpts)
                 local TTitle = DOpts.Title or "Dropdown"
+                local TDesc = DOpts.Desc or nil
                 local OptionsList = DOpts.Options or {}
                 local Multi = DOpts.Multi or false
                 local Default = DOpts.Default
@@ -1648,6 +1770,7 @@ function Library:Window(Options)
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
                 local DropText = Create("TextLabel", {Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
                 local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, -16, 0.5, -6), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Theme.TextSecondary, Parent = DropBtn})
+                AttachTooltip(DropBtn, TTitle, TDesc)
 
                 local function UpdateText()
                     local str = table.concat(SelectedItems, ", ")
@@ -1714,8 +1837,10 @@ function Library:Window(Options)
             
             function RowObj:SubButton(BOpts)
                 local BTitle = BOpts.Title or "Click"
+                local BDesc = BOpts.Desc or nil
                 local Callback = BOpts.Callback or function() end
                 local Btn = Create("TextButton", {Size = UDim2.new(0, 0, 0, 26), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = Theme.Search, Text = BTitle, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 11, AutoButtonColor = false, Parent = Container})
+                AttachTooltip(Btn, BTitle, BDesc)
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Btn})
                 Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = Btn})
                 Btn.MouseButton1Click:Connect(Callback)
@@ -1724,6 +1849,7 @@ function Library:Window(Options)
 
             function RowObj:SubKeybind(KOpts)
                 local KTitle = KOpts.Title or "Keybind"
+                local KDesc = KOpts.Desc or nil
                 local Default = KOpts.Default
                 local Callback = KOpts.Callback or function() end
                 local CurrentKey = Default
@@ -1736,6 +1862,7 @@ function Library:Window(Options)
                     Font = Enum.Font.FredokaOne, TextSize = 11,
                     AutoButtonColor = false, Parent = Container
                 })
+                AttachTooltip(KeyBtn, KTitle, KDesc)
                 Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = KeyBtn})
                 Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = KeyBtn})
                 KeyBtn.MouseButton1Click:Connect(function()
@@ -1982,6 +2109,7 @@ function Library:Window(Options)
 
         function TabObj:Button(BOpts)
             local Title = BOpts.Title or "Button"
+            local Desc = BOpts.Desc or nil
             local Action = BOpts.Action or "Click"
             local Callback = BOpts.Callback or function() end
             
@@ -2006,6 +2134,7 @@ function Library:Window(Options)
             
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Btn})
             Create("UIPadding", {PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16), Parent = Btn})
+            AttachTooltip(Row, Title, Desc)
             
             ThemeUpdate(function()
                 TitleLabel.TextColor3 = Theme.TextPrimary
@@ -2028,6 +2157,7 @@ function Library:Window(Options)
 
         function TabObj:Textbox(TOpts)
             local Title = TOpts.Title or "Textbox"
+            local Desc = TOpts.Desc or nil
             local Default = TOpts.Default or ""
             local Placeholder = TOpts.Placeholder or "Type here"
             local Callback = TOpts.Callback or function() end
@@ -2036,6 +2166,7 @@ function Library:Window(Options)
             local Row = CreateRow(Title, 40)
 
             local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            AttachTooltip(Row, Title, Desc)
 
             local InputBox = Create("TextBox", {
                 Size = UDim2.new(0, 100, 0, 26),
@@ -2089,6 +2220,7 @@ function Library:Window(Options)
 
         function TabObj:Keybind(KOpts)
             local Title = KOpts.Title or "Keybind"
+            local Desc = KOpts.Desc or nil
             local Default = KOpts.Default
             local Callback = KOpts.Callback or function() end
             
@@ -2097,6 +2229,7 @@ function Library:Window(Options)
 
             local Row = CreateRow(Title, 40)
             local TitleLabel = Create("TextLabel", {Size = UDim2.new(1, -200, 1, 0), Position = UDim2.new(0, 8, 0, 0), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
+            AttachTooltip(Row, Title, Desc)
 
             local KeyContainer = Create("TextButton", {Size = UDim2.new(0, 150, 1, 0), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, Parent = Row})
             Create("UIListLayout", {FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = KeyContainer})
@@ -2159,6 +2292,7 @@ function Library:Window(Options)
 
         function TabObj:Slider(SOpts)
             local Title = SOpts.Title or "Slider"
+            local Desc = SOpts.Desc or nil
             local Min = SOpts.Min or 0
             local Max = SOpts.Max or 100
             local Decimal = SOpts.Decimal or 0
@@ -2181,6 +2315,7 @@ function Library:Window(Options)
 
             local TitleLabel = Create("TextLabel", {Size = UDim2.new(0, 200, 0, 20), Position = UDim2.new(0, 8, 0, 8), BackgroundTransparency = 1, Text = Title, TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = Row})
             local ValueLabel = Create("TextLabel", {Size = UDim2.new(0, 150, 0, 20), Position = UDim2.new(1, -158, 0, 8), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Right, Parent = Row})
+            AttachTooltip(Row, Title, Desc)
 
             local TrackBtn = Create("TextButton", {Size = UDim2.new(1, -16, 0, 20), Position = UDim2.new(0, 8, 0, 28), BackgroundTransparency = 1, Text = "", AutoButtonColor = false, Parent = Row})
             local Track = Create("Frame", {Size = UDim2.new(1, 0, 0, 4), Position = UDim2.new(0, 0, 0.5, -2), BackgroundColor3 = Theme.Search, Parent = TrackBtn})
@@ -2312,6 +2447,7 @@ function Library:Window(Options)
 
         function TabObj:Toggle(TOpts)
             local Title = TOpts.Title or "Toggle"
+            local Desc = TOpts.Desc or nil
             local Default = TOpts.Default or false
             local Callback = TOpts.Callback or function() end
             
@@ -2322,6 +2458,7 @@ function Library:Window(Options)
 
             local Checkbox = Create("TextButton", {Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Default and Theme.Accent or Theme.Search, Text = "", AutoButtonColor = false, Parent = Row})
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = Checkbox})
+            AttachTooltip(Row, Title, Desc)
 
             local State = Default
             
@@ -2357,6 +2494,7 @@ function Library:Window(Options)
 
         function TabObj:Dropdown(DOpts)
             local Title = DOpts.Title or "Dropdown"
+            local Desc = DOpts.Desc or nil
             local OptionsList = DOpts.Options or {}
             local Multi = DOpts.Multi or false
             local Default = DOpts.Default
@@ -2377,6 +2515,7 @@ function Library:Window(Options)
 
             local DropBtn = Create("TextButton", {Size = UDim2.new(0, 160, 0, 26), Position = UDim2.new(1, -8, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false, Parent = Row})
             Create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = DropBtn})
+            AttachTooltip(Row, Title, Desc)
             
             local DropdownText = Create("TextLabel", {Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = "", TextColor3 = Theme.TextPrimary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, Parent = DropBtn})
             local Chevron = Create("ImageLabel", {Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(1, -20, 0.5, -8), BackgroundTransparency = 1, Image = Icons.ChevronDown, ImageColor3 = Theme.TextSecondary, Parent = DropBtn})
