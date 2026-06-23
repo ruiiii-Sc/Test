@@ -50,21 +50,100 @@ local Icons = {
 
 local Compkiller = { Lucide = {} }
 
-local function GetIcon(Icon)
-    if typeof(Icon) == "string" then
-        -- "--" means no icon
-        if Icon == "--" then return nil end
-        local CleanName = Icon:gsub("[%[%]]", ""):lower()
-        if Icons[CleanName] then return Icons[CleanName] end
-        if CleanName:match("^lucide%-") then
-            if Compkiller.Lucide[CleanName] then return Compkiller.Lucide[CleanName] end
-        else
-            if Compkiller.Lucide["lucide-" .. CleanName] then return Compkiller.Lucide["lucide-" .. CleanName] end
+-- Icon Registry: allows registering context-specific icon sets
+-- Icons can be called from any context (sub-elements, non-native components, etc.)
+local IconRegistry = {
+    Contexts = {},
+    Cache = {}
+}
+
+-- Register a custom icon context for sub-elements, non-native components, etc.
+-- Usage: RegisterIconContext("myContext", { myIcon = "rbxassetid://123" })
+local function RegisterIconContext(ContextName, ContextData)
+    IconRegistry.Contexts[ContextName] = ContextData or {}
+    -- Invalidate cache entries for this context
+    for key, _ in pairs(IconRegistry.Cache) do
+        if key:find("|" .. ContextName .. "$") then
+            IconRegistry.Cache[key] = nil
         end
-        if Icon:find("rbxassetid://") then return Icon end
     end
-    return Icons.Placeholder
 end
+
+-- Enhanced GetIcon: supports optional Context parameter for flexible icon resolution.
+-- Returns nil when icon is explicitly absent ("--", "", or nil input).
+-- Icons are callable from ANY context including sub-elements and non-native components.
+--
+-- @param Icon     string|nil  The icon name, asset ID, or "--"/"" for no icon
+-- @param Context  string|nil  Optional context name for context-specific resolution
+-- @return string|nil  The resolved rbxassetid:// or nil if no icon
+local function GetIcon(Icon, Context)
+    -- "--" or empty string means explicitly no icon
+    if Icon == nil or Icon == "" or Icon == "--" then return nil end
+
+    if typeof(Icon) ~= "string" then return nil end
+
+    -- Check cache for performance (keyed by Icon|Context)
+    local CacheKey = Icon .. "|" .. (Context or "default")
+    if IconRegistry.Cache[CacheKey] ~= nil then
+        -- Cache stores false for "not found" to distinguish from nil (uncached)
+        local cached = IconRegistry.Cache[CacheKey]
+        return cached ~= false and cached or nil
+    end
+
+    local ResolvedIcon = nil
+
+    -- 1. Context-specific resolution (sub-elements, custom components, etc.)
+    if Context and IconRegistry.Contexts[Context] then
+        ResolvedIcon = IconRegistry.Contexts[Context][Icon]
+        if not ResolvedIcon then
+            ResolvedIcon = IconRegistry.Contexts[Context][Icon:lower()]
+        end
+    end
+
+    -- 2. Fallback to global icon tables
+    if not ResolvedIcon then
+        local CleanName = Icon:gsub("[%[%]]", ""):lower()
+        if Icons[CleanName] then
+            ResolvedIcon = Icons[CleanName]
+        elseif CleanName:match("^lucide%-") then
+            ResolvedIcon = Compkiller.Lucide[CleanName]
+        elseif Compkiller.Lucide["lucide-" .. CleanName] then
+            ResolvedIcon = Compkiller.Lucide["lucide-" .. CleanName]
+        -- 3. Check FontAwesome
+        elseif Compkiller.FontAwesome and Compkiller.FontAwesome[CleanName] then
+            ResolvedIcon = Compkiller.FontAwesome[CleanName]
+        end
+    end
+
+    -- 4. Direct rbxassetid:// passthrough
+    if not ResolvedIcon and Icon:find("rbxassetid://") then
+        ResolvedIcon = Icon
+    end
+
+    -- Cache the result (use false sentinel for "not found")
+    IconRegistry.Cache[CacheKey] = ResolvedIcon or false
+
+    return ResolvedIcon
+end
+
+-- SafeGetIcon: convenience wrapper. Returns nil when no icon found (never placeholder).
+-- Use AllowPlaceholder=true to fall back to the placeholder icon.
+local function SafeGetIcon(IconName, AllowPlaceholder)
+    if not IconName or IconName == "" or IconName == "--" then
+        return AllowPlaceholder and Icons.Placeholder or nil
+    end
+    local Icon = GetIcon(IconName)
+    if not Icon and AllowPlaceholder then
+        return Icons.Placeholder
+    end
+    return Icon
+end
+
+-- Expose icon utilities on Compkiller for external access
+Compkiller.GetIcon = GetIcon
+Compkiller.SafeGetIcon = SafeGetIcon
+Compkiller.RegisterIconContext = RegisterIconContext
+Compkiller.IconRegistry = IconRegistry
 
 Compkiller.Lucide = {
 	['lucide-mouse-2'] = "rbxassetid://10088146939",
@@ -1113,6 +1192,121 @@ local Library = {
     Flags = {}
 }
 
+-- ============================================================
+-- CONFLICT GROUP SYSTEM
+-- Manages mutually exclusive UI options (e.g. radio buttons).
+-- When one option in a group is activated, all others in the
+-- same group are automatically deactivated.
+-- ============================================================
+
+local ConflictGroupManager = {}
+ConflictGroupManager.__index = ConflictGroupManager
+
+function ConflictGroupManager.new(options, groups)
+    local self = setmetatable({}, ConflictGroupManager)
+    self.state = {}
+    for _, option in ipairs(options or {}) do
+        self.state[option] = false
+    end
+    self.groups = groups or {}
+    self.onChange = nil
+    self.dependencies = {}
+    return self
+end
+
+function ConflictGroupManager:toggle(optionName)
+    if self.state[optionName] == nil then
+        warn("[ConflictGroupManager] Option '" .. optionName .. "' not found")
+        return nil
+    end
+    self.state[optionName] = not self.state[optionName]
+    if self.state[optionName] then
+        self:_applyConflicts(optionName)
+        self:_applyDependencies(optionName)
+    end
+    self:_triggerCallback()
+    return self.state
+end
+
+function ConflictGroupManager:set(optionName, value)
+    if self.state[optionName] == nil then
+        warn("[ConflictGroupManager] Option '" .. optionName .. "' not found")
+        return nil
+    end
+    self.state[optionName] = value
+    if value then
+        self:_applyConflicts(optionName)
+        self:_applyDependencies(optionName)
+    end
+    self:_triggerCallback()
+    return self.state
+end
+
+function ConflictGroupManager:getState()      return self.state end
+function ConflictGroupManager:isActive(name)  return self.state[name] or false end
+
+function ConflictGroupManager:getActiveOptions()
+    local active = {}
+    for k, v in pairs(self.state) do if v then table.insert(active, k) end end
+    return active
+end
+
+function ConflictGroupManager:reset()
+    for k in pairs(self.state) do self.state[k] = false end
+    self:_triggerCallback()
+end
+
+function ConflictGroupManager:setMultiple(updates)
+    for k, v in pairs(updates) do
+        if self.state[k] ~= nil then self.state[k] = v end
+    end
+    for k, v in pairs(self.state) do
+        if v then self:_applyConflicts(k); self:_applyDependencies(k) end
+    end
+    self:_triggerCallback()
+end
+
+function ConflictGroupManager:addDependency(option, requiredOption)
+    if self.state[option] == nil or self.state[requiredOption] == nil then return false end
+    self.dependencies[option] = requiredOption
+    return true
+end
+
+function ConflictGroupManager:_applyConflicts(changedName)
+    for _, group in ipairs(self.groups) do
+        local found = false
+        for _, opt in ipairs(group) do
+            if opt == changedName then found = true; break end
+        end
+        if found then
+            for _, opt in ipairs(group) do
+                if opt ~= changedName then self.state[opt] = false end
+            end
+            break
+        end
+    end
+end
+
+function ConflictGroupManager:_applyDependencies(changedName)
+    for opt, req in pairs(self.dependencies) do
+        if opt == changedName and self.state[opt] then
+            if not self.state[req] then
+                self.state[req] = true
+                self:_applyConflicts(req)
+            end
+        elseif req == changedName and not self.state[req] then
+            if self.state[opt] then self.state[opt] = false end
+        end
+    end
+end
+
+function ConflictGroupManager:_triggerCallback()
+    if self.onChange then self.onChange(self.state) end
+end
+
+-- Expose on Library for external access
+Library.ConflictGroupManager = ConflictGroupManager
+
 function Library:SetWindowKeybind(KeyEnum)
     self.ToggleKey = KeyEnum
 end
@@ -1181,6 +1375,17 @@ function Library:Window(Options)
         TooltipDescLabel.Text     = descText  or ""
         TooltipTitleLabel.Visible = hasTitle
         TooltipDescLabel.Visible  = hasDesc
+        -- Dynamic layout: title takes priority at LayoutOrder 1.
+        -- If title is empty, description moves up to LayoutOrder 1
+        -- so it fills the space directly below the cursor.
+        if hasTitle then
+            TooltipTitleLabel.LayoutOrder = 1
+            TooltipDescLabel.LayoutOrder  = 2
+        else
+            -- No title: description rises to fill the space directly below cursor
+            TooltipDescLabel.LayoutOrder  = 1
+            TooltipTitleLabel.LayoutOrder = 2
+        end
         TooltipFrame.Visible = true
     end
 
@@ -1188,16 +1393,20 @@ function Library:Window(Options)
         TooltipFrame.Visible = false
     end
 
-    -- Update tooltip position every frame while visible
+    -- Update tooltip position every frame while visible.
+    -- The helper appears DIRECTLY BELOW the cursor (small X offset, Y offset below).
     RunService.RenderStepped:Connect(function()
         if not TooltipFrame.Visible then return end
         local mp = UserInputService:GetMouseLocation()
         local ss = ScreenGui.AbsoluteSize
         local ts = TooltipFrame.AbsoluteSize
-        local ox, oy = 14, 14
+        -- Position directly below cursor: minimal X offset, Y offset below
+        local ox, oy = 0, 18
         local tx = mp.X + ox
         local ty = mp.Y + oy
-        if tx + ts.X > ss.X then tx = mp.X - ts.X - 4 end
+        -- Boundary checks: flip to above cursor or left if overflowing
+        if tx + ts.X > ss.X then tx = mp.X - ts.X end
+        if tx < 0 then tx = 0 end
         if ty + ts.Y > ss.Y then ty = mp.Y - ts.Y - 4 end
         TooltipFrame.Position = UDim2.fromOffset(tx, ty)
     end)
@@ -1242,13 +1451,41 @@ function Library:Window(Options)
             end
         end)
 
+        -- Double-click BottomBar to reset window to center (safety net for off-screen)
+        -- FIX: MouseButton1Click is not valid on Frame — use InputBegan with UserInputType filter instead.
+        local LastClickTime = 0
+        BottomBar.InputBegan:Connect(function(Input)
+            if Input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+            local now = tick()
+            if now - LastClickTime < 0.35 then
+                -- Double-click detected: snap back to center
+                SmoothMove(UDim2.new(0.5, -377, 0.5, -257))
+            end
+            LastClickTime = now
+        end)
+
+        -- UNRESTRICTED DRAGGING: No math.clamp — allows placement beyond screen boundaries.
+        --
+        -- WHY THE ORIGINAL WAS RESTRICTED:
+        -- The previous code used math.clamp(offset, 0, ScreenSize - FrameSize)
+        -- which forced the window X/Y to stay within [0, screenWidth-frameWidth]
+        -- and [0, screenHeight-frameHeight]. This prevented any part of the window
+        -- from being dragged outside the visible screen area.
+        --
+        -- HOW TO ENABLE DRAGGING BEYOND SCREEN BOUNDARIES:
+        -- Step 1: Remove the math.clamp calls that constrain NewX and NewY.
+        -- Step 2: Calculate new position as a simple delta from the drag start.
+        -- Step 3: Use UDim2.fromOffset with unclamped values.
+        -- Step 4: The ScreenGui already has ClipsDescendants = false by default,
+        --         so the MainFrame (CanvasGroup) will visually render even when
+        --         positioned partially or fully outside the screen bounds.
+        -- Step 5: (Optional) Add a double-click reset to snap back to center.
         UserInputService.InputChanged:Connect(function(Input)
             if Input == DragInput and Dragging then
                 local Delta = Input.Position - DragStart
-                local ScreenSize = ScreenGui.AbsoluteSize
-                local FrameSize = MainFrame.AbsoluteSize
-                local NewX = math.clamp(StartPos.X.Offset + Delta.X, 0, ScreenSize.X - FrameSize.X)
-                local NewY = math.clamp(StartPos.Y.Offset + Delta.Y, 0, ScreenSize.Y - FrameSize.Y)
+                -- No clamping: window can be dragged freely beyond screen edges
+                local NewX = StartPos.X.Offset + Delta.X
+                local NewY = StartPos.Y.Offset + Delta.Y
                 SmoothMove(UDim2.fromOffset(NewX, NewY))
             end
         end)
@@ -1552,15 +1789,31 @@ function Library:Window(Options)
 
     function WindowObj:Tab(Options)
         local TabTitle = Options.Title or "Tab"
+        -- Conditional Icon Display: GetIcon now returns nil for "--", "", and nil.
+        -- If no icon is resolved, we skip creating the ImageLabel entirely
+        -- and show only the title text instead of a placeholder icon.
         local TabIcon = GetIcon(Options.Icon)
+        local HasIcon = TabIcon ~= nil
         local IsConfig = Options.IsConfig or false
 
-        local TabBtn = Create("TextButton", {Size = UDim2.new(0, 36, 0, 36), BackgroundTransparency = 1, BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false})
+        local TabBtn = Create("TextButton", {Size = UDim2.new(0, HasIcon and 36 or 0, 0, 36), AutomaticSize = HasIcon and Enum.AutomaticSize.None or Enum.AutomaticSize.X, BackgroundTransparency = 1, BackgroundColor3 = Theme.Search, Text = "", AutoButtonColor = false})
         TabBtn.Parent = TabContainerNav
+        if not HasIcon then
+            Create("UIPadding", {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), Parent = TabBtn})
+        end
         
         Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = TabBtn})
         local TabBtnStroke = Create("UIStroke", {Color = Theme.Accent, Thickness = 1.5, Transparency = 1, Parent = TabBtn})
-        local TabIconImage = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = TabIcon or "", ImageColor3 = Theme.TextSecondary, Visible = TabIcon ~= nil, Parent = TabBtn})
+
+        -- Only create icon ImageLabel when an actual icon is resolved.
+        -- When icon is "--" or empty, no icon element is created — only the title shows.
+        local TabIconImage = nil
+        if HasIcon then
+            TabIconImage = Create("ImageLabel", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, Image = TabIcon, ImageColor3 = Theme.TextSecondary, Parent = TabBtn})
+        else
+            -- No icon: display tab title text directly in the button
+            Create("TextLabel", {Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, BackgroundTransparency = 1, Text = TabTitle, TextColor3 = Theme.TextSecondary, Font = Enum.Font.FredokaOne, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center, Parent = TabBtn})
+        end
 
         local TabCanvas = Create("CanvasGroup", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, Parent = TabContainer})
         local TabContent = Create("ScrollingFrame", {Size = UDim2.new(1, -40, 1, -40), Position = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4, ScrollBarImageColor3 = Theme.Accent, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = TabCanvas})
@@ -1569,11 +1822,16 @@ function Library:Window(Options)
         ThemeUpdate(function()
             if WindowObj.CurrentTab and WindowObj.CurrentTab.TabButton == TabBtn then
                 TabBtn.BackgroundColor3 = Theme.Search
-                TabIconImage.ImageColor3 = Theme.Accent
+                if TabIconImage then TabIconImage.ImageColor3 = Theme.Accent end
+                -- Update text label color for title-only tabs
+                local txtLbl = not TabIconImage and TabBtn:FindFirstChildOfClass("TextLabel")
+                if txtLbl then txtLbl.TextColor3 = Theme.Accent end
                 TabBtnStroke.Transparency = 0
             else
                 TabBtn.BackgroundColor3 = Theme.Sidebar
-                TabIconImage.ImageColor3 = Theme.TextSecondary
+                if TabIconImage then TabIconImage.ImageColor3 = Theme.TextSecondary end
+                local txtLbl = not TabIconImage and TabBtn:FindFirstChildOfClass("TextLabel")
+                if txtLbl then txtLbl.TextColor3 = Theme.TextSecondary end
                 TabBtnStroke.Transparency = 1
             end
             TabContent.ScrollBarImageColor3 = Theme.Accent
@@ -1600,7 +1858,11 @@ function Library:Window(Options)
                     TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(210, 49, 49)}):Play()
                 else
                     TweenService:Create(Tab.TabButton, TweenFast, {BackgroundTransparency = 1}):Play()
-                    TweenService:Create(Tab.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Theme.TextSecondary}):Play()
+                    local tabImg = Tab.TabButton:FindFirstChildOfClass("ImageLabel")
+                    if tabImg then TweenService:Create(tabImg, TweenFast, {ImageColor3 = Theme.TextSecondary}):Play() end
+                    -- Also handle title-only tab text color
+                    local tabTxt = Tab.TabButton:FindFirstChildOfClass("TextLabel")
+                    if tabTxt and not tabImg then TweenService:Create(tabTxt, TweenFast, {TextColor3 = Theme.TextSecondary}):Play() end
                     local tbStroke2 = Tab.TabButton:FindFirstChildOfClass("UIStroke")
                     if tbStroke2 then TweenService:Create(tbStroke2, TweenFast, {Transparency = 1}):Play() end
                 end
@@ -1614,7 +1876,11 @@ function Library:Window(Options)
                 TweenService:Create(DestroyBtn, TweenFast, {BackgroundColor3 = Color3.fromRGB(239, 68, 68)}):Play()
             else
                 TweenService:Create(TabObj.TabButton, TweenFast, {BackgroundTransparency = 0}):Play()
-                TweenService:Create(TabObj.TabButton:FindFirstChildOfClass("ImageLabel"), TweenFast, {ImageColor3 = Theme.Accent}):Play()
+                local activeImg = TabObj.TabButton:FindFirstChildOfClass("ImageLabel")
+                if activeImg then TweenService:Create(activeImg, TweenFast, {ImageColor3 = Theme.Accent}):Play() end
+                -- Also handle title-only tab text color
+                local activeTxt = TabObj.TabButton:FindFirstChildOfClass("TextLabel")
+                if activeTxt and not activeImg then TweenService:Create(activeTxt, TweenFast, {TextColor3 = Theme.Accent}):Play() end
                 local tbStroke = TabObj.TabButton:FindFirstChildOfClass("UIStroke")
                 if tbStroke then TweenService:Create(tbStroke, TweenFast, {Transparency = 0}):Play() end
             end
@@ -2642,6 +2908,107 @@ function Library:Window(Options)
             function DropdownObj:GetOptions() return OptionsList end
             Library.Flags[FlagName] = DropdownObj
             return DropdownObj
+        end
+
+        -- ============================================================
+        -- CONFLICT GROUP: wraps multiple Toggle components so only
+        -- one can be active at a time (radio-button behaviour).
+        --
+        -- Usage:
+        --   local cg = Tab:ConflictGroup({
+        --       Options = { "Spell", "Physical", "Health" },
+        --       Groups  = { { "Spell", "Physical" } },   -- optional; defaults to all-exclusive
+        --       Default = "Spell",                       -- optional pre-selected option
+        --       Callback = function(active, state) end,  -- active = selected name or nil
+        --   })
+        --   cg:GetValue()   → name of active option (or nil)
+        --   cg:GetState()   → full state table { [name]=bool, ... }
+        --   cg:SetValue("Physical")
+        --   cg:Reset()
+        -- ============================================================
+        function TabObj:ConflictGroup(CGOpts)
+            CGOpts = CGOpts or {}
+            local OptionNames = CGOpts.Options or {}
+            local Groups      = CGOpts.Groups  -- nil = treat all options as one conflict group
+            local Default     = CGOpts.Default
+            local Callback    = CGOpts.Callback or function() end
+            local FlagName    = CGOpts.Flag or string.format("%s/ConflictGroup/%s", TabObj.Title, table.concat(OptionNames, "|"))
+
+            -- If no explicit groups provided, put all options in a single exclusive group
+            if not Groups then
+                Groups = { OptionNames }
+            end
+
+            local manager = ConflictGroupManager.new(OptionNames, Groups)
+
+            -- Track Toggle objects so we can sync their visual state
+            local ToggleObjects = {}
+
+            -- Sync all toggle visuals to manager state
+            local function SyncUI()
+                for name, toggleObj in pairs(ToggleObjects) do
+                    local shouldBeActive = manager:isActive(name)
+                    if toggleObj:GetValue() ~= shouldBeActive then
+                        -- SetValue without re-triggering ConflictGroup callback
+                        toggleObj:SetValue(shouldBeActive)
+                    end
+                end
+            end
+
+            -- Set manager callback: sync UI then fire user callback
+            manager.onChange = function(state)
+                SyncUI()
+                -- Find active option name
+                local activeName = nil
+                for name, active in pairs(state) do
+                    if active then activeName = name; break end
+                end
+                Callback(activeName, state)
+            end
+
+            -- Create one Toggle per option
+            for _, optName in ipairs(OptionNames) do
+                local tOpts = {
+                    Title    = optName,
+                    Default  = (optName == Default),
+                    Callback = function(newVal)
+                        -- When toggle fires, drive the manager (not the other way)
+                        if newVal then
+                            manager:set(optName, true)
+                        else
+                            -- Allow explicit deactivation only if not in a group
+                            -- (groups keep at least one active; plain deactivation allowed here)
+                            manager:set(optName, false)
+                        end
+                    end,
+                    Flag = FlagName .. "/" .. optName,
+                }
+                -- Pass through any per-option overrides if caller provides Options as array of tables
+                local tObj = TabObj:Toggle(tOpts)
+                ToggleObjects[optName] = tObj
+            end
+
+            -- Apply default via manager so conflict rules run
+            if Default and manager.state[Default] ~= nil then
+                manager:set(Default, true)
+            end
+            SyncUI()
+
+            -- Public API
+            local CGObj = {}
+            function CGObj:GetComponentType() return "ConflictGroup" end
+            function CGObj:GetValue()
+                local opts = manager:getActiveOptions()
+                return opts[1]  -- single active option name, or nil
+            end
+            function CGObj:GetState()   return manager:getState() end
+            function CGObj:SetValue(name) manager:set(name, true) end
+            function CGObj:Reset()      manager:reset() end
+            function CGObj:AddDependency(opt, req) manager:addDependency(opt, req) end
+            function CGObj:GetManager() return manager end
+
+            Library.Flags[FlagName] = CGObj
+            return CGObj
         end
 
         return TabObj
