@@ -1330,12 +1330,12 @@ function Library:Window(Options)
     local Success = pcall(function() ScreenGui.Parent = CoreGui end)
     if not Success then ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
-    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 721, 0, 584), Position = UDim2.new(0.5, -360, 0.5, -292), BackgroundColor3 = Theme.Main, BackgroundTransparency = 0.08, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
+    local MainFrame = Create("CanvasGroup", {Size = UDim2.new(0, 721, 0, 584), Position = UDim2.new(0.5, -355, 0.5, -292), BackgroundColor3 = Theme.Main, BackgroundTransparency = 0.08, BorderSizePixel = 0, GroupTransparency = 0, Parent = ScreenGui})
     Create("UICorner", {CornerRadius = UDim.new(0, 20), Parent = MainFrame})
 
     -- Left vertical SideBar (replaces BottomBar)
     local SideBar = Create("Frame", {
-        Size = UDim2.new(0, 53, 1, 0),
+        Size = UDim2.new(0, 58, 1, 0),
         Position = UDim2.new(0, 0, 0, 0),
         BackgroundColor3 = Theme.Sidebar,
         BorderSizePixel = 0,
