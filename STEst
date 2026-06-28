@@ -1421,7 +1421,7 @@ function Library:Window(Options)
 
     -- Red button (close)
     local RedBtn = Create("TextButton", {
-        Size = UDim2.new(0, 12, 0, 12),
+        Size = UDim2.new(0, 16, 0, 16),
         BackgroundColor3 = Color3.fromRGB(255, 96, 89),
         Text = "",
         AutoButtonColor = false,
@@ -1443,7 +1443,7 @@ function Library:Window(Options)
 
     -- Yellow button (minimize)
     local YellowBtn = Create("TextButton", {
-        Size = UDim2.new(0, 12, 0, 12),
+        Size = UDim2.new(0, 16, 0, 16),
         BackgroundColor3 = Color3.fromRGB(255, 189, 46),
         Text = "",
         AutoButtonColor = false,
@@ -1465,7 +1465,7 @@ function Library:Window(Options)
 
     -- Green button (filter)
     local GreenBtn = Create("TextButton", {
-        Size = UDim2.new(0, 12, 0, 12),
+        Size = UDim2.new(0, 16, 0, 16),
         BackgroundColor3 = Color3.fromRGB(39, 201, 63),
         Text = "",
         AutoButtonColor = false,
